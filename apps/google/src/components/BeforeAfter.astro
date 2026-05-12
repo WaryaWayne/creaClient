@@ -1,0 +1,422 @@
+---
+import { Globe, Phone, CornerUpRight } from "lucide-react"
+import { CTAButton } from "@/components/CTAButton"
+import { beforeAfterPriceAssets, offerCatalog } from "@/data/offers"
+import { routes } from "@/lib/routes"
+import { getCompanyPhoneNumberDisplay } from "@/lib/site-config"
+
+type ActionBadge = "Call" | "Get Directions" | "Website" | string
+
+interface PriceAsset {
+  title: string
+  price: string
+  description: string
+}
+
+interface BeforeAdData {
+  url: string
+  headline: string
+  description: string
+  whatsWrong: string[]
+}
+
+interface AfterAdData {
+  url: string
+  headline: string
+  description: string
+  extensions?: string[]
+  whyItConverts: string[]
+  actionBadges?: ActionBadge[]
+  priceAssets?: PriceAsset[]
+}
+
+interface Props {
+  id?: string
+  sectionClass?: string
+  eyebrow?: string
+  titlePrefix?: string
+  titleAccent?: string
+  titleSuffix?: string
+  description?: string
+  beforeLabel?: string
+  afterLabel?: string
+  badAd?: Partial<BeforeAdData>
+  goodAd?: Partial<AfterAdData>
+  badPhoneNumber?: string
+  badCtaTitle?: string
+  badCtaBody?: string
+  badCtaLabel?: string
+  badCtaHref?: string
+  footerPositive?: string
+  footerNegative?: string
+  showActionBadges?: boolean
+  showPriceAssets?: boolean
+}
+
+const companyPhoneNumberDisplay = getCompanyPhoneNumberDisplay()
+
+const defaultBadAd: BeforeAdData = {
+  url: "/google+ads+management/call+us",
+  headline: `Call Us: ${companyPhoneNumberDisplay}`,
+  description:
+    "Google Ads management for all businesses. We are the best PPC agency. Call for Google Ads help today.",
+  whatsWrong: [
+    '"Google Ads" repeated 3 times. Keyword stuffing, not copy.',
+    "No offer, no price. Zero reason to hire you over anyone else.",
+    '"Best PPC agency" is an unsubstantiated claim nobody believes.',
+    "Generic URL looks like a lead-gen aggregator, not an expert.",
+    "Zero urgency. Zero differentiation. Zero conversion.",
+  ],
+}
+
+const defaultGoodAd: Required<AfterAdData> = {
+  url: "/services/ads-audit",
+  headline: `${offerCatalog.adsAudit.label} for ${offerCatalog.adsAudit.price} Flat | No Contracts`,
+  description: `Want more efficient Google Ads performance? Every audit covers campaigns, copy, keywords, bids, and negatives. ${offerCatalog.adsAudit.price} one-time project fee. No contracts. 7-day support included. Real people, practical improvements.`,
+  extensions: [
+    `${offerCatalog.adsAudit.shortLabel} for ${offerCatalog.adsAudit.price}`,
+    offerCatalog.weeklyStrategy.label,
+    offerCatalog.googleBusinessProfile.shortLabel,
+    "See All Offers",
+  ],
+  whyItConverts: [
+    '"One fixed $300 fee" answers the billing question upfront',
+    '"Campaigns, copy, keywords, bids, and negatives" makes the scope concrete',
+    '"No contracts" eliminates the #1 fear of hiring any agency',
+    "Specific deliverable, not vague management jargon.",
+    '"7-day support" signals we stand behind every piece of work',
+  ],
+  actionBadges: ["Call", "Get Quote", "Website"],
+  priceAssets: [...beforeAfterPriceAssets],
+}
+
+const {
+  id = "before-after",
+  sectionClass = "px-4 py-12",
+  eyebrow = "Real Example",
+  titlePrefix = "This Is What",
+  titleAccent = "Before vs. After",
+  titleSuffix = "Looks Like in Google Ads",
+  description = "One ad brings qualified leads into your pipeline. The other gives prospects fewer reasons to call. Most accounts look closer to the first example.",
+  beforeLabel = "Before: The Typical Agency Ad",
+  afterLabel = "After: What We Actually Build",
+  badAd,
+  goodAd,
+  badPhoneNumber = companyPhoneNumberDisplay,
+  badCtaTitle = "Sound familiar?",
+  badCtaBody = "This is exactly what most agencies deliver for their clients and for themselves. No offer, no price, no reason to call. We do it differently.",
+  badCtaLabel = "Let Us Improve Your Ads",
+  badCtaHref = offerCatalog.adsAudit.href,
+  footerPositive = "leads landing in your inbox every day",
+  footerNegative = "spend on ads that need better conversion paths",
+  showActionBadges = true,
+  showPriceAssets = true,
+} = Astro.props as Props
+
+const mergedBadAd: BeforeAdData = {
+  ...defaultBadAd,
+  ...badAd,
+  headline: badAd?.headline ?? `Call Us: ${badPhoneNumber}`,
+  whatsWrong: badAd?.whatsWrong ?? defaultBadAd.whatsWrong,
+}
+
+const mergedGoodAd: Required<AfterAdData> = {
+  ...defaultGoodAd,
+  ...goodAd,
+  extensions: goodAd?.extensions ?? defaultGoodAd.extensions,
+  whyItConverts: goodAd?.whyItConverts ?? defaultGoodAd.whyItConverts,
+  actionBadges: goodAd?.actionBadges ?? defaultGoodAd.actionBadges,
+  priceAssets: goodAd?.priceAssets ?? defaultGoodAd.priceAssets,
+}
+
+const shouldShowActionBadges =
+  showActionBadges && mergedGoodAd.actionBadges.length > 0
+const shouldShowPriceAssets =
+  showPriceAssets && mergedGoodAd.priceAssets.length > 0
+
+const siteDomain = (() => {
+  if (Astro.site) {
+    try {
+      return new URL(Astro.site).hostname
+    } catch {
+      return "oursite.com"
+    }
+  }
+  return "oursite.com"
+})()
+
+const normalizePath = (value: string) => {
+  const cleaned = value
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+  const firstSlash = cleaned.indexOf("/")
+  const rawPath = firstSlash >= 0 ? cleaned.slice(firstSlash + 1) : cleaned
+  const path = rawPath
+    .toLowerCase()
+    .replace(/[^a-z0-9\-_/+ ]/g, " ")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/\/+/g, "/")
+  if (!path) return "/good-endpoint"
+  return `/${path.replace(/^\/+/, "")}`
+}
+
+const badUrlFromValue = (value: string) => {
+  const hasDomainPattern = /[a-z0-9-]+\.[a-z]{2,}/i.test(value)
+  if (hasDomainPattern) {
+    const cleaned = value
+      .trim()
+      .replace(/^https?:\/\//i, "")
+      .replace(/^www\./i, "")
+    const firstSlash = cleaned.indexOf("/")
+    const host = firstSlash >= 0 ? cleaned.slice(0, firstSlash) : cleaned
+    const rawPath = firstSlash >= 0 ? cleaned.slice(firstSlash + 1) : ""
+    const first =
+      host
+        .toLowerCase()
+        .split(".")[0]
+        ?.replace(/[^a-z0-9+-]/g, "") || "cheapservice"
+    const second =
+      rawPath
+        .toLowerCase()
+        .split("/")[0]
+        ?.replace(/[^a-z0-9+-]/g, "") || "call+us"
+    return `${first} /${second}/`
+  }
+
+  const tokenSource = value
+    .toLowerCase()
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .replace(/[^a-z0-9+/\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  const tokens = tokenSource
+    .split(/[\/\s-]+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length > 1)
+  const first = tokens[0] ?? "cheapservice"
+  const second = tokens[1] ?? "call+us"
+  return `${first} /${second}/`
+}
+
+const displayedBadUrl = badUrlFromValue(mergedBadAd.url)
+const displayedGoodUrl = `${siteDomain}${normalizePath(mergedGoodAd.url)}`
+const displayedBadHeadline = mergedBadAd.headline
+
+const isDirectionBadge = (label: string) =>
+  label.toLowerCase().includes("direction")
+const isWebsiteBadge = (label: string) =>
+  label.toLowerCase().includes("website")
+const extensionHrefFor = (label: string) => {
+  const normalized = label.toLowerCase()
+  if (normalized.includes("quote") || normalized.includes("contact"))
+    return routes.google.contact
+  if (normalized.includes("weekly") || normalized.includes("strategy"))
+    return offerCatalog.weeklyStrategy.href
+  if (
+    normalized.includes("gmb") ||
+    normalized.includes("google my business") ||
+    normalized.includes("google business profile")
+  )
+    return offerCatalog.googleBusinessProfile.href
+  if (normalized.includes("offer") || normalized.includes("pricing"))
+    return routes.google.pricing + "#offers"
+  if (normalized.includes("review")) return routes.google.home + "#social-proof"
+  if (normalized.includes("service")) return routes.google.services.Index
+  return offerCatalog.adsAudit.href + "#features"
+}
+const priceAssetHrefFor = (asset: PriceAsset) =>
+  extensionHrefFor(`${asset.title} ${asset.description}`)
+---
+
+<section id={id} class={`${sectionClass} scroll-mt-24`}>
+  <div class="mx-auto max-w-6xl">
+    <div class="mb-16 text-center">
+      <p class="mb-3 text-sm font-bold tracking-widest text-primary uppercase">
+        {eyebrow}
+      </p>
+      <h2 class="text-4xl font-black md:text-5xl">
+        {titlePrefix}
+        <span class="text-primary"> {titleAccent}</span>
+        <br />{titleSuffix}
+      </h2>
+      <p class="mt-4 text-lg text-foreground">
+        {description}
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 items-stretch gap-8 md:grid-cols-2">
+      <div class="flex flex-col">
+        <div class="mb-4 flex items-center gap-2">
+          <span class="h-3 w-3 rounded-full bg-destructive"></span>
+          <span
+            class="text-sm font-black tracking-widest text-foreground uppercase"
+            >{beforeLabel}</span
+          >
+        </div>
+        <div
+          class="flex flex-1 flex-col overflow-hidden rounded-2xl border border-destructive/30 bg-card"
+        >
+          <div class="p-6">
+            <div class="mb-1 flex items-center gap-2">
+              <span
+                class="rounded border border-border px-1 py-0.5 text-xs font-medium text-foreground"
+                >Ad</span
+              >
+              <span class="truncate text-xs text-foreground"
+                >{displayedBadUrl}</span
+              >
+            </div>
+            <h3
+              class="mb-1 cursor-pointer text-lg leading-tight font-semibold text-blue-700 dark:text-blue-300 hover:underline"
+            >
+              {displayedBadHeadline}
+            </h3>
+            <p class="text-sm leading-relaxed text-foreground">
+              {mergedBadAd.description}
+            </p>
+          </div>
+          <div
+            class="space-y-2 border-t border-destructive bg-destructive/30 p-4"
+          >
+            <p class="text-sm font-bold text-destructive">❌ What's wrong:</p>
+            <ul class="space-y-1 text-sm text-foreground">
+              {mergedBadAd.whatsWrong.map((item) => <li>• {item}</li>)}
+            </ul>
+          </div>
+          <div
+            class="flex flex-1 flex-col items-center justify-center gap-4 border-t border-destructive bg-destructive/10 px-6 py-10 text-center"
+          >
+            <p class="text-2xl font-black text-primary">{badCtaTitle}</p>
+            <p class="max-w-xs text-sm text-foreground">{badCtaBody}</p>
+            <CTAButton variant="default" href={badCtaHref} target="_self">
+              {badCtaLabel}
+            </CTAButton>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col">
+        <div class="mb-4 flex items-center gap-2">
+          <span class="h-3 w-3 rounded-full bg-primary"></span>
+          <span
+            class="text-sm font-black tracking-widest text-primary uppercase"
+            >{afterLabel}</span
+          >
+        </div>
+        <div
+          class="flex flex-1 flex-col overflow-hidden rounded-2xl border border-primary/30 bg-card"
+        >
+          <div class="p-6">
+            <div class="mb-1 flex items-center gap-2">
+              <span
+                class="rounded border border-border px-1 py-0.5 text-xs font-medium text-foreground"
+                >Ad</span
+              >
+              <span class="truncate text-xs text-foreground"
+                >{displayedGoodUrl}</span
+              >
+            </div>
+            <h3
+              class="mb-1 cursor-pointer text-lg leading-tight font-semibold text-blue-700 dark:text-blue-300 hover:underline"
+            >
+              {mergedGoodAd.headline}
+            </h3>
+            <p class="text-sm leading-relaxed text-foreground">
+              {mergedGoodAd.description}
+            </p>
+
+            {
+              shouldShowActionBadges && (
+                <div class="mt-3 flex flex-wrap gap-2">
+                  {mergedGoodAd.actionBadges.map((badge) => (
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-blue-500 px-3 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
+                      {isDirectionBadge(badge) ? (
+                        <CornerUpRight className="h-5 w-5" />
+                      ) : isWebsiteBadge(badge) ? (
+                        <Globe className="h-5 w-5" />
+                      ) : (
+                        <Phone className="h-5 w-5" />
+                      )}
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+              )
+            }
+
+            {
+              mergedGoodAd.extensions.length > 0 && (
+                <div class="mt-4 border-t border-border/60 pt-3">
+                  <div class="flex flex-wrap gap-2">
+                    {mergedGoodAd.extensions.map((ext) => (
+                      <a
+                        href={extensionHrefFor(ext)}
+                        class="rounded border border-border px-2 py-1 text-xs text-blue-700 dark:text-blue-300 hover:underline"
+                      >
+                        {ext}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+
+            {
+              shouldShowPriceAssets && (
+                <div class="mt-4 border-t border-border/60 pt-3">
+                  <div class="flex gap-0 overflow-hidden rounded-lg border border-border">
+                    {mergedGoodAd.priceAssets.map((asset, i) => (
+                      <a
+                        href={priceAssetHrefFor(asset)}
+                        class:list={[
+                          "block flex-1 px-4 py-3 hover:bg-muted/40",
+                          i !== mergedGoodAd.priceAssets.length - 1 &&
+                            "border-r border-border",
+                        ]}
+                      >
+                        <span
+                          class="text-xs font-semibold text-blue-700 dark:text-blue-300 underline underline-offset-2"
+                        >
+                          {asset.title}
+                        </span>
+                        <div class="my-2 border-t border-border" />
+                        <p class="text-xs text-muted-foreground">
+                          For{" "}
+                          <span class="text-base font-black text-foreground/80">
+                            {asset.price}
+                          </span>
+                        </p>
+                        <span
+                          class="mt-1 block text-xs text-blue-700 dark:text-blue-300 underline underline-offset-2"
+                        >
+                          {asset.description}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+          </div>
+          <div
+            class="flex flex-1 flex-col space-y-2 border-t border-primary/20 bg-primary/5 p-4"
+          >
+            <p class="text-sm font-bold text-primary">✓ Why this converts:</p>
+            <ul class="space-y-1 text-sm text-foreground">
+              {mergedGoodAd.whyItConverts.map((item) => <li>• {item}</li>)}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="mt-8 text-center text-sm text-foreground">
+      The difference between these two ads is the difference between <span
+        class="font-bold text-foreground">{footerPositive}</span
+      > and <span class="font-bold text-destructive">{footerNegative}</span>.
+    </p>
+  </div>
+</section>

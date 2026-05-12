@@ -1,0 +1,547 @@
+---
+import Layout from "@/layouts/main.astro"
+import PathBreadcrumb from "@/components/PathBreadcrumb"
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+} from "@workspace/ui/components/item"
+import { CTAButton } from "@/components/CTAButton"
+import { PaymentCTA } from "@/components/PaymentCTA"
+import Hero from "@/components/Hero.astro"
+import ZarazViewContent from "@/components/ZarazViewContent.astro"
+import SocialProof from "@/components/SocialProof.astro"
+import FAQSection from "@/components/FAQSection.astro"
+import FeatureGrid from "@/components/services/FeatureGrid.astro"
+import FeaturesList from "@/components/services/FeaturesList.astro"
+import PricingCard from "@/components/services/PricingCard.astro"
+import { getSchemaEntityModel, sharedServiceArea } from "@/lib/schema"
+import { routes } from "@/lib/routes"
+import type { BreadcrumbList, Service, WebPage, WithContext } from "schema-dts"
+import { productPaymentLinks } from "@/lib/payment-links"
+import { siteConfig } from "@/lib/site-config"
+
+const siteUrl = Astro.site ?? new URL(Astro.url.origin)
+const basePath = import.meta.env.BASE_URL
+const turnstileSiteKey = import.meta.env.TURNSTILE_SITE_KEY
+const { appSiteUrl, ids } = getSchemaEntityModel(siteUrl, basePath)
+const siteBaseUrl = new URL(
+  appSiteUrl.endsWith("/") ? appSiteUrl : `${appSiteUrl}/`
+)
+const pageUrl = routes.google.services.WeeklyStrategy
+const canonicalUrl = new URL(pageUrl, siteUrl).toString()
+const servicesUrl = new URL(routes.google.services.Index, siteUrl).toString()
+const providerId = ids.googleProfessionalService
+const serviceId = `${canonicalUrl}#service`
+const areaServed = sharedServiceArea
+const brandLogoUrl = new URL(siteConfig.images.logo, siteBaseUrl).toString()
+
+const title =
+  "Weekly Google Ads Strategy | Live Optimization Calls from $60/Week | 2To6X"
+const description =
+  "Weekly Google Ads strategy sessions where we review performance and make live edits to your campaigns. Start at $60 / week, or prepay for one month or 12 weeks of sessions."
+
+const whatWeDoWeekly = [
+  {
+    title: "Performance Report Review",
+    desc: "We pull your latest data: impressions, CTR, cost per lead, and conversion rate. Nothing gets hidden. We show you exactly what's happening.",
+  },
+  {
+    title: "Live Account Edits",
+    desc: "This isn't a call where we take notes and come back next week. We make changes during the session: bid adjustments, ad copy tweaks, keyword additions, and negative terms added.",
+  },
+  {
+    title: "Search Term Harvesting",
+    descHtml: `We dig through what people actually searched to trigger your ads. Good terms get added as keywords. Unqualified terms get blocked immediately. If your account still needs cleanup, start with <a href=\"${routes.google.services.AdsAudit}#features\" class=\"font-semibold text-primary underline underline-offset-2 hover:no-underline\">Google Ads Audit & Rewrite details</a>.`,
+  },
+  {
+    title: "A/B Test Results + Next Round",
+    desc: "We review which ad variations are winning and replace the underperformers. Constant iteration is how you keep lowering cost per lead.",
+  },
+  {
+    title: "Algorithm Signal Updates",
+    desc: "Google's algorithm rewards fresh activity and consistent optimization signals. Weekly touches keep your campaigns current. Neglected accounts can lose efficiency.",
+  },
+  {
+    title: "Your Questions, Answered Live",
+    desc: "Got something new you want to test? Competitor you've noticed? Budget change coming? We handle it in the call, with no waiting for the next sprint.",
+  },
+]
+
+const weeklyWhyFeatures = [
+  {
+    title: "Data only gets useful after weeks",
+    desc: "The more weeks of live optimization data you have, the smarter the decisions. Month 1 is setup. Month 3 is where it compounds.",
+  },
+  {
+    title: "Algorithms reward consistency",
+    desc: "Google's system gives preference to actively managed campaigns. Untouched accounts can lose efficiency. Weekly activity keeps yours favoured.",
+  },
+  {
+    title: "Your competition isn't sitting still",
+    desc: "Someone in your market is optimizing weekly. If it's not you, it's them. The gap compounds fast.",
+  },
+]
+
+const plans = [
+  {
+    name: "Weekly Subscription",
+    price: "$60",
+    per: "/ week",
+    billing: "Weekly subscription",
+    desc: "Best if you want ongoing weekly optimization without prepaying for a larger session block.",
+    cta: "Start Weekly Subscription",
+    paymentLink: productPaymentLinks.weeklyStrategySubscriptionPaymentLink,
+    offerKey: "weeklyStrategy" as const,
+    highlight: true,
+    badge: "Primary Offer",
+  },
+  {
+    name: "4 Sessions",
+    price: "$199",
+    per: "one-time",
+    billing: "4 weekly sessions",
+    desc: "Best if you want one focused month of weekly sessions paid upfront.",
+    cta: "Buy 4 Sessions for $199",
+    paymentLink: productPaymentLinks.weeklyStrategy4MeetingsPaymentLink,
+    offerKey: "weeklyStrategy4Weeks" as const,
+    highlight: false,
+  },
+  {
+    name: "12 Sessions",
+    price: "$499",
+    per: "one-time",
+    billing: "3 months of weekly sessions",
+    desc: "Best if you want enough runway for tests to mature and improvements to compound.",
+    cta: "Buy 12 Sessions for $499",
+    paymentLink: productPaymentLinks.weeklyStrategy12MeetingsPaymentLink,
+    offerKey: "weeklyStrategy12Weeks" as const,
+    highlight: false,
+  },
+]
+
+const results = [
+  {
+    time: "Week 1–2",
+    outcome:
+      "Baseline established. We know your account inside out. First round of edits live.",
+  },
+  {
+    time: "Week 3–4",
+    outcome:
+      "Search term cleanup done. Inefficient spend decreases. CTR starts climbing.",
+  },
+  {
+    time: "Month 2",
+    outcome:
+      "A/B tests start returning winners. Ad copy improves. Cost per lead decreasing.",
+  },
+  {
+    time: "Month 3",
+    outcome:
+      "Algorithm is favouring your campaigns. Quality Scores up. CPC down. Leads up.",
+  },
+  {
+    time: "Month 6+",
+    outcome:
+      "Compounding returns. Your account is a well-oiled machine. Competitors can't catch up.",
+  },
+]
+
+const faqs = [
+  {
+    q: "Do calls happen at a fixed time each week?",
+    a: "Yes: we schedule a recurring weekly slot that works for you. Same time, same day, every week. No rescheduling chaos.",
+  },
+  {
+    q: "What if I need to skip a week?",
+    a: "No problem. Give us 24 hours notice and we'll reschedule. Sessions don't expire.",
+  },
+  {
+    q: "Do I need the Audit & Rewrite first?",
+    aHtml: `Highly recommended but not required. If your account is already clean, we can dive straight into ongoing optimization. If it needs improvement, we'll want to address the foundation first. Start here: <a href=\"${routes.google.services.AdsAudit}#pricing\" class=\"font-semibold text-primary underline underline-offset-2 hover:no-underline\">Google Ads Audit & Rewrite pricing</a>.`,
+  },
+  {
+    q: "What access do you need?",
+    aHtml: `Standard manager access to your Google Ads account. Read and write so we can make edits live during the call. Details are covered in the <a href=\"${routes.google.frequentlyAskedQuestions}#audit-process\" class=\"font-semibold text-primary underline underline-offset-2 hover:no-underline\">audit process FAQ</a>.`,
+  },
+  {
+    q: "Can I upgrade my plan later?",
+    aHtml: `Yes. Start at $60 / week and move into a prepaid session block any time. If you want a longer runway, the <a href=\"${routes.google.services.WeeklyStrategy12Weeks}#pricing\" class=\"font-semibold text-primary underline underline-offset-2 hover:no-underline\">12-week option</a> is the next step.`,
+  },
+]
+
+const heroHeadline = `Google Ads Need<br /><span class="text-primary">Weekly Attention.</span>`
+const heroSubheadline = [
+  "Your competitors are tweaking bids, adding negatives, and testing copy every week. If you set it and forget it, performance can fall behind.",
+  "Weekly attention, live edits, and clear next steps. Start at $60 / week, with one-month and 12-week prepaid options if you prefer to buy sessions upfront.",
+]
+const heroCtas = [
+  {
+    label: "Start Weekly Subscription",
+    target: "_blank" as const,
+    href: productPaymentLinks.weeklyStrategySubscriptionPaymentLink,
+    variant: "default" as const,
+    note: "Weekly subscription for live Google Ads optimization sessions.",
+    paymentOfferKey: "weeklyStrategy" as const,
+  },
+]
+const heroTrustPills = [
+  "Live edits every session",
+  "Performance report reviewed",
+  "Start at $60 / week",
+  "One-month and 12-week prepaid options",
+]
+
+const schema: Array<
+  WithContext<BreadcrumbList> | WithContext<WebPage> | WithContext<Service>
+> = [
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "@id": `${canonicalUrl}#breadcrumb`,
+    name: "Weekly Ads Strategy Sessions breadcrumb",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Google",
+        item: appSiteUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Services",
+        item: servicesUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: "Weekly Ads Strategy Sessions",
+        item: canonicalUrl,
+      },
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${canonicalUrl}#webpage`,
+    url: canonicalUrl,
+    name: title,
+    description,
+    isPartOf: {
+      "@id": ids.appWebsite,
+    },
+    mainEntity: {
+      "@id": serviceId,
+    },
+    about: {
+      "@id": serviceId,
+    },
+    breadcrumb: {
+      "@id": `${canonicalUrl}#breadcrumb`,
+    },
+    primaryImageOfPage: {
+      "@type": "ImageObject",
+      url: brandLogoUrl,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": serviceId,
+    name: "Weekly Ads Strategy Sessions",
+    description,
+    url: canonicalUrl,
+    serviceType: "Weekly Google Ads strategy and optimization sessions",
+    areaServed,
+    provider: {
+      "@id": providerId,
+    },
+    offers: [
+      {
+        "@type": "Offer",
+        name: "Weekly Ads Strategy Base Rate",
+        description:
+          "Weekly subscription rate for Google Ads strategy sessions.",
+        price: 60,
+        priceCurrency: "CAD",
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          price: 60,
+          priceCurrency: "CAD",
+          unitText: "WEEK",
+        },
+        availability: "https://schema.org/InStock",
+        url: `${canonicalUrl}#pricing`,
+      },
+      {
+        "@type": "Offer",
+        name: "One-Month Weekly Ads Strategy Session Block",
+        description: "Four weekly Google Ads strategy sessions paid upfront.",
+        price: 199,
+        priceCurrency: "CAD",
+        availability: "https://schema.org/InStock",
+        url: `${new URL(routes.google.services.WeeklyStrategy4Weeks, siteUrl).toString()}#pricing`,
+      },
+      {
+        "@type": "Offer",
+        name: "12-Week Weekly Ads Strategy Session Block",
+        description: "Twelve weekly Google Ads strategy sessions paid upfront.",
+        price: 499,
+        priceCurrency: "CAD",
+        availability: "https://schema.org/InStock",
+        url: `${new URL(routes.google.services.WeeklyStrategy12Weeks, siteUrl).toString()}#pricing`,
+      },
+    ],
+  },
+]
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonical={pageUrl}
+  ogType="website"
+  schema={schema}
+>
+  <div class="mx-auto max-w-5xl px-4 pt-8">
+    <PathBreadcrumb className="mb-4" location={Astro.url.pathname} />
+  </div>
+
+  <!-- HERO -->
+  <Hero
+    id="hero"
+    tagline="Weekly Ads Strategy Sessions"
+    headline={heroHeadline}
+    subheadline={heroSubheadline}
+    ctas={heroCtas}
+    trustPills={heroTrustPills}
+  />
+  <ZarazViewContent contentKey="weeklyStrategy" />
+
+  <!-- WHY WEEKLY -->
+  <FeatureGrid
+    id="why-weekly"
+    eyebrow="Why It Has to Be Weekly"
+    titleHtml={`Google's Algorithm<br /><span class="text-primary">Never Takes a Week Off.</span>`}
+    description="Search behaviour shifts. Competitors change bids. New unqualified terms show up. The accounts that improve are the ones that respond fast, not the ones that check in monthly."
+    features={weeklyWhyFeatures}
+    cta={{
+      eyebrow: "Weekly Optimization",
+      heading: "Start the weekly subscription.",
+      subheadline:
+        "Choose this if you want a steady weekly optimization rhythm without prepaying for a larger block.",
+      buttonLabel: "Start Weekly Subscription",
+      href: productPaymentLinks.weeklyStrategySubscriptionPaymentLink,
+      target: "_blank",
+      paymentOfferKey: "weeklyStrategy",
+    }}
+  />
+
+  <!-- WHAT HAPPENS EACH WEEK -->
+  <FeaturesList
+    id="what-happens"
+    eyebrow="Every Session"
+    titleHtml={`What Actually Happens<br /><span class="text-primary">In Your 1-Hour Call.</span>`}
+    items={whatWeDoWeekly}
+    gridClassName="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12"
+    cta={{
+      eyebrow: "Every Week",
+      heading: "Move into the pricing options.",
+      subheadline:
+        "Compare the weekly subscription with prepaid session blocks before choosing.",
+      buttonLabel: "Compare Weekly Options",
+      href: "#pricing",
+      target: "_self",
+    }}
+  />
+
+  <!-- RESULTS OVER TIME -->
+  <section id="results" class="scroll-mt-25 px-4 py-20">
+    <div class="mx-auto max-w-4xl">
+      <div class="mb-14 text-center">
+        <p
+          class="mb-3 text-sm font-bold tracking-widest text-primary uppercase"
+        >
+          The Compound Effect
+        </p>
+        <h2 class="text-4xl font-black md:text-5xl">
+          Week by Week,<br /><span class="text-primary">It Gets Better.</span>
+        </h2>
+      </div>
+      <div class="mb-12 space-y-4">
+        {
+          results.map(({ time, outcome }) => (
+            <Item
+              variant="outline"
+              className="gap-6 items-center shadow-xl bg-card"
+            >
+              <ItemMedia
+                variant="default"
+                className="w-28 shrink-0 justify-end"
+              >
+                <span class="text-sm font-black text-primary">{time}</span>
+              </ItemMedia>
+              <div class="h-8 w-px shrink-0 bg-primary/30" />
+              <ItemContent>
+                <ItemDescription className="line-clamp-none text-sm text-foreground">
+                  {outcome}
+                </ItemDescription>
+              </ItemContent>
+            </Item>
+          ))
+        }
+      </div>
+      <div class="text-center">
+        <CTAButton variant={"default"} target="_self" href="#pricing">
+          Compare Weekly Options
+        </CTAButton>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOCIAL PROOF -->
+  <SocialProof
+    eyebrow="Client Results"
+    subheading="Neither Do Our Clients."
+    cta={{
+      eyebrow: "Next Step",
+      heading: "Choose your weekly plan.",
+      subheadline:
+        "Start with the subscription, or buy sessions upfront if you prefer a fixed block.",
+      buttonLabel: "Compare Weekly Options",
+      href: "#pricing",
+      target: "_self",
+    }}
+  />
+
+  <!-- PRICING -->
+  <section id="pricing" class="scroll-mt-25 px-4 py-20">
+    <div class="mx-auto max-w-5xl">
+      <div class="mb-14 text-center">
+        <p
+          class="mb-3 text-sm font-bold tracking-widest text-primary uppercase"
+        >
+          Weekly Strategy Pricing
+        </p>
+        <h2 class="text-4xl font-black md:text-5xl">
+          Start Weekly Strategy.<br /><span class="text-primary"
+            >Keep The Account Moving.</span
+          >
+        </h2>
+        <p class="mt-4 text-lg text-foreground">
+          Start the weekly subscription at $60 / week. If you prefer to buy
+          sessions upfront, choose the one-month or 12-week option.
+        </p>
+        <p class="mx-auto mt-3 max-w-2xl text-sm text-foreground">
+          Need the account cleaned up first? Start with the{" "}
+          <a
+            href={routes.google.services.AdsAudit + "#pricing"}
+            class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+          >
+            Google Ads Audit & Rewrite
+          </a>
+          {" "}. Want the free local channel handled too? Add{" "}
+          <a
+            href={routes.google.services.GoogleMyBusiness + "#opportunity"}
+            class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+          >
+            Google Business Profile optimization
+          </a>.
+        </p>
+      </div>
+      <div class="mb-12 grid grid-cols-1 gap-4 md:grid-cols-3">
+        {
+          plans.map(
+            ({
+              name,
+              price,
+              per,
+              billing,
+              desc,
+              cta,
+              paymentLink,
+              offerKey,
+              highlight,
+              badge,
+            }) => (
+              <PricingCard
+                variant="plan"
+                planName={name}
+                price={price}
+                per={per}
+                planBilling={billing}
+                description={desc}
+                ctaLabel={cta}
+                ctaHref={paymentLink}
+                ctaTarget="_blank"
+                paymentOfferKey={offerKey}
+                highlight={highlight}
+                badge={badge}
+              />
+            )
+          )
+        }
+      </div>
+      <p class="text-center text-xs text-foreground">
+        The subscription is the main offer. Prepaid one-month and 12-week
+        session blocks are available if you prefer to pay upfront. Prepaid
+        sessions do not expire.
+      </p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <FAQSection
+    id="faq"
+    faqs={faqs}
+    eyebrow="Questions"
+    title="How It Works."
+    variant="cards"
+  >
+    <div slot="footer">
+      <PaymentCTA
+        client:load
+        variant={"default"}
+        target="_blank"
+        href={productPaymentLinks.weeklyStrategySubscriptionPaymentLink}
+        offerKey="weeklyStrategy"
+        turnstileSiteKey={turnstileSiteKey}
+      >
+        Start Weekly Subscription
+      </PaymentCTA>
+    </div>
+  </FAQSection>
+
+  <!-- FINAL CTA -->
+  <section id="final-cta" class="scroll-mt-25 px-4 py-12">
+    <div class="mx-auto max-w-3xl text-center">
+      <p class="mb-3 text-sm font-bold tracking-widest text-primary uppercase">
+        Don't Let It Sit
+      </p>
+      <h2 class="mb-4 text-4xl font-black md:text-6xl">
+        Your Ads Are Running Right Now.<br />
+        <span class="text-primary">Are They Improving?</span>
+      </h2>
+      <p class="mx-auto mb-10 max-w-xl text-lg text-foreground">
+        Every week you don't optimize is a week your competitors are. One hour a
+        week is all it takes to keep your account ahead of the curve.
+      </p>
+      <PaymentCTA
+        client:load
+        variant={"default"}
+        target="_blank"
+        href={productPaymentLinks.weeklyStrategySubscriptionPaymentLink}
+        offerKey="weeklyStrategy"
+        turnstileSiteKey={turnstileSiteKey}
+      >
+        Start Weekly Subscription
+      </PaymentCTA>
+      <p class="mt-4 text-xs text-foreground">
+        Weekly subscription. One-month and 12-week prepaid options available.
+      </p>
+    </div>
+  </section>
+</Layout>

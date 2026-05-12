@@ -1,0 +1,249 @@
+---
+import {
+  industriesOverviewHref,
+  orderIndustriesForNav,
+  primaryNavLinks,
+  serviceLinks,
+  servicesOverviewHref,
+} from "@/lib/site-nav"
+import { policyLinks } from "@/lib/policies"
+import { serviceTypes } from "@/data/service-types"
+import Logo from "@/assets/logo.svg"
+import { routes } from "@/lib/routes"
+import {
+  getCompanyAddressDisplay,
+  getCompanyPhoneNumber,
+  getCompanyPhoneNumberDisplay,
+  getContactEmail,
+  getWhatsappUrl,
+} from "@/lib/site-config"
+import { Mail, MapPin, Phone } from "lucide-react"
+import WhatsappLogo from "@/components/WhatsappLogo.svg"
+
+const year = new Date().getFullYear()
+const navIndustries = orderIndustriesForNav(serviceTypes)
+const contactEmail = getContactEmail()
+const companyPhoneNumber = getCompanyPhoneNumber()
+const companyPhoneNumberDisplay = getCompanyPhoneNumberDisplay()
+const companyAddressDisplay = getCompanyAddressDisplay()
+const whatsappUrl = getWhatsappUrl()
+---
+
+<footer
+  class="mt-20 border-t border-border/80 bg-background/90 backdrop-blur-sm"
+>
+  <div class="mx-auto max-w-7xl px-5 py-12">
+    <section
+      class="mb-10 border-b border-border/70 pb-10"
+      aria-labelledby="footer-contact-title"
+    >
+      <div class="mb-6 flex flex-col gap-2 text-center md:text-start">
+        <p
+          id="footer-contact-title"
+          class="text-xs font-black tracking-widest text-primary uppercase"
+        >
+          Contact 2To6X
+        </p>
+        <p class="text-sm text-muted-foreground">
+          Reach us directly before ordering, after delivery, or when you need a
+          quick answer.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div
+          class="flex flex-col gap-3 border border-border bg-background p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between md:col-span-1"
+        >
+          <a
+            href={`tel:${companyPhoneNumber}`}
+            class="flex items-center justify-center gap-3 text-sm font-semibold text-foreground transition-colors hover:text-primary sm:justify-start"
+          >
+            <Phone
+              className="h-4 w-4 shrink-0 text-primary"
+              aria-hidden="true"
+            />
+            <span class="whitespace-nowrap">{companyPhoneNumberDisplay}</span>
+          </a>
+          {
+            whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                class="inline-flex shrink-0 items-center justify-center gap-2 border border-primary/50 bg-primary px-3 py-2 text-xs font-black text-primary-foreground uppercase transition-colors hover:bg-primary/90"
+              >
+                <WhatsappLogo class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                WhatsApp
+              </a>
+            )
+          }
+        </div>
+
+        <a
+          href={`mailto:${contactEmail}`}
+          class="flex items-center justify-center gap-3 border border-border bg-background p-4 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary sm:justify-start"
+        >
+          <Mail className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          <span class="min-w-0 truncate">{contactEmail}</span>
+        </a>
+
+        <a
+          href={import.meta.env.PUBLIC_GOOGLE_MAPS_LINK}
+          target="_blank"
+          class="md:col-span-2 xl:col-span-1"
+        >
+          <address
+            class="flex items-center justify-center gap-3 border border-border bg-background p-4 text-center text-sm font-semibold text-foreground not-italic sm:justify-start sm:text-start"
+          >
+            <MapPin
+              className="h-4 w-4 shrink-0 text-primary"
+              aria-hidden="true"
+            />
+            <span>{companyAddressDisplay}</span>
+          </address>
+        </a>
+      </div>
+    </section>
+
+    <div
+      class="grid gap-10 md:grid-cols-4 lg:grid-cols-[1.15fr_0.7fr_1.05fr_2.45fr_0.9fr]"
+    >
+      <div
+        class="flex flex-col items-center space-y-4 text-center md:col-span-4 lg:col-span-1 lg:items-start lg:text-start"
+      >
+        <a
+          href={import.meta.env.BASE_URL}
+          class="inline-block"
+          aria-label="2To6X home"
+        >
+          <Logo
+            class="h-16 w-auto transition-opacity duration-200 hover:opacity-85"
+          />
+        </a>
+        <p class="max-w-sm text-sm leading-relaxed text-muted-foreground">
+          Google Ads audits, rewrites, and weekly optimization for local
+          businesses that need more qualified leads without wasting budget.
+        </p>
+      </div>
+
+      <div class="text-center lg:text-start">
+        <p
+          class="mb-3 text-xs font-black tracking-widest text-foreground uppercase"
+        >
+          Company
+        </p>
+        <ul class="space-y-2 text-sm">
+          {
+            primaryNavLinks.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  class="text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+          <li>
+            <a
+              href={routes.google.industry.Index}
+              class="text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary"
+            >
+              Industries
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="text-center lg:text-start">
+        <a href={servicesOverviewHref}>
+          <p
+            class="mb-3 text-xs font-black tracking-widest text-foreground uppercase underline underline-offset-4 transition-colors hover:text-primary"
+          >
+            Services
+          </p>
+        </a>
+
+        <ul class="space-y-2 text-sm">
+          {
+            serviceLinks.map((service) => (
+              <li>
+                <a
+                  href={service.href}
+                  class="text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary"
+                >
+                  {service.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div class="text-center lg:text-start">
+        <a href={industriesOverviewHref}>
+          <p
+            class="mb-3 text-xs font-black tracking-widest text-foreground uppercase underline underline-offset-4 transition-colors hover:text-primary"
+          >
+            Industries
+          </p>
+        </a>
+
+        <ul class="grid grid-cols-1 gap-x-8 gap-y-2 text-sm lg:grid-cols-2">
+          {
+            navIndustries.map((industry) => (
+              <li>
+                <a
+                  href={`${routes.google.industry.Index}/${industry.slug}`}
+                  class="text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary"
+                >
+                  {industry.name}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div class="text-center lg:text-start">
+        <a href={routes.google.policies.Index}>
+          <p
+            class="mb-3 text-xs font-black tracking-widest text-foreground uppercase underline underline-offset-4 transition-colors hover:text-primary"
+          >
+            Policies
+          </p>
+        </a>
+
+        <ul class="space-y-2 text-sm">
+          {
+            policyLinks.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  class="text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+
+    <div
+      class="mt-10 flex flex-col items-center justify-center gap-3 border-t border-border/70 pt-6 text-center text-xs text-muted-foreground"
+    >
+      <p>© 2021 - {year} 2To6X. All rights reserved.</p>
+      <p>No long-term contracts · Full-scope audits · Local lead focus</p>
+    </div>
+    <p
+      class="mx-auto mt-4 max-w-3xl text-center text-xs leading-relaxed text-muted-foreground"
+    >
+      2To6X is an independent marketing service. We are not affiliated with,
+      endorsed by, or sponsored by Google LLC. Google Ads is a trademark of
+      Google LLC.
+    </p>
+  </div>
+</footer>

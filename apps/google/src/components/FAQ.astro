@@ -1,0 +1,102 @@
+---
+import { routes } from "@/lib/routes"
+import { CTAButton } from "@/components/CTAButton"
+
+const faqs = [
+  {
+    question: "What if my Google Ads account is too much of a mess to fix?",
+    answer:
+      "There's no such thing as too messy. We've seen accounts spending $10K / month with zero conversion tracking, campaigns targeting the wrong country, and ad copy that's been untouched since 2019. We've fixed all of it. If your account is beyond saving, we'll tell you straight and show you exactly what to rebuild and how.",
+  },
+  {
+    question: "Do I need to pause my ads while you work on them?",
+    answer:
+      "No. We work in the background while your campaigns keep running. Once we hand over your new copy and recommendations, you decide when to implement. Most clients implement within 24 - 48 hours. We can walk you through every change if you need us to.",
+  },
+  {
+    question: "How fast will I actually see results after making the changes?",
+    answer:
+      "Google Ads results are almost immediate. You'll see data shifting within days of implementing the changes. Expect to see improvements in click-through rate within the first week. Lead volume improvements typically show up in 2 - 3 weeks as Google learns the new signals. Results compound over time.",
+  },
+  {
+    question: "What happens if I'm not happy with the work?",
+    answer:
+      "Then we fix it. We don't hide behind fine print. If the audit missed something, if the copy isn't right, or if you have questions, reach out and we deal with it. We're not a $39 / month app, we're real people who stand behind what we deliver. The 7 days of post-delivery support exists for exactly this reason.",
+  },
+  {
+    question: "Do you need my Google Ads login to do the audit?",
+    answer:
+      "Yes. We need read access to your Google Ads account to do a proper audit. We use Google's official Manager Account (MCC) access request, which means you grant us read-only access through Google's own system. We can't make changes without your approval, and you can revoke access at any time in two clicks.",
+  },
+]
+---
+
+<section class="bg-background px-4 py-12" id="faq">
+  <div class="mx-auto max-w-3xl">
+    <div class="mb-16 text-center">
+      <p class="mb-3 text-sm font-bold tracking-widest text-primary uppercase">
+        FAQ
+      </p>
+      <h2 class="text-4xl font-black md:text-5xl">
+        Every Objection.
+        <span class="text-primary"> Answered.</span>
+      </h2>
+      <p class="mt-4 text-foreground">
+        If you're still on the fence, these answers will get you off it.
+      </p>
+    </div>
+
+    <div class="space-y-4">
+      {
+        faqs.map((faq) => (
+          <details class="group overflow-hidden rounded-2xl border border-border bg-background">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-6 transition-colors hover:bg-background">
+              <h3 class="pr-4 text-base font-black text-foreground transition-colors group-open:text-primary">
+                {faq.question}
+              </h3>
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border text-foreground transition-colors group-open:border-primary group-open:text-primary">
+                <svg
+                  class="h-4 w-4 rotate-0 transition-transform duration-200 group-open:rotate-45"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2.5"
+                    d="M12 5v14M5 12h14"
+                  />
+                </svg>
+              </span>
+            </summary>
+            <div class="px-6 pb-6">
+              <p class="leading-relaxed text-foreground">{faq.answer}</p>
+            </div>
+          </details>
+        ))
+      }
+    </div>
+
+    <div
+      class="mx-auto mt-12 max-w-2xl border border-primary/30 bg-primary/5 p-6 text-center"
+    >
+      <p class="mb-2 text-xs font-bold tracking-widest text-primary uppercase">
+        Need Help?
+      </p>
+      <h3 class="mb-2 text-2xl font-black text-foreground">
+        Still have a question?
+      </h3>
+      <p class="mx-auto mb-5 max-w-xl text-sm leading-relaxed text-foreground">
+        Send the question and we will point you to the right next step.
+      </p>
+      <CTAButton
+        href={routes.google.contact}
+        target="_self"
+        variant={"default"}
+      >
+        Send a Question
+      </CTAButton>
+    </div>
+  </div>
+</section>

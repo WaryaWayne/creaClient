@@ -1,0 +1,207 @@
+---
+import {
+  getCompanyPhoneNumber,
+  getCompanyPhoneNumberDisplay,
+} from "@/lib/site-config"
+
+const companyPhoneNumber = getCompanyPhoneNumber()
+const companyPhoneNumberDisplay = getCompanyPhoneNumberDisplay()
+---
+
+<section class="bg-background px-4 py-12" id="contact">
+  <div class="mx-auto max-w-5xl">
+    <div class="mb-16 text-center">
+      <p class="mb-3 text-sm font-bold tracking-widest text-primary uppercase">
+        Let's Talk
+      </p>
+      <h2 class="text-4xl leading-tight font-black md:text-5xl">
+        Stop Running Ads That Don't Work.
+        <br />
+        <span class="text-primary">Call or Fill Out the Form.</span>
+      </h2>
+      <p class="mx-auto mt-4 max-w-2xl text-lg text-foreground">
+        We respond within a few hours during business hours. If you call and we
+        miss it, we always call back.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 items-start gap-12 lg:grid-cols-2">
+      <!-- Left: Phone + Info -->
+      <div class="space-y-8">
+        <!-- Phone -->
+        <div
+          class="rounded-2xl border border-primary/30 bg-background p-8 text-center"
+        >
+          <p
+            class="mb-3 text-sm font-bold tracking-widest text-foreground uppercase"
+          >
+            Call Us Directly
+          </p>
+          <a
+            href={`tel:${companyPhoneNumber}`}
+            class="mb-3 block text-4xl font-black text-primary transition-colors hover:text-foreground md:text-5xl"
+          >
+            {companyPhoneNumberDisplay}
+          </a>
+          <p class="text-sm text-foreground">Mon–Fri, 8am–6pm MST</p>
+          <p class="mt-1 text-xs text-foreground">
+            We answer. Not a call center.
+          </p>
+        </div>
+
+        <!-- What to expect -->
+        <div class="rounded-2xl border border-border bg-background p-6">
+          <p
+            class="mb-4 text-sm font-black tracking-widest text-foreground uppercase"
+          >
+            What happens next:
+          </p>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <span
+                class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-black text-foreground"
+                >1</span
+              >
+              <div>
+                <p class="text-sm font-bold text-foreground">
+                  We review your submission
+                </p>
+                <p class="text-xs text-foreground">
+                  Within a few hours on business days
+                </p>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span
+                class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-black text-foreground"
+                >2</span
+              >
+              <div>
+                <p class="text-sm font-bold text-foreground">
+                  We confirm and collect access
+                </p>
+                <p class="text-xs text-foreground">
+                  Read-only Google Ads access via MCC
+                </p>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span
+                class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-black text-foreground"
+                >3</span
+              >
+              <div>
+                <p class="text-sm font-bold text-foreground">
+                  Audit + rewrite delivered
+                </p>
+                <p class="text-xs text-foreground">
+                  Full-scope review included
+                </p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Right: Form -->
+      <div class="rounded-2xl border border-border bg-background p-8">
+        <p class="mb-6 text-lg font-black text-foreground">Send Us a Message</p>
+        <form class="space-y-5" name="contact" method="POST">
+          <div>
+            <label
+              for="name"
+              class="mb-2 block text-xs font-bold tracking-widest text-foreground uppercase"
+              >Name *</label
+            >
+            <input
+              type="text"
+              id="name"
+              name="name"
+              required
+              class="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder-muted-foreground transition-colors focus:border-primary focus:outline-none"
+              placeholder="John Smith"
+            />
+          </div>
+
+          <div>
+            <label
+              for="email"
+              class="mb-2 block text-xs font-bold tracking-widest text-foreground uppercase"
+              >Email *</label
+            >
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              class="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder-muted-foreground transition-colors focus:border-primary focus:outline-none"
+              placeholder="Enter your email"
+            />
+          </div>
+
+          <div>
+            <label
+              for="phone"
+              class="mb-2 block text-xs font-bold tracking-widest text-foreground uppercase"
+              >Phone Number</label
+            >
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              class="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder-muted-foreground transition-colors focus:border-primary focus:outline-none"
+              placeholder="(555) 000-0000"
+            />
+          </div>
+
+          <div>
+            <label
+              for="budget"
+              class="mb-2 block text-xs font-bold tracking-widest text-foreground uppercase"
+              >Monthly Ad Budget *</label
+            >
+            <select
+              id="budget"
+              name="budget"
+              required
+              class="w-full cursor-pointer appearance-none rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground transition-colors focus:border-primary focus:outline-none"
+            >
+              <option value="" disabled selected class="text-foreground"
+                >Select your budget</option
+              >
+              <option value="under-500">Under $500 / month</option>
+              <option value="500-1500">$500 - $1,500 / month</option>
+              <option value="1500-3000">$1,500 - $3,000 / month</option>
+              <option value="3000-plus">Over $3,000 / month</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              for="message"
+              class="mb-2 block text-xs font-bold tracking-widest text-foreground uppercase"
+              >Biggest Problem With Your Ads</label
+            >
+            <textarea
+              id="message"
+              name="message"
+              rows="4"
+              class="w-full resize-none rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder-muted-foreground transition-colors focus:border-primary focus:outline-none"
+              placeholder="I'm spending $X / month and getting almost no leads. My main issue is..."
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full rounded-lg bg-primary py-4 text-base font-black tracking-wide text-foreground uppercase transition-colors hover:bg-primary"
+          >
+            Send My Message
+          </button>
+          <p class="text-center text-xs text-foreground">
+            No spam. No cold calls. Just results.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>

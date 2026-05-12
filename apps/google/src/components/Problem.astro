@@ -1,0 +1,105 @@
+---
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@workspace/ui/components/item"
+import { CTAButton } from "@/components/CTAButton"
+import { routes } from "@/lib/routes"
+
+const painPoints = [
+  {
+    title: "Budget Efficiency",
+    body: "Your budget is going toward clicks that will never become customers. Broad match keywords are showing your ad to completely wrong searches, and you're paying for every single one.",
+  },
+  {
+    title: "Misaligned Keywords",
+    body: '"Plumber" sounds right. But Google is matching it to "how to become a plumber," "plumber salary," and "plumber memes." You\'re funding competitors\' customers and people outside your target market.',
+  },
+  {
+    title: "Generic Copy",
+    body: '"Family-owned business serving the area for 20 years." Similar copy can make it harder for your ad to stand out and earn qualified clicks.',
+  },
+  {
+    title: "No Real Offer",
+    body: 'Your landing page says "Welcome to our website." There\'s no urgency, no reason to act, no reason to choose you over the next guy. So they bounce. And you pay for that bounce.',
+  },
+]
+---
+
+<section id="problem" class="scroll-mt-25 px-4 py-12">
+  <div class="mx-auto max-w-6xl">
+    <div class="mb-16 text-center">
+      <p class="mb-3 text-sm font-bold tracking-widest text-primary uppercase">
+        The Hard Truth
+      </p>
+      <h2 class="text-4xl leading-tight font-black md:text-5xl">
+        Campaign Results Depend on Setup.
+        <br />
+        <span class="text-foreground"
+          >Your results may be limited by campaign setup issues.</span
+        >
+      </h2>
+    </div>
+    <div class="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2">
+      {
+        painPoints.map(({ title, body }) => (
+          <Item variant="outline" className="shadow-xl items-start bg-card">
+            <ItemMedia
+              variant="icon"
+              className="text-primary font-black text-lg mt-0.5"
+            >
+              ✓
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle className="text-primary">{title}</ItemTitle>
+              <ItemDescription className="line-clamp-none">
+                {body}
+              </ItemDescription>
+            </ItemContent>
+          </Item>
+        ))
+      }
+    </div>
+    <div
+      class="mx-auto max-w-2xl border border-primary/30 bg-primary/5 backdrop-blur-sm p-6 text-center"
+    >
+      <p class="mb-2 text-xs font-bold tracking-widest text-primary uppercase">
+        Next Step
+      </p>
+      <h3 class="mb-2 text-2xl font-black text-foreground">
+        Pick the offer that matches the issue.
+      </h3>
+      <!-- <p class="mb-6 text-2xl font-black text-foreground">
+        Every day you run these ads unoptimized, your budget is reaching
+        searchers who are unlikely to choose your business.
+      </p> -->
+      <p class="mx-auto mb-5 max-w-2xl text-sm text-foreground">
+        If you want to verify costs and expected outcomes first, review{" "}
+        <a
+          href={routes.google.pricing + "#offers"}
+          class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+        >
+          compare all offers
+        </a>
+        {" "}and the{" "}
+        <a
+          href={routes.google.frequentlyAskedQuestions + "#results"}
+          class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+        >
+          results FAQ
+        </a>
+        .
+      </p>
+      <CTAButton
+        variant="default"
+        href={routes.google.home + "#offer"}
+        target="_self"
+      >
+        Compare Offers
+      </CTAButton>
+    </div>
+  </div>
+</section>

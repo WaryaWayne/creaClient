@@ -1,0 +1,798 @@
+---
+import Layout from "@/layouts/main.astro"
+import PathBreadcrumb from "@/components/PathBreadcrumb"
+import { serviceTypes, getServiceBySlug } from "@/data/service-types"
+import { CTAButton } from "@/components/CTAButton"
+import BeforeAfter from "@/components/BeforeAfter.astro"
+import { Card, CardContent } from "@workspace/ui/components/card"
+import { getSchemaEntityModel, sharedServiceArea } from "@/lib/schema"
+import { routes } from "@/lib/routes"
+import type { BreadcrumbList, Service, WebPage, WithContext } from "schema-dts"
+
+export function getStaticPaths() {
+  return serviceTypes.map((s) => ({ params: { wow: s.slug } }))
+}
+
+const { wow } = Astro.params
+const service = getServiceBySlug(wow)
+
+if (!service) {
+  return Astro.redirect("/404")
+}
+
+const {
+  name,
+  industry,
+  tagline,
+  headline,
+  subheadline,
+  urgencyTrigger,
+  painPoints,
+  badAd,
+  goodAd,
+  stats,
+} = service
+
+const adNoun = service.adNoun ?? `${name} Ads`
+const adRewriteNoun = adNoun.replace(/ Ads$/, " Ad")
+
+type PriceAsset = {
+  title: string
+  price: string
+  description: string
+}
+
+const industryPriceAssets: Record<string, PriceAsset[]> = {
+  plumbers: [
+    {
+      title: "Drain Unblocking",
+      price: "$89",
+      description: "Clear blocked drains fast.",
+    },
+    {
+      title: "Leak Detection",
+      price: "$129",
+      description: "Find hidden leaks before damage spreads.",
+    },
+    {
+      title: "Hot Water System",
+      price: "$349",
+      description: "Install or replace any hot water unit.",
+    },
+  ],
+  "tow-trucks": [
+    {
+      title: "Local Tow",
+      price: "$95",
+      description: "Fast city towing with live ETA.",
+    },
+    {
+      title: "Emergency Recovery",
+      price: "$149",
+      description: "Roadside rescue when you're stuck now.",
+    },
+    {
+      title: "Highway Winch-Out",
+      price: "$249",
+      description: "Safe recovery from ditch or shoulder.",
+    },
+  ],
+  dentists: [
+    {
+      title: "Emergency Exam",
+      price: "$79",
+      description: "New-patient emergency consult today.",
+    },
+    {
+      title: "Tooth Extraction",
+      price: "$149",
+      description: "Fast pain relief with same-day care.",
+    },
+    {
+      title: "Root Canal",
+      price: "$699",
+      description: "Save the tooth and stop severe pain.",
+    },
+  ],
+  locksmiths: [
+    {
+      title: "Home Lockout",
+      price: "$85",
+      description: "Get back inside quickly and safely.",
+    },
+    {
+      title: "Car Lockout",
+      price: "$95",
+      description: "Non-damage entry for most vehicles.",
+    },
+    {
+      title: "Rekey Service",
+      price: "$129",
+      description: "Secure your property without replacing locks.",
+    },
+  ],
+  hvac: [
+    {
+      title: "AC Diagnostic",
+      price: "$89",
+      description: "Upfront diagnostic for urgent cooling issues.",
+    },
+    {
+      title: "Same-Day Repair",
+      price: "$189",
+      description: "Restore comfort fast with licensed techs.",
+    },
+    {
+      title: "Furnace Tune-Up",
+      price: "$129",
+      description: "Seasonal performance and safety check.",
+    },
+  ],
+  electricians: [
+    {
+      title: "Service Call",
+      price: "$99",
+      description: "Licensed electrician dispatched quickly.",
+    },
+    {
+      title: "Breaker/Outlet Repair",
+      price: "$149",
+      description: "Fix common electrical faults safely.",
+    },
+    {
+      title: "Panel Upgrade",
+      price: "$1,499",
+      description: "Modernize capacity for today's loads.",
+    },
+  ],
+  roofers: [
+    {
+      title: "Emergency Tarping",
+      price: "$199",
+      description: "Immediate storm protection for active leaks.",
+    },
+    {
+      title: "Roof Leak Repair",
+      price: "$349",
+      description: "Targeted repair to stop water intrusion.",
+    },
+    {
+      title: "Full Roof Inspection",
+      price: "$99",
+      description: "Detailed report with repair priorities.",
+    },
+  ],
+  "pest-control": [
+    {
+      title: "Initial Inspection",
+      price: "$49",
+      description: "Identify pest source and treatment plan.",
+    },
+    {
+      title: "Same-Day Treatment",
+      price: "$129",
+      description: "Fast relief for urgent infestations.",
+    },
+    {
+      title: "Monthly Protection Plan",
+      price: "$89",
+      description: "Prevent recurring outbreaks year-round.",
+    },
+  ],
+  "water-damage": [
+    {
+      title: "Emergency Dry-Out",
+      price: "$299",
+      description: "Rapid extraction and drying response.",
+    },
+    {
+      title: "Moisture Mapping",
+      price: "$149",
+      description: "Pinpoint hidden water before mold forms.",
+    },
+    {
+      title: "Mold Prevention",
+      price: "$399",
+      description: "Contain risk and protect indoor air.",
+    },
+  ],
+  "auto-glass": [
+    {
+      title: "Chip Repair",
+      price: "$49",
+      description: "Stop cracks from spreading.",
+    },
+    {
+      title: "Windshield Replacement",
+      price: "$279",
+      description: "ADAS-safe replacement by certified techs.",
+    },
+    {
+      title: "Mobile Service",
+      price: "$25",
+      description: "We come to your home or workplace.",
+    },
+  ],
+  "garage-door": [
+    {
+      title: "Spring Repair",
+      price: "$149",
+      description: "Restore safe operation the same day.",
+    },
+    {
+      title: "Opener Repair",
+      price: "$189",
+      description: "Fix remotes, motors, and sensors fast.",
+    },
+    {
+      title: "Door Tune-Up",
+      price: "$99",
+      description: "Quiet, smooth performance and safety checks.",
+    },
+  ],
+  "tree-service": [
+    {
+      title: "Tree Trimming",
+      price: "$249",
+      description: "Clean shaping for safety and curb appeal.",
+    },
+    {
+      title: "Stump Grinding",
+      price: "$199",
+      description: "Remove trip hazards and clear space.",
+    },
+    {
+      title: "Emergency Removal",
+      price: "$1,299",
+      description: "Storm-damaged tree response today.",
+    },
+  ],
+  "appliance-repair": [
+    {
+      title: "Diagnostic Visit",
+      price: "$79",
+      description: "Fast diagnosis by trained technicians.",
+    },
+    {
+      title: "One-Visit Repair",
+      price: "$149",
+      description: "Most common fixes completed on-site.",
+    },
+    {
+      title: "Fridge Repair",
+      price: "$189",
+      description: "Urgent cooling issues fixed same day.",
+    },
+  ],
+  "carpet-cleaning": [
+    {
+      title: "3 Rooms Package",
+      price: "$129",
+      description: "Deep clean with transparent flat pricing.",
+    },
+    {
+      title: "Pet Stain Treatment",
+      price: "$79",
+      description: "Target odor and stain hotspots.",
+    },
+    {
+      title: "Move-Out Clean",
+      price: "$199",
+      description: "Inspection-ready carpets on short notice.",
+    },
+  ],
+  movers: [
+    {
+      title: "Studio Move",
+      price: "$299",
+      description: "Efficient local move for small spaces.",
+    },
+    {
+      title: "2-Bedroom Move",
+      price: "$549",
+      description: "Full-service team with protection included.",
+    },
+    {
+      title: "Packing Add-On",
+      price: "$149",
+      description: "Save time with pro packing support.",
+    },
+  ],
+}
+
+const fallbackPriceAssets: PriceAsset[] = [
+  {
+    title: "Fast Response Service",
+    price: "$99",
+    description: "Urgent support when you need it most.",
+  },
+  {
+    title: "Core Repair",
+    price: "$149",
+    description: "Most common fixes done right.",
+  },
+  {
+    title: "Premium Option",
+    price: "$299",
+    description: "Higher-value package for complex jobs.",
+  },
+]
+
+const industryGoodAd = {
+  ...goodAd,
+  priceAssets: industryPriceAssets[wow] ?? fallbackPriceAssets,
+}
+
+const pageTitle = `Google Ads for ${name} | Stop Wasting Ad Budget | 2To6X`
+const pageDescription = `We build and optimize Google Ads campaigns specifically for ${industry} businesses. Reduce low-value clicks and attract more qualified calls.`
+const siteUrl = Astro.site ?? new URL(Astro.url.origin)
+const basePath = import.meta.env.BASE_URL
+const { appSiteUrl, ids } = getSchemaEntityModel(siteUrl, basePath)
+const homeUrl = appSiteUrl
+const industriesUrl = new URL(routes.google.industry.Index, siteUrl).toString()
+const pageUrl = new URL(Astro.url.pathname, siteUrl).toString()
+const serviceId = `${pageUrl}#service`
+
+const serviceArea = sharedServiceArea
+
+const pageSchemas: Array<
+  WithContext<BreadcrumbList> | WithContext<WebPage> | WithContext<Service>
+> = [
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "@id": `${pageUrl}#breadcrumb`,
+    name: `${name} Google Ads guide breadcrumb`,
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Google",
+        item: homeUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Industries",
+        item: industriesUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name,
+        item: pageUrl,
+      },
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    url: pageUrl,
+    name: pageTitle,
+    description: pageDescription,
+    isPartOf: {
+      "@id": ids.appWebsite,
+    },
+    mainEntity: {
+      "@id": serviceId,
+    },
+    breadcrumb: {
+      "@id": `${pageUrl}#breadcrumb`,
+    },
+    about: {
+      "@id": serviceId,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": serviceId,
+    name: tagline,
+    description: subheadline,
+    url: pageUrl,
+    serviceType: name,
+    areaServed: serviceArea,
+    provider: {
+      "@id": ids.googleProfessionalService,
+    },
+  },
+]
+---
+
+<Layout
+  title={pageTitle}
+  description={pageDescription}
+  canonical={pageUrl}
+  ogType="website"
+  ogUrl={pageUrl}
+  schema={pageSchemas}
+>
+  <div class="mx-auto max-w-5xl px-4 pt-8">
+    <PathBreadcrumb className="mb-4" location={Astro.url.pathname} />
+  </div>
+
+  <!-- ─── HERO ─── -->
+  <section
+    class="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12"
+  >
+    <div
+      class="pointer-events-none absolute top-0 left-1/2 h-[400px] w-[800px] -translate-x-1/2 bg-primary opacity-5 blur-[120px]"
+    >
+    </div>
+
+    <div class="relative mx-auto max-w-5xl text-center">
+      <!-- Industry badge -->
+      <div
+        class="mb-6 inline-block border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-semibold tracking-widest text-primary uppercase"
+      >
+        {tagline}
+      </div>
+
+      <!-- Headline -->
+      <h1
+        class="mb-6 text-5xl leading-[1.05] font-black tracking-tight md:text-6xl"
+      >
+        {headline[0]}
+        <br />
+        <span class="text-primary">{headline[1]}</span>
+      </h1>
+
+      <p
+        class="mx-auto mb-10 max-w-3xl text-xl leading-relaxed text-foreground md:text-2xl"
+      >
+        {subheadline}
+      </p>
+
+      <!-- CTAs -->
+      <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
+        <CTAButton
+          variant="default"
+          href={routes.google.services.AdsAudit}
+          target="_self"
+        >
+          Fix My {adNoun} for $300
+        </CTAButton>
+        <CTAButton variant="outline" href={"#the-problem"} target="_self">
+          See what's going wrong
+        </CTAButton>
+      </div>
+
+      <!-- Trust pills -->
+      <div
+        class="mt-12 flex flex-wrap justify-center gap-8 text-sm text-foreground"
+      >
+        <span class="flex items-center gap-2">
+          <span class="inline-block h-2 w-2 bg-primary"></span>
+          Industry-specific copy
+        </span>
+        <span class="flex items-center gap-2">
+          <span class="inline-block h-2 w-2 bg-primary"></span>
+          Full-scope review
+        </span>
+        <span class="flex items-center gap-2">
+          <span class="inline-block h-2 w-2 bg-primary"></span>
+          One-time $300 project fee
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── URGENCY CALLOUT ─── -->
+  <section class="px-4 pb-4">
+    <div class="mx-auto max-w-4xl">
+      <div
+        class="border border-primary/30 bg-primary/5 p-6 backdrop-blur-sm md:p-8"
+      >
+        <p
+          class="mb-2 text-xs font-bold tracking-widest text-primary uppercase"
+        >
+          The Moment You're Missing
+        </p>
+        <p
+          class="text-lg leading-relaxed font-semibold text-foreground md:text-xl"
+        >
+          {urgencyTrigger}
+        </p>
+        <p class="mt-3 text-sm text-foreground">
+          Want the quickest path? Start with{" "}
+          <a
+            href={routes.google.services.AdsAudit + "#pricing"}
+            class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+          >
+            Google Ads Audit & Rewrite pricing
+          </a>
+          , then add{" "}
+          <a
+            href={routes.google.services.WeeklyStrategy + "#results"}
+            class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+          >
+            weekly results timeline
+          </a>
+          {" "}or{" "}
+          <a
+            href={routes.google.services.GoogleMyBusiness + "#opportunity"}
+            class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+          >
+            Google Business Profile free-leads overview
+          </a>
+          .
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PAIN POINTS ─── -->
+  <section class="px-4 py-12" id="the-problem">
+    <div class="mx-auto max-w-6xl">
+      <div class="mb-16 text-center">
+        <p
+          class="mb-3 text-sm font-bold tracking-widest text-primary uppercase"
+        >
+          Why Your Ads Aren't Working
+        </p>
+        <h2 class="text-4xl leading-tight font-black md:text-5xl">
+          Four Reasons {adNoun} Fail.<br />
+          <span class="text-primary">All of Them Are Fixable.</span>
+        </h2>
+      </div>
+
+      <div class="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2">
+        {
+          painPoints.map(({ title, body }, i) => (
+            <div class="flex gap-5 border border-border bg-card p-6 shadow-xl">
+              <div class="shrink-0">
+                <span class="flex h-9 w-9 items-center justify-center border border-primary/30 bg-primary/10 text-sm font-black text-primary">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+              </div>
+              <div>
+                <h3 class="mb-2 font-black text-primary">{title}</h3>
+                <p class="text-sm leading-relaxed text-foreground">{body}</p>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      <div
+        class="mx-auto max-w-2xl border border-primary/30 bg-primary/5 p-6 text-center backdrop-blur-sm"
+      >
+        <p
+          class="mb-2 text-xs font-bold tracking-widest text-primary uppercase"
+        >
+          Next Step
+        </p>
+        <h3 class="mb-2 text-2xl font-black text-foreground">
+          Review the audit package.
+        </h3>
+        <p
+          class="mx-auto mb-5 max-w-xl text-sm leading-relaxed text-foreground"
+        >
+          The audit and rewrite package is the starting point for fixing these
+          campaign issues.
+        </p>
+        <CTAButton
+          variant="default"
+          href={routes.google.services.AdsAudit}
+          target="_self"
+        >
+          See the Audit Package for $300
+        </CTAButton>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── BEFORE / AFTER ─── -->
+  <BeforeAfter
+    titleSuffix={`Looks Like for ${adNoun}`}
+    badAd={badAd}
+    goodAd={industryGoodAd}
+    badCtaBody={`Most ${industry} businesses are running ads exactly like this and wondering why the phone isn't ringing.`}
+    showActionBadges={false}
+  />
+
+  <!-- ─── STATS ─── -->
+  <section class="px-4 py-12">
+    <div class="mx-auto max-w-6xl">
+      <div class="mb-12 text-center">
+        <p
+          class="mb-3 text-sm font-bold tracking-widest text-primary uppercase"
+        >
+          The {adNoun} Landscape
+        </p>
+        <h2 class="text-4xl font-black md:text-5xl">
+          The Numbers Behind
+          <span class="text-primary"> {adNoun}</span>
+        </h2>
+      </div>
+      <div class="grid grid-cols-2 gap-6 lg:grid-cols-4">
+        {
+          stats.map(({ number, label, sublabel }) => (
+            <Card className="border-border shadow-xl text-center py-6 gap-0 ring-0">
+              <CardContent className="px-6">
+                <p class="mb-1 text-3xl font-black text-primary md:text-4xl">
+                  {number}
+                </p>
+                <p class="mb-1 text-sm font-bold text-foreground">{label}</p>
+                <p class="text-xs text-foreground">{sublabel}</p>
+              </CardContent>
+            </Card>
+          ))
+        }
+      </div>
+      <p class="mt-5 text-center text-xs text-foreground/70">
+        CPC numbers are estimated U.S. non-brand Google Search ranges and can
+        vary by city, season, and keyword intent.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─── WHAT WE DO ─── -->
+  <section class="px-4 py-12">
+    <div class="mx-auto max-w-5xl">
+      <div class="mb-16 text-center">
+        <p
+          class="mb-3 text-sm font-bold tracking-widest text-primary uppercase"
+        >
+          Our Process
+        </p>
+        <h2 class="text-4xl font-black md:text-5xl">
+          How We Fix Your<br />
+          <span class="text-primary">{adNoun}</span>
+        </h2>
+      </div>
+
+      <div class="mb-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+        {
+          [
+            {
+              n: "01",
+              title: "We Audit Your Account",
+              body: `We review your ${industry} campaigns for keyword match issues, Quality Score gaps, search terms that need filtering, and places where spend is drifting away from likely customers.`,
+            },
+            {
+              n: "02",
+              title: "We Rewrite Your Copy",
+              body: `Generic ads don't give ${industry} customers enough reason to call. We write industry-specific copy with real offers, response times, and trust signals that match high-intent searches.`,
+            },
+            {
+              n: "03",
+              title: "You Implement the Improvements",
+              body: `We hand over your audit report and new ad copy in plain English, so you can implement with clearer priorities and stronger ads. We're available for 7 days of questions after delivery.`,
+            },
+          ].map(({ n, title, body }) => (
+            <div class="flex flex-col gap-4 border border-border bg-card p-6 shadow-xl">
+              <span class="text-5xl font-black text-primary opacity-30">
+                {n}
+              </span>
+              <h3 class="font-black text-foreground">{title}</h3>
+              <p class="text-sm leading-relaxed text-foreground">{body}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── OFFER CTA ─── -->
+  <section class="px-4 py-12">
+    <div class="mx-auto max-w-4xl">
+      <div
+        class="relative overflow-hidden border-2 border-primary bg-background"
+      >
+        <div
+          class="pointer-events-none absolute inset-0 bg-primary opacity-[0.03]"
+        >
+        </div>
+        <div
+          class="absolute -top-20 left-1/2 h-40 w-96 -translate-x-1/2 bg-primary opacity-10 blur-[60px]"
+        >
+        </div>
+
+        <div class="relative p-8 text-center md:p-14">
+          <p
+            class="mb-3 text-sm font-bold tracking-widest text-primary uppercase"
+          >
+            The Offer
+          </p>
+          <h2 class="mb-4 text-4xl leading-tight font-black md:text-5xl">
+            Full Google Ads Audit<br />+ {adRewriteNoun} Rewrite
+          </h2>
+          <div class="mb-2 flex items-baseline justify-center gap-3">
+            <span class="text-7xl font-black text-primary">$300</span>
+            <span class="text-lg text-foreground">one-time project fee</span>
+          </div>
+          <p class="mb-8 text-foreground">
+            One payment. No retainer. No surprises. Industry-specific. Compare
+            against all offers on{" "}
+            <a
+              href={routes.google.pricing + "#offers"}
+              class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+            >
+              compare all offers
+            </a>
+            {" "}or review objections in the{" "}
+            <a
+              href={routes.google.frequentlyAskedQuestions + "#results"}
+              class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+            >
+              results FAQ
+            </a>
+            .
+          </p>
+
+          <div class="mb-8 flex flex-wrap justify-center gap-3">
+            {
+              [
+                { label: "Full-scope review" },
+                { label: "No contracts" },
+                { label: "7-day support" },
+                { label: `Built for ${industry.toLocaleUpperCase()}` },
+              ].map(({ label }) => (
+                <span class="flex items-center gap-2 border border-border bg-background px-4 py-2 text-sm font-bold">
+                  {label}
+                </span>
+              ))
+            }
+          </div>
+
+          <CTAButton
+            variant="default"
+            href={routes.google.services.AdsAudit}
+            target="_self"
+          >
+            Start With an Audit for $300
+          </CTAButton>
+          <p class="mt-4 text-xs text-foreground">
+            Submit access when you're ready. We'll review it as soon as it comes
+            in.
+          </p>
+        </div>
+      </div>
+
+      <!-- Urgency strip -->
+      <div
+        class="mt-4 border border-destructive bg-destructive/40 p-4 text-center"
+      >
+        <p class="text-sm font-bold text-foreground">
+          Every day your current {adNoun.toLowerCase()} run without review, more
+          budget can go to searches that do not turn into calls.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── ALL INDUSTRIES STRIP ─── -->
+  <section class="px-4 py-12">
+    <div class="mx-auto max-w-6xl">
+      <div class="mb-10 text-center">
+        <p
+          class="mb-3 text-sm font-bold tracking-widest text-primary uppercase"
+        >
+          We Work With High-Intent Local Service Businesses
+        </p>
+        <h2 class="text-2xl font-black md:text-3xl">
+          Explore More <span class="text-primary">Local Service Industries</span>
+        </h2>
+      </div>
+      <div class="flex flex-wrap justify-center gap-3">
+        {
+          serviceTypes.map((s) => (
+            <a
+              href={`${routes.google.industry.Index}/${s.slug}`}
+              class:list={[
+                "flex items-center gap-2 border px-4 py-2 text-sm font-bold transition-colors",
+                s.slug === wow
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-background text-foreground hover:border-primary/50 hover:text-primary",
+              ]}
+            >
+              <span>{s.name}</span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+</Layout>

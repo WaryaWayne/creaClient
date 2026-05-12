@@ -1,0 +1,607 @@
+---
+import Layout from "@/layouts/main.astro"
+import PathBreadcrumb from "@/components/PathBreadcrumb"
+import { CTAButton } from "@/components/CTAButton"
+import { PaymentCTA } from "@/components/PaymentCTA"
+import ZarazViewContent from "@/components/ZarazViewContent.astro"
+import SocialProof from "@/components/SocialProof.astro"
+import type {
+  BreadcrumbList,
+  Service,
+  UnitPriceSpecification,
+  WebPage,
+  WithContext,
+} from "schema-dts"
+import {
+  offerCatalog,
+  offers as catalogOffers,
+  productSchemaOffers,
+} from "@/data/offers"
+import { routes } from "@/lib/routes"
+import { getSchemaEntityModel } from "@/lib/schema"
+import { Check } from "lucide-react"
+
+const pageTitle =
+  "Google Ads & Local SEO Offers | Pricing for Lead Generation | 2To6X"
+const pageDescription =
+  "Six focused Google Ads and local SEO offers to get more leads from Google. Choose the Google Ads Audit, Google Business Profile Optimization, weekly check-ins, or a longer optimization bundle."
+const siteUrl = Astro.site ?? new URL(Astro.url.origin)
+const basePath = import.meta.env.BASE_URL
+const turnstileSiteKey = import.meta.env.TURNSTILE_SITE_KEY
+const { ids } = getSchemaEntityModel(siteUrl, basePath)
+const siteHomeUrl = new URL(basePath, siteUrl).toString()
+const siteHomeWithTrailingSlash = siteHomeUrl.endsWith("/")
+  ? siteHomeUrl
+  : `${siteHomeUrl}/`
+const canonicalPath = routes.google.pricing
+const canonicalUrl = new URL(canonicalPath, siteUrl).toString()
+const serviceIds = productSchemaOffers.map(
+  (offer) => `${canonicalUrl}#${offer.productId}`
+)
+
+const offers = catalogOffers
+
+const decisionPaths = [
+  {
+    condition: "You're running Google Ads and leads are not converting",
+    answer: "Start with the Audit & Rewrite",
+    href: offerCatalog.adsAudit.href + "#pricing",
+    price: offerCatalog.adsAudit.price,
+  },
+  {
+    condition: "You want more unpaid local visibility",
+    answer: "Add the GMB Optimization",
+    href: offerCatalog.googleBusinessProfile.href + "#pricing",
+    price: offerCatalog.googleBusinessProfile.price,
+  },
+  {
+    condition: "Your ads are working but you want to keep improving",
+    answer: "Book Weekly Strategy Sessions",
+    href: offerCatalog.weeklyStrategy.href + "#pricing",
+    price: offerCatalog.weeklyStrategy.priceWithBilling,
+  },
+  {
+    condition: "You want everything: max leads from Google",
+    answer: "Build the full setup. Start with the Audit.",
+    href: routes.google.pricing + "#stack-offers",
+    price: "$449 + strategy plan",
+  },
+]
+
+const productImageUrl = (filename: string) =>
+  new URL(filename, siteHomeWithTrailingSlash).toString()
+
+const productOffer = (
+  price: string,
+  url: string,
+  priceSpecification?: UnitPriceSpecification
+) => ({
+  "@type": "Offer" as const,
+  price,
+  priceCurrency: "CAD",
+  availability: "https://schema.org/InStock" as const,
+  url,
+  ...(priceSpecification ? { priceSpecification } : {}),
+})
+
+const serviceSchemas: WithContext<Service>[] = productSchemaOffers.map(
+  (offer) => {
+    const url = new URL(
+      `${offer.route}${offer.urlHash ?? ""}`,
+      siteUrl
+    ).toString()
+    const priceSpecification = offer.unitText
+      ? ({
+          "@type": "UnitPriceSpecification",
+          price: offer.price,
+          priceCurrency: "CAD",
+          unitText: offer.unitText,
+        } satisfies UnitPriceSpecification)
+      : undefined
+
+    return {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "@id": `${canonicalUrl}#${offer.productId}`,
+      name: offer.name,
+      description: offer.description,
+      image: productImageUrl(offer.imageFilename),
+      provider: {
+        "@id": ids.rootOrganization,
+      },
+      url,
+      offers: productOffer(offer.price, url, priceSpecification),
+    }
+  }
+)
+
+const breadcrumbSchema: WithContext<BreadcrumbList> = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "@id": `${canonicalUrl}#breadcrumb`,
+  name: "Pricing breadcrumb",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Google", item: siteHomeUrl },
+    { "@type": "ListItem", position: 2, name: "Pricing", item: canonicalUrl },
+  ],
+}
+
+const webPageSchema: WithContext<WebPage> = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": `${canonicalUrl}#webpage`,
+  url: canonicalUrl,
+  name: pageTitle,
+  description: pageDescription,
+  isPartOf: {
+    "@type": "WebSite",
+    "@id": `${siteHomeUrl}#website`,
+    url: siteHomeUrl,
+    name: "2To6X",
+  },
+  mainEntity: serviceIds.map((id) => ({
+    "@id": id,
+  })),
+  breadcrumb: {
+    "@id": `${canonicalUrl}#breadcrumb`,
+  },
+}
+
+const schema: Array<
+  WithContext<BreadcrumbList> | WithContext<WebPage> | WithContext<Service>
+> = [breadcrumbSchema, webPageSchema, ...serviceSchemas]
+---
+
+<Layout
+  title={pageTitle}
+  description={pageDescription}
+  canonical={canonicalPath}
+  ogType="website"
+  schema={schema}
+>
+  <div class="mx-auto max-w-5xl px-4 pt-8">
+    <PathBreadcrumb className="mb-4" location={Astro.url.pathname} />
+  </div>
+  <ZarazViewContent contentKey="pricing" />
+
+  <!-- HERO -->
+  <section
+    id="hero"
+    class="relative flex min-h-[60vh] scroll-mt-25 items-center justify-center overflow-hidden px-4 py-20"
+  >
+    <div
+      class="pointer-events-none absolute top-0 left-1/2 h-[500px] w-[900px] -translate-x-1/2 bg-primary opacity-5 blur-[140px]"
+    >
+    </div>
+
+    <div class="relative mx-auto max-w-4xl text-center">
+      <div
+        class="mb-5 inline-block border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary uppercase"
+      >
+        All Offers
+      </div>
+      <h1
+        class="mb-6 text-5xl leading-[1.05] font-black tracking-tight md:text-7xl"
+      >
+        Six Offers.
+        <br />
+        <span class="text-primary">One Goal:</span>
+        <br />
+        More Leads From Google.
+      </h1>
+      <p
+        class="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-foreground/80 md:text-xl"
+      >
+        Pick the improvement you need right now. Start with one, stack them as
+        you grow. Every offer has clear pricing, no contracts, and is built to
+        move fast..
+      </p>
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <CTAButton href="#offers" variant="default" target="_self">
+          See All Offers ↓
+        </CTAButton>
+
+        <CTAButton href="#which-one" variant="outline" target="_self">
+          Help Me Pick
+        </CTAButton>
+      </div>
+      <!-- Trust bar -->
+      <div
+        class="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-foreground/60"
+      >
+        <span class="flex items-center gap-2">
+          <span class="h-1.5 w-1.5 bg-primary"></span>No long-term contracts
+        </span>
+        <span class="flex items-center gap-2">
+          <span class="h-1.5 w-1.5 bg-primary"></span>Flat-rate pricing
+        </span>
+        <span class="flex items-center gap-2">
+          <span class="h-1.5 w-1.5 bg-primary"></span>Clear written deliverables
+        </span>
+        <span class="flex items-center gap-2">
+          <span class="h-1.5 w-1.5 bg-primary"></span>Real people, not an agency
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- OFFERS — FULL-WIDTH STACK -->
+  <section class="scroll-mt-25 px-4 pt-0 pb-4" id="offers">
+    <div class="mx-auto max-w-5xl space-y-6">
+      {
+        offers.map(
+          ({
+            key,
+            pricing: {
+              id,
+              number,
+              badge,
+              badgeStyle,
+              eyebrow,
+              title,
+              tagline,
+              price,
+              billing,
+              href,
+              cta,
+              highlight,
+              includes,
+              who,
+              turnaround,
+              guarantee,
+              detailHref,
+              detailLabel,
+              faqHref,
+            },
+          }) => (
+            <article
+              id={id}
+              class={`relative scroll-mt-24 overflow-hidden border ${highlight ? "border-primary bg-primary/5 backdrop-blur-sm" : "border-border bg-background/60 backdrop-blur-sm"} transition-colors hover:border-primary/50`}
+            >
+              {/* Top glow for highlighted offer */}
+              {highlight && (
+                <div class="pointer-events-none absolute -top-12 left-1/2 h-24 w-80 -translate-x-1/2 bg-primary opacity-10 blur-[60px]" />
+              )}
+
+              {/* Header strip */}
+              <div
+                class={`flex items-center justify-between border-b ${highlight ? "border-primary/20 bg-primary/5" : "border-border bg-background/40"} px-6 py-3`}
+              >
+                <div class="flex items-center gap-3">
+                  <span class="font-mono text-xs font-black tracking-[0.3em] text-foreground/30">
+                    {number}
+                  </span>
+                  <span class="text-xs font-bold tracking-widest text-foreground/50 uppercase">
+                    {eyebrow}
+                  </span>
+                </div>
+                <span
+                  class={`border px-3 py-1 text-xs font-bold ${badgeStyle}`}
+                >
+                  {badge}
+                </span>
+              </div>
+
+              {/* Main content */}
+              <div class="grid grid-cols-1 gap-0 lg:grid-cols-[1fr_auto]">
+                {/* Left: Info */}
+                <div class="p-7 md:p-10">
+                  <h2 class="mb-3 text-3xl font-black tracking-tight text-foreground md:text-4xl">
+                    {title}
+                  </h2>
+                  <p class="mb-7 max-w-xl text-base leading-relaxed text-foreground/70">
+                    {tagline}
+                  </p>
+                  <p class="mb-6 text-xs text-foreground/60">
+                    <a
+                      href={detailHref}
+                      class="font-bold text-primary underline underline-offset-2 hover:no-underline"
+                    >
+                      {detailLabel}
+                    </a>
+                    {" · "}
+                    <a
+                      href={faqHref}
+                      class="font-bold text-primary underline underline-offset-2 hover:no-underline"
+                    >
+                      Related FAQ
+                    </a>
+                  </p>
+
+                  {/* Includes grid */}
+                  <div class="mb-7 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
+                    {includes.map((item) => (
+                      <div class="flex items-start gap-2.5 text-sm text-foreground/80">
+                        <span class="mt-0.5 shrink-0 leading-none font-black text-primary">
+                          <Check />
+                        </span>
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Who it's for + meta */}
+                  <div class="flex flex-wrap gap-4 border-t border-border pt-5 text-xs text-foreground/50">
+                    <span class="flex items-center gap-1.5">
+                      <span class="h-1 w-1 bg-primary" />
+                      <strong class="text-foreground/70">For:</strong> {who}
+                    </span>
+                  </div>
+                  <div class="mt-3 flex flex-wrap gap-5 text-xs text-foreground/50">
+                    <span class="flex items-center gap-1.5">
+                      <span class="h-1 w-1 bg-primary/50" />
+                      Turnaround:{" "}
+                      <strong class="text-foreground/70">{turnaround}</strong>
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                      <span class="h-1 w-1 bg-primary/50" />
+                      {guarantee}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right: Price + CTA */}
+                <div
+                  class={`flex flex-col items-center justify-center gap-5 border-t px-8 py-8 text-center lg:border-t-0 lg:border-l ${highlight ? "border-primary/20 bg-primary/5" : "border-border bg-background/30"} lg:min-w-[220px]`}
+                >
+                  <div>
+                    <p
+                      class={`text-5xl leading-none font-black ${highlight ? "text-primary" : "text-foreground"}`}
+                    >
+                      {price}
+                    </p>
+                    <p class="mt-2 text-xs leading-snug text-foreground/50">
+                      {billing}
+                    </p>
+                  </div>
+                  {href.startsWith("http") ? (
+                    <PaymentCTA
+                      client:load
+                      variant={highlight ? "default" : "outline"}
+                      href={href}
+                      target="_blank"
+                      offerKey={key}
+                      turnstileSiteKey={turnstileSiteKey}
+                      className="w-full px-6 py-4 text-sm"
+                    >
+                      {cta}
+                    </PaymentCTA>
+                  ) : (
+                    <a
+                      href={href}
+                      target="_self"
+                      class={`w-full px-6 py-4 text-sm font-black tracking-wide uppercase transition-colors ${highlight ? "bg-primary text-foreground hover:bg-primary/90" : "border border-primary text-primary hover:bg-primary/10"}`}
+                    >
+                      {cta}
+                    </a>
+                  )}
+                  <p class="text-xs text-foreground/40">
+                    No contracts · Cancel anytime
+                  </p>
+                </div>
+              </div>
+            </article>
+          )
+        )
+      }
+    </div>
+  </section>
+
+  <!-- STACK THEM BANNER -->
+  <section id="stack-offers" class="scroll-mt-25 px-4 py-10">
+    <div class="mx-auto max-w-5xl">
+      <div
+        class="relative overflow-hidden border border-primary/30 bg-primary/5 p-8 text-center backdrop-blur-sm md:p-12"
+      >
+        <div
+          class="pointer-events-none absolute inset-0 bg-primary opacity-[0.02]"
+        >
+        </div>
+        <div
+          class="mb-2 inline-block border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-bold tracking-widest text-primary uppercase"
+        >
+          Stack Your Setup
+        </div>
+        <h2 class="mb-4 text-3xl font-black md:text-4xl">
+          Want the Full Google Domination Setup?
+        </h2>
+        <p
+          class="mx-auto mb-6 max-w-2xl text-base leading-relaxed text-foreground/70"
+        >
+          Most serious clients start with the Audit & Rewrite, add the GMB
+          Optimization for free organic traffic, then choose the weekly strategy
+          plan that matches their timeline. Together, that gives you paid ads +
+          free traffic + ongoing optimization. See the{" "}
+          <a
+            href={offerCatalog.adsAudit.href + "#features"}
+            class="font-bold text-primary underline underline-offset-2 hover:no-underline"
+          >
+            {offerCatalog.adsAudit.label} details
+          </a>
+          ,{" "}
+          <a
+            href={offerCatalog.googleBusinessProfile.href + "#whats-included"}
+            class="font-bold text-primary underline underline-offset-2 hover:no-underline"
+          >
+            GBP optimization deliverables
+          </a>
+          , and{" "}
+          <a
+            href={offerCatalog.weeklyStrategy.href + "#results"}
+            class="font-bold text-primary underline underline-offset-2 hover:no-underline"
+          >
+            weekly results timeline
+          </a>
+          .
+        </p>
+        <div
+          class="mb-8 flex flex-wrap items-center justify-center gap-4 text-sm"
+        >
+          <div
+            class="flex items-center gap-3 border border-primary/30 bg-background px-5 py-3"
+          >
+            <span
+              class="text-xs font-bold tracking-widest text-primary uppercase"
+              >01</span
+            >
+            <span class="font-black text-foreground">Audit & Rewrite</span>
+            <span class="font-black text-primary">
+              {offerCatalog.adsAudit.price}
+            </span>
+          </div>
+          <span class="text-2xl font-black text-foreground/30">+</span>
+          <div
+            class="flex items-center gap-3 border border-border bg-background px-5 py-3"
+          >
+            <span
+              class="text-xs font-bold tracking-widest text-foreground/40 uppercase"
+              >02</span
+            >
+            <span class="font-black text-foreground">GMB Optimization</span>
+            <span class="font-black text-foreground">
+              {offerCatalog.googleBusinessProfile.price}
+            </span>
+          </div>
+          <span class="text-2xl font-black text-foreground/30">+</span>
+          <div
+            class="flex items-center gap-3 border border-border bg-background px-5 py-3"
+          >
+            <span
+              class="text-xs font-bold tracking-widest text-foreground/40 uppercase"
+              >03</span
+            >
+            <span class="font-black text-foreground">Weekly Sessions</span>
+            <span class="font-black text-foreground">
+              {offerCatalog.weeklyStrategy.priceWithBilling}
+            </span>
+          </div>
+        </div>
+        <CTAButton
+          variant="default"
+          target="_self"
+          href={offerCatalog.adsAudit.href}
+        >
+          Start with the Audit
+        </CTAButton>
+        <p class="mt-3 text-xs text-foreground/40">
+          Start with what you need. Add the rest when you're ready.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHICH ONE IS RIGHT FOR ME -->
+  <section class="scroll-mt-25 px-4 py-10" id="which-one">
+    <div class="mx-auto max-w-5xl">
+      <div class="mb-10 text-center">
+        <div
+          class="mb-4 inline-block border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary uppercase"
+        >
+          Decision Guide
+        </div>
+        <h2 class="text-3xl font-black md:text-4xl">Not Sure Which to Pick?</h2>
+        <p class="mt-3 text-base text-foreground/60">
+          Answer one question: what's your situation right now?
+        </p>
+      </div>
+
+      <div class="space-y-3">
+        {
+          decisionPaths.map(({ condition, answer, href, price }) => (
+            <a
+              href={href}
+              class="group flex flex-col items-start justify-between gap-4 border border-border bg-background p-6 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:backdrop-blur-sm sm:flex-row sm:items-center"
+            >
+              <div class="flex items-start gap-4">
+                <span class="mt-0.5 shrink-0 text-xl leading-none font-black text-primary">
+                  →
+                </span>
+                <div>
+                  <p class="font-black text-foreground">{condition}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-4 pl-8 sm:pl-0">
+                <div class="text-right">
+                  <p class="text-xs font-bold tracking-widest text-primary uppercase">
+                    Then
+                  </p>
+                  <p class="font-black text-foreground">{answer}</p>
+                </div>
+                <span class="shrink-0 border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-black whitespace-nowrap text-primary">
+                  {price}
+                </span>
+              </div>
+            </a>
+          ))
+        }
+      </div>
+
+      <p class="mt-6 text-center text-sm text-foreground/50">
+        Still unsure?{" "}
+        <a
+          href={routes.google.contact}
+          class="text-primary underline underline-offset-2 hover:no-underline"
+        >
+          Send us a message
+        </a>{" "}
+        or scan the{" "}
+        <a
+          href={routes.google.frequentlyAskedQuestions + "#pricing"}
+          class="text-primary underline underline-offset-2 hover:no-underline"
+        >
+          pricing FAQ
+        </a>{" "}
+        before you decide.
+      </p>
+    </div>
+  </section>
+
+  <!-- SOCIAL PROOF -->
+  <SocialProof subheading="Neither Do Our Clients." />
+  <!-- TODO: Add heading here -->
+
+  <!-- FINAL CTA -->
+  <section id="final-cta" class="scroll-mt-25 px-4 py-16">
+    <div class="mx-auto max-w-3xl text-center">
+      <h2 class="mb-4 text-4xl font-black md:text-5xl">
+        Every Day You Wait Is
+        <br />
+        <span class="text-primary">Money Out the Door.</span>
+      </h2>
+      <p
+        class="mx-auto mb-8 max-w-xl text-base leading-relaxed text-foreground/70"
+      >
+        Pick the offer that fits your situation right now. You can always add
+        the others later. The least efficient move is leaving underperforming
+        ads unchanged for another week.
+      </p>
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <CTAButton
+          target="_self"
+          href={offerCatalog.adsAudit.href}
+          variant={"default"}
+        >
+          See Audit Details for {offerCatalog.adsAudit.price}
+        </CTAButton>
+        <CTAButton
+          target="_self"
+          href={offerCatalog.googleBusinessProfile.href}
+          variant={"outline"}
+        >
+          View Profile Package for {offerCatalog.googleBusinessProfile.price}
+        </CTAButton>
+      </div>
+      <p class="mt-4 text-xs text-foreground/40">
+        No contracts. No retainers. Flat rates, real people, fast results.
+      </p>
+    </div>
+  </section>
+
+  <!-- <StickyBar
+    secondaryType="cta"
+    secondaryText="GMB — $149"
+    secondaryHref={"/services/google-my-business")}
+    primaryText="Audit — $300"
+    primaryHref={"/services/ads-audit")}
+  /> -->
+</Layout>

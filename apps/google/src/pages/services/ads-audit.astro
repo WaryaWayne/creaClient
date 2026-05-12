@@ -1,0 +1,454 @@
+---
+import Layout from "@/layouts/main.astro"
+import PathBreadcrumb from "@/components/PathBreadcrumb"
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@workspace/ui/components/item"
+import { PaymentCTA } from "@/components/PaymentCTA"
+import Hero from "@/components/Hero.astro"
+import ZarazViewContent from "@/components/ZarazViewContent.astro"
+import SocialProof from "@/components/SocialProof.astro"
+import FAQSection from "@/components/FAQSection.astro"
+import FeatureGrid from "@/components/services/FeatureGrid.astro"
+import FeaturesList from "@/components/services/FeaturesList.astro"
+import PricingCard from "@/components/services/PricingCard.astro"
+import { getSchemaEntityModel, sharedServiceArea } from "@/lib/schema"
+import type { BreadcrumbList, Service, WebPage, WithContext } from "schema-dts"
+import { routes } from "@/lib/routes"
+import { productPaymentLinks } from "@/lib/payment-links"
+
+const adsAuditPaymentLink = productPaymentLinks.adsAuditPaymentLink
+const turnstileSiteKey = import.meta.env.TURNSTILE_SITE_KEY
+
+const pageTitle =
+  "Google Ads Audit & Rewrite - One-Time $300 Project Fee | Improve Your Ads Today | 2To6X"
+const pageDescription =
+  "We audit your entire Google Ads account and rewrite your ads from scratch. Every audit covers campaigns, copy, keywords, bids, and negatives. One-time $300 project fee."
+const siteUrl = Astro.site ?? new URL(Astro.url.origin)
+const canonicalPath = routes.google.services.AdsAudit
+const canonicalUrl = new URL(canonicalPath, siteUrl).toString()
+const basePath = import.meta.env.BASE_URL
+const { appSiteUrl, ids } = getSchemaEntityModel(siteUrl, basePath)
+const homeUrl = appSiteUrl
+const servicesUrl = new URL(routes.google.services.Index, siteUrl).toString()
+const providerId = ids.googleProfessionalService
+const serviceId = `${canonicalUrl}#service`
+const areaServed = sharedServiceArea
+
+const breadcrumbSchema: WithContext<BreadcrumbList> = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  name: "Google Ads Audit & Rewrite breadcrumb",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Google",
+      item: homeUrl,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Services",
+      item: servicesUrl,
+    },
+    {
+      "@type": "ListItem",
+      position: 3,
+      name: "Google Ads Audit & Rewrite",
+      item: canonicalUrl,
+    },
+  ],
+}
+
+const webPageSchema: WithContext<WebPage> = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": `${canonicalUrl}#webpage`,
+  url: canonicalUrl,
+  name: pageTitle,
+  description: pageDescription,
+  isPartOf: {
+    "@type": "WebSite",
+    "@id": `${homeUrl}#website`,
+    url: homeUrl,
+    name: "2To6X",
+  },
+  mainEntity: {
+    "@id": serviceId,
+  },
+  about: {
+    "@id": serviceId,
+  },
+  breadcrumb: {
+    "@id": `${canonicalUrl}#breadcrumb`,
+  },
+}
+
+const serviceSchema: WithContext<Service> = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": serviceId,
+  name: "Google Ads Audit & Rewrite",
+  description: pageDescription,
+  url: canonicalUrl,
+  serviceType: "Google Ads audit and ad rewrite service",
+  areaServed,
+  provider: {
+    "@id": providerId,
+  },
+  offers: {
+    "@type": "Offer",
+    price: "300",
+    priceCurrency: "CAD",
+    availability: "https://schema.org/InStock",
+    url: `${canonicalUrl}#pricing`,
+  },
+}
+
+const pageSchemas = [
+  {
+    ...breadcrumbSchema,
+    "@id": `${canonicalUrl}#breadcrumb`,
+  },
+  webPageSchema,
+  serviceSchema,
+] as const
+
+const included = [
+  {
+    title: "Full Account Audit",
+    desc: "We go through every campaign, ad group, keyword, and search term. Inefficient spend gets flagged.",
+  },
+  {
+    title: "Ad Copy Rewrite",
+    desc: "Your underperforming ads get replaced. We write new ones with benefit-first headlines, real offers, and urgency that converts.",
+  },
+  {
+    title: "Keyword Restructuring",
+    desc: "Tight match types, clean ad groups, keywords that actually match what buyers are searching.",
+  },
+  {
+    title: "Negative Keyword List",
+    desc: "We build you a negative keyword list that reduces irrelevant clicks using your budget starting day one.",
+  },
+  {
+    title: "Search Term Report",
+    desc: "See exactly what you've been paying for. Most clients are surprised. Usually includes dozens of unqualified terms.",
+  },
+  {
+    title: "Bid Strategy Review",
+    desc: "We check if your bidding strategy matches your goals, then recommend improvements if it doesn't.",
+  },
+  {
+    title: "Quality Score Plan",
+    desc: "Higher Quality Scores = lower cost per click. We show you exactly how to get there.",
+  },
+  {
+    title: "Plain-English Report",
+    desc: "Every finding, every recommended improvement, explained so you actually understand what changed and why.",
+  },
+  {
+    title: "7 Days Email Q&A",
+    descHtml: `After delivery, we're available to answer every question you have. If you want us to keep optimizing after implementation, add <a href="${routes.google.services.WeeklyStrategy}#pricing" class="font-semibold text-primary underline underline-offset-2 hover:no-underline">weekly strategy pricing</a>.`,
+  },
+]
+
+const problemFeatures = [
+  {
+    title: "Budget works inefficiently",
+    desc: "Clicks keep coming in but the phone stays silent. You raise the budget hoping it helps, but the account needs improvement.",
+  },
+  {
+    title: "Unqualified people clicking",
+    descHtml: `You\'re paying for people who were never going to buy. Google\'s algorithm needs tight control, and yours needs improvement. Most of this gets addressed with tighter negatives and match types covered in our <a href="${routes.google.frequentlyAskedQuestions}#keywords" class="font-semibold text-primary underline underline-offset-2 hover:no-underline">keywords FAQ</a>.`,
+  },
+  {
+    title: "Copy that underperforms",
+    desc: "Your ads look exactly like every competitor's. Generic. Forgettable. There's no clear reason to click yours over theirs.",
+  },
+]
+
+const pricingItems = [
+  "Full account audit",
+  "Full written report",
+  "Rewritten ad copy",
+  "Keyword list",
+  "7-day support",
+]
+
+const steps = [
+  {
+    n: "1",
+    title: "Pay & Send Us Access",
+    desc: "Complete checkout. Then give us read-only access to your Google Ads account via Manager Account (MCC). Takes 2 minutes.",
+  },
+  {
+    n: "2",
+    title: "We Audit & Rewrite",
+    desc: "We go deep into your account, identify every underperforming area, and rewrite your ads from scratch.",
+  },
+  {
+    n: "3",
+    title: "You Get the Full Deliverable",
+    desc: "Written audit report, rewritten ad copy, keyword recommendations, and negative keyword list. Yours to implement immediately.",
+  },
+]
+
+const faqs = [
+  {
+    q: "Do I need to give you access to my account?",
+    a: "Yes: read-only access via Google's Manager Account (MCC). We can see everything but can't spend a single dollar. You stay in full control.",
+  },
+  {
+    q: "What if I don't have an existing Google Ads account?",
+    aHtml: `This audit is for existing accounts. If you need a full setup from scratch, start with the <a href="${routes.google.contact}" class="font-semibold text-primary underline underline-offset-2 hover:no-underline">contact form</a> and we can scope it properly.`,
+  },
+  {
+    q: "How fast will I see results after implementing the changes?",
+    aHtml: `Most clients see improvement within the first week. Google\'s algorithm responds quickly to better Quality Scores and more relevant ads. If you want that momentum maintained, see the <a href="${routes.google.services.WeeklyStrategy}#results" class="font-semibold text-primary underline underline-offset-2 hover:no-underline">weekly results timeline</a>.`,
+  },
+  {
+    q: "What if I'm not happy?",
+    a: "We don't offer refunds on completed work, but we do offer revisions. If something's unclear or off, tell us and we address it.",
+  },
+  {
+    q: "Can you implement the changes for me?",
+    aHtml: `The audit and rewrite are a deliverable you take and implement. If you want us to manage ongoing changes, see <a href="${routes.google.services.WeeklyStrategy}#what-happens" class="font-semibold text-primary underline underline-offset-2 hover:no-underline">weekly strategy session details</a>.`,
+  },
+]
+
+const heroHeadline = `Your Ads Are Spending Inefficiently.<br /><span class="text-primary">We'll Improve Them Today.</span>`
+const heroSubheadline = [
+  "Inefficient keywords. Underperforming copy. Unclear strategy. We audit your entire account and rewrite everything that needs improvement - in one business day.",
+  "One fixed $300 fee. No retainer. No monthly contracts. No surprises.",
+]
+const heroCtas = [
+  {
+    label: "Buy Audit & Rewrite for $300",
+    target: "_blank" as const,
+    href: adsAuditPaymentLink,
+    variant: "default" as const,
+    note: "Every audit covers campaigns, copy, keywords, bids, and negatives.",
+    paymentOfferKey: "adsAudit" as const,
+  },
+]
+const heroTrustPills = [
+  "Full account audit",
+  "No contracts",
+  "One-time $300 project fee",
+  "7-day email support",
+]
+---
+
+<Layout
+  title={pageTitle}
+  description={pageDescription}
+  canonical={canonicalPath}
+  ogType="article"
+  schema={pageSchemas}
+  stickyBarPrimaryText="Buy Now"
+  stickyBarPrimaryHref="#pricing"
+>
+  <div class="mx-auto max-w-5xl px-4 pt-8">
+    <PathBreadcrumb className="mb-4" location={Astro.url.pathname} />
+  </div>
+
+  <!-- HERO -->
+  <Hero
+    id="hero"
+    tagline="Google Ads Audit & Rewrite"
+    headline={heroHeadline}
+    subheadline={heroSubheadline}
+    ctas={heroCtas}
+    trustPills={heroTrustPills}
+  />
+
+  <!-- THE PROBLEM -->
+  <FeatureGrid
+    id="problem"
+    eyebrow="Sound Familiar?"
+    titleHtml={`You're Paying Google.<br /><span class="text-foreground">Google Isn't Paying You Back.</span>`}
+    features={problemFeatures}
+    cardClassName="border border-border bg-card shadow-xl text-center py-6 gap-0 ring-0"
+    cardContentClassName="px-6"
+    cta={{
+      eyebrow: "Ready to Fix It",
+      heading: "Start with the audit package.",
+      subheadline:
+        "We review the account, identify the waste, and rewrite what needs improvement.",
+      buttonLabel: "Buy Audit & Rewrite for $300",
+      href: adsAuditPaymentLink,
+      target: "_blank",
+      paymentOfferKey: "adsAudit",
+    }}
+  >
+    <p slot="after-grid" class="mb-6 text-center text-lg text-foreground">
+      This isn't a Google problem. It's a setup problem. And it can be improved.
+    </p>
+  </FeatureGrid>
+
+  <!-- WHAT YOU GET -->
+  <FeaturesList
+    id="features"
+    eyebrow="What's Included"
+    titleHtml={`Everything You Need.<br /><span class="text-primary">Nothing You Don't.</span>`}
+    items={included}
+    itemClassName="shadow-xl items-start bg-card"
+    cta={{
+      eyebrow: "What's Included",
+      heading: "Order the full audit and rewrite.",
+      subheadline:
+        "One flat payment covers the review, written findings, and improved ad copy.",
+      buttonLabel: "Buy Audit & Rewrite for $300",
+      href: adsAuditPaymentLink,
+      target: "_blank",
+      paymentOfferKey: "adsAudit",
+    }}
+    ctaNote="Every audit covers campaigns, copy, keywords, bids, and negatives."
+  />
+  <ZarazViewContent contentKey="adsAudit" />
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works" class="scroll-mt-25 px-4 py-20">
+    <div class="mx-auto max-w-4xl">
+      <div class="mb-14 text-center">
+        <p
+          class="mb-3 text-sm font-bold tracking-widest text-primary uppercase"
+        >
+          The Process
+        </p>
+        <h2 class="text-4xl font-black md:text-5xl">
+          3 Steps.<br /><span class="text-primary">One Business Day.</span>
+        </h2>
+      </div>
+      {
+        steps.map(({ n, title, desc }) => (
+          <Item variant={"outline"} className="bg-card">
+            <ItemMedia variant="icon">{n}</ItemMedia>
+            <ItemContent>
+              <ItemTitle>{title}</ItemTitle>
+              <ItemDescription>{desc}</ItemDescription>
+            </ItemContent>
+          </Item>
+        ))
+      }
+      <div class="mt-6 text-center">
+        <PaymentCTA
+          client:load
+          variant={"default"}
+          target="_blank"
+          href={adsAuditPaymentLink}
+          offerKey="adsAudit"
+          turnstileSiteKey={turnstileSiteKey}
+        >
+          Buy Audit & Rewrite for $300
+        </PaymentCTA>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOCIAL PROOF -->
+  <SocialProof
+    eyebrow="Real Results"
+    cta={{
+      eyebrow: "Next Step",
+      heading: "Open the audit checkout.",
+      subheadline:
+        "Use this package when the account needs a concrete cleanup and rewrite before you spend more.",
+      buttonLabel: "Buy Audit & Rewrite for $300",
+      href: adsAuditPaymentLink,
+      target: "_blank",
+      paymentOfferKey: "adsAudit",
+    }}
+  />
+
+  <!-- PRICING -->
+  <section id="pricing" class="scroll-mt-15 px-4 py-20 md:scroll-mt-25">
+    <div class="mx-auto max-w-3xl text-center">
+      <p class="mb-3 text-sm font-bold tracking-widest text-primary uppercase">
+        The Price
+      </p>
+      <h2 class="mb-10 text-4xl font-black md:text-5xl">
+        Simple. Flat. One-Time.
+      </h2>
+      <p class="mb-8 text-sm text-foreground">
+        Want to compare all options first? See the{" "}
+        <a
+          href={routes.google.pricing + "#offers"}
+          class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+        >
+          compare all offers
+        </a>
+        .
+      </p>
+      <PricingCard
+        variant="hero"
+        itemLabel="Full Google Ads Audit + Rewrite"
+        price="$300"
+        description="One payment. No retainer. No surprises."
+        pills={pricingItems}
+        ctaLabel="Buy Audit & Rewrite for $300"
+        ctaHref={adsAuditPaymentLink}
+        ctaTarget="_blank"
+        paymentOfferKey="adsAudit"
+        footnote="Every audit covers campaigns, copy, keywords, bids, and negatives."
+      />
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <FAQSection
+    id="faq"
+    faqs={faqs}
+    eyebrow="Questions"
+    titleHtml={`Before You Ask,<br /><span class="text-primary">Here's the Answer.</span>`}
+  >
+    <div slot="footer">
+      <PaymentCTA
+        client:load
+        variant={"default"}
+        target="_blank"
+        href={adsAuditPaymentLink}
+        offerKey="adsAudit"
+        turnstileSiteKey={turnstileSiteKey}
+      >
+        Buy Audit & Rewrite for $300
+      </PaymentCTA>
+    </div>
+  </FAQSection>
+
+  <!-- FINAL CTA -->
+  <section id="final-cta" class="scroll-mt-25 px-4 py-12">
+    <div class="mx-auto max-w-3xl text-center">
+      <p class="mb-3 text-sm font-bold tracking-widest text-primary uppercase">
+        Last Chance
+      </p>
+      <h2 class="mb-4 text-4xl font-black md:text-6xl">
+        Every Day You Wait,<br />
+        <span class="text-primary">You're Paying for It.</span>
+      </h2>
+      <p class="mx-auto mb-10 max-w-xl text-lg text-foreground">
+        Underperforming ads keep running until you improve them. The longer you
+        wait, the more inefficient spend can build up. $300 improves that today.
+      </p>
+      <PaymentCTA
+        client:load
+        variant={"default"}
+        target="_blank"
+        href={adsAuditPaymentLink}
+        offerKey="adsAudit"
+        turnstileSiteKey={turnstileSiteKey}
+      >
+        Buy Audit & Rewrite for $300
+      </PaymentCTA>
+      <p class="mt-4 text-xs text-foreground">
+        Every audit covers campaigns, copy, keywords, bids, and negatives.
+      </p>
+    </div>
+  </section>
+</Layout>

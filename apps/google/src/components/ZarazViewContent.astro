@@ -1,0 +1,25 @@
+---
+import type { ZarazContentKey } from "@/lib/zaraz"
+
+interface Props {
+  contentKey: ZarazContentKey
+}
+
+const { contentKey } = Astro.props as Props
+---
+
+<span data-zaraz-view-content={contentKey} hidden></span>
+
+<script>
+  import { trackViewContent, type ZarazContentKey } from "@/lib/zaraz"
+
+  document
+    .querySelectorAll<HTMLElement>("[data-zaraz-view-content]")
+    .forEach((element) => {
+      const contentKey = element.dataset.zarazViewContent as
+        | ZarazContentKey
+        | undefined
+
+      if (contentKey) trackViewContent(contentKey)
+    })
+</script>

@@ -1,0 +1,164 @@
+---
+import "@/styles/global.css"
+import Header from "@/components/Header.astro"
+import PageBackground from "@/components/PageBackground.astro"
+import Footer from "@/components/Footer.astro"
+import StickyBar from "@/components/StickyBar.astro"
+import { ContactFloatingWidget } from "@/components/ContactFloatingWidget"
+import SEOHead from "@/components/SEOHead.astro"
+import type { OrganizationSchemaType, SchemaInput } from "@/lib/schema"
+import { routes } from "@/lib/routes"
+import { siteConfig } from "@/lib/site-config"
+
+interface Props {
+  title?: string
+  description?: string
+  ogImage?: string
+  twitterImage?: string
+  ogType?: "website" | "article" | "product"
+  ogUrl?: string
+  ogDescription?: string
+  canonical?: string
+  schema?: SchemaInput
+  entityType?: OrganizationSchemaType
+  robots?:
+    | "index,follow"
+    | "noindex,follow"
+    | "index,nofollow"
+    | "noindex,nofollow"
+  twitterCard?: "summary" | "summary_large_image"
+  includeOrganizationSchema?: boolean
+  /** Hide the mobile sticky CTA bar (useful for pages with their own forms) */
+  hideStickyBar?: boolean
+  stickyBarPrimaryText?: string
+  stickyBarPrimaryHref?: string
+}
+
+const {
+  title = "Improve Google Ads ROI | Expert Google Ads Optimization | 2To6X",
+  description = "We audit, rewrite, and optimize Google Ads campaigns for local businesses seeking better qualified clicks. One-time $300 project fee. Same-day turnaround.",
+  ogImage,
+  twitterImage,
+  ogType,
+  ogUrl,
+  ogDescription,
+  canonical,
+  schema,
+  entityType,
+  robots,
+  twitterCard,
+  includeOrganizationSchema,
+  hideStickyBar = false,
+  stickyBarPrimaryText = "Open Audit Page",
+  stickyBarPrimaryHref = routes.google.services.AdsAudit,
+} = Astro.props
+
+const seoProps = {
+  title,
+  description,
+  ogImage,
+  twitterImage,
+  ogType,
+  ogUrl,
+  ogDescription,
+  canonical,
+  schema,
+  entityType,
+  robots,
+  twitterCard,
+  includeOrganizationSchema,
+}
+---
+
+<html lang="en" class="scroll-smooth" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      const getStoredThemePreference = () => {
+        try {
+          const storedTheme = localStorage.getItem("theme")
+          if (storedTheme === "theme-light" || storedTheme === "light") {
+            return "light"
+          }
+          if (storedTheme === "dark" || storedTheme === "system") {
+            return storedTheme
+          }
+        } catch {
+          return "system"
+        }
+
+        return "system"
+      }
+
+      const theme = getStoredThemePreference()
+      const isDark =
+        theme === "dark" ||
+        (theme === "system" &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches)
+
+      document.documentElement.classList.toggle("dark", isDark)
+      document.documentElement.dataset.theme = theme
+    </script>
+    <meta
+      name="theme-color"
+      content={siteConfig.app.backgroundColor}
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content={siteConfig.app.themeColor}
+      media="(prefers-color-scheme: dark)"
+    />
+    <SEOHead {...seoProps} />
+    <script is:inline>
+      const readAdTrackingOptOut = () => {
+        try {
+          return localStorage.getItem("ad_tracking_opt_out") === "true"
+        } catch {
+          return false
+        }
+      }
+    </script>
+    <script is:inline>
+      document.addEventListener(
+        "click",
+        (event) => {
+          if (readAdTrackingOptOut()) return
+
+          const target = event.target instanceof Element ? event.target : null
+          const link = target?.closest("a[data-zaraz-checkout-properties]")
+          if (!link) return
+
+          try {
+            const properties = JSON.parse(
+              link.dataset.zarazCheckoutProperties || "{}"
+            )
+
+            void window.zaraz?.ecommerce("Checkout Started", properties)
+          } catch {
+            return
+          }
+        },
+        { capture: true }
+      )
+    </script>
+  </head>
+  <body class="bg-background text-foreground antialiased">
+    <PageBackground />
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+    <ContactFloatingWidget client:idle />
+    {
+      !hideStickyBar && (
+        <StickyBar
+          primaryText={stickyBarPrimaryText}
+          primaryHref={stickyBarPrimaryHref}
+        />
+      )
+    }
+  </body>
+</html>

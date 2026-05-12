@@ -1,0 +1,205 @@
+---
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+} from "@workspace/ui/components/item"
+import { CTAButton } from "@/components/CTAButton"
+import { auditOfferBlockIncluded, offerCatalog } from "@/data/offers"
+import { routes } from "@/lib/routes"
+
+const included = auditOfferBlockIncluded
+---
+
+<section class="px-4 py-12" id="offer">
+  <div class="mx-auto max-w-5xl">
+    <div class="relative overflow-hidden border-2 border-primary bg-background">
+      <div
+        class="pointer-events-none absolute inset-0 bg-primary opacity-[0.03]"
+      >
+      </div>
+      <div
+        class="absolute -top-20 left-1/2 h-40 w-96 -translate-x-1/2 bg-primary opacity-10 blur-[60px]"
+      >
+      </div>
+      <div class="relative p-8 md:p-14">
+        <div class="flex flex-col items-start gap-12 lg:flex-row">
+          <div class="flex-1">
+            <p
+              class="mb-3 text-sm font-bold tracking-widest text-primary uppercase"
+            >
+              The Offer
+            </p>
+            <h2 class="mb-4 text-4xl leading-tight font-black md:text-5xl">
+              Full Google Ads
+              <br />
+              Audit + Rewrite
+            </h2>
+            <div class="mb-2 flex items-baseline gap-3">
+              <span class="text-7xl font-black text-primary"
+                >{offerCatalog.adsAudit.price}</span
+              >
+              <span class="text-lg text-foreground">one-time project fee</span>
+            </div>
+            <p class="mb-8 text-foreground">
+              One payment. No retainer. No surprises. See{" "}
+              <a
+                href={routes.google.industry.Index + "#ads-audit-offer"}
+                class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+              >
+                Google Ads Audit & Rewrite details
+              </a>
+              {" "}or jump to{" "}
+              <a
+                href={routes.google.frequentlyAskedQuestions + "#pricing"}
+                class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+              >
+                pricing FAQ
+              </a>
+              .
+            </p>
+            <div class="mb-8 flex flex-wrap gap-3">
+              {
+                [
+                  { icon: "⚡", label: "Full-scope review" },
+                  { icon: "🔒", label: "No contracts" },
+                  { icon: "💬", label: "7-day support" },
+                ].map(({ icon, label }) => (
+                  <span class="flex items-center gap-2 border border-border bg-background px-4 py-2 text-sm font-bold">
+                    <span class="text-primary">{icon}</span> {label}
+                  </span>
+                ))
+              }
+            </div>
+            <CTAButton
+              variant="default"
+              href={offerCatalog.adsAudit.href}
+              target="_self"
+            >
+              View Audit Offer for {offerCatalog.adsAudit.price}
+            </CTAButton>
+            <p class="mt-3 text-xs text-foreground">
+              Submit access when you're ready. We'll review it as soon as it comes in.
+            </p>
+          </div>
+          <div class="shrink-0 lg:w-80">
+            <div class="border border-border bg-background p-6">
+              <p
+                class="mb-4 text-sm font-black tracking-widest text-foreground uppercase"
+              >
+                Everything Included:
+              </p>
+              <div class="space-y-2">
+                {
+                  included.map((item) => (
+                    <Item
+                      variant="outline"
+                      className="hover:border-primary/30 shadow-sm items-start"
+                    >
+                      <ItemMedia
+                        variant="icon"
+                        className="text-primary font-black text-lg mt-0.5"
+                      >
+                        ✓
+                      </ItemMedia>
+                      <ItemContent>
+                        <ItemDescription className="line-clamp-none text-xs">
+                          {item}
+                        </ItemDescription>
+                      </ItemContent>
+                    </Item>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-6 border border-border bg-background/60 p-6 md:p-8">
+      <div class="flex flex-col items-start gap-6 md:flex-row md:items-center">
+        <div class="flex-1">
+          <div class="mb-2 flex items-center gap-2">
+            <span
+              class="text-xs font-bold tracking-widest text-primary uppercase"
+              >Add-On</span
+            >
+            <span
+              class="border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary"
+              >Free Lead Channel</span
+            >
+          </div>
+          <h3 class="mb-1 text-xl font-black text-foreground">
+            {offerCatalog.googleBusinessProfile.label}
+          </h3>
+          <p class="max-w-xl text-sm leading-relaxed text-foreground">
+            You're paying for ads to bring people in. Why not own the free
+            channel at the same time? Your Google Business Profile shows up to
+            everyone nearby searching right now, at zero cost per click. We
+            complete your full profile: keyword-optimized description, services,
+            products, photo guidance, website links, and category setup. <span
+              class="font-semibold text-foreground"
+              >One-time setup. Free leads from Google, forever.</span
+            >
+            {" "}Then keep paid campaigns moving with{" "}
+            <a
+              href={offerCatalog.weeklyStrategy.href + "#pricing"}
+              class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+            >
+              weekly strategy pricing
+            </a>
+            .
+          </p>
+          <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+            {
+              [
+                "Optimized description",
+                "Services & products listed",
+                "Website & booking links",
+                "Category & attribute setup",
+                "Photo guidance",
+              ].map((item) => (
+                <li class="flex items-center gap-1.5 text-xs text-foreground">
+                  <span class="font-black text-primary">✓</span> {item}
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+        <div class="flex shrink-0 flex-col items-center gap-3 text-center">
+          <div>
+            <span class="text-4xl font-black text-primary"
+              >{offerCatalog.googleBusinessProfile.price}</span
+            >
+            <p class="mt-0.5 text-xs text-foreground">one-time</p>
+          </div>
+          <CTAButton
+            variant="outline"
+            href={offerCatalog.googleBusinessProfile.href}
+            target="_self"
+          >
+            View GMB Offer
+          </CTAButton>
+        </div>
+      </div>
+    </div>
+    <div
+      class="mt-4 border border-destructive bg-destructive/40 p-4 text-center"
+    >
+      <p class="text-sm font-bold text-foreground">
+        Every day your current ads run unoptimized, you're losing money. A {
+          offerCatalog.adsAudit.price
+        }
+        fix can save you thousands in wasted ad spend. Start at{" "}
+        <a
+          href={offerCatalog.adsAudit.href + "#pricing"}
+          class="font-semibold text-foreground underline underline-offset-2 hover:no-underline"
+        >
+          Google Ads Audit & Rewrite pricing
+        </a>
+        .
+      </p>
+    </div>
+  </div>
+</section>

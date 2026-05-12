@@ -1,0 +1,34 @@
+---
+interface Props {
+  href: string
+  title: string
+  description: string
+  price: string
+  className?: string
+  titleClassName?: string
+  descriptionClassName?: string
+  priceClassName?: string
+}
+
+const {
+  href,
+  title,
+  description,
+  price,
+  className = "border border-border px-5 py-3.5 transition-colors hover:border-primary/50",
+  titleClassName = "text-sm font-black text-foreground",
+  descriptionClassName = "text-xs text-foreground/70",
+  priceClassName = "text-lg font-black text-primary transition-transform group-hover:translate-x-0.5",
+} = Astro.props
+---
+
+<a
+  href={href}
+  class:list={["group flex w-full items-center justify-between", className]}
+>
+  <div>
+    <p class={titleClassName}>{title}</p>
+    <p class={descriptionClassName}>{description}</p>
+  </div>
+  <span class={priceClassName}>{price}</span>
+</a>

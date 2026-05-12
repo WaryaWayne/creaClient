@@ -1,0 +1,864 @@
+---
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@workspace/ui/components/item"
+import { Card, CardContent } from "@workspace/ui/components/card"
+import ServiceLinkCard from "@/components/ServiceLinkCard.astro"
+import { Field, FieldContent, FieldLabel } from "@workspace/ui/components/field"
+import { Input } from "@workspace/ui/components/input"
+import { Textarea } from "@workspace/ui/components/textarea"
+import { contactShortcutOffers } from "@/data/offers"
+import {
+  getCompanyPhoneNumber,
+  getCompanyPhoneNumberDisplay,
+} from "@/lib/site-config"
+import { defaultTestimonials } from "./SocialProof.astro"
+
+interface Props {
+  headingTag?: "h1" | "h2"
+  turnstileSiteKey?: string
+}
+
+const { headingTag = "h2", turnstileSiteKey } = Astro.props
+const HeadingTag = headingTag
+
+const companyPhoneNumber = getCompanyPhoneNumber()
+const companyPhoneNumberDisplay = getCompanyPhoneNumberDisplay()
+const [auditShortcut, weeklyShortcut, gmbShortcut] = contactShortcutOffers
+const basePath = import.meta.env.BASE_URL
+const siteUrl = Astro.site ?? new URL(Astro.url.origin)
+const contactFormAction = new URL(
+  "api/contact-form",
+  new URL(basePath, siteUrl)
+).pathname
+---
+
+<section class="px-4 py-12" id="contact" data-contact-section>
+  <div class="mx-auto max-w-5xl">
+    <div class="mb-16 text-center">
+      <p class="mb-3 text-sm font-bold tracking-widest text-primary uppercase">
+        Let's Talk
+      </p>
+      <HeadingTag class="text-4xl leading-tight font-black md:text-5xl">
+        Stop Running Ads That Don't Work.
+        <br />
+        <span class="text-primary">Call or Fill Out the Form.</span>
+      </HeadingTag>
+      <p class="mx-auto mt-4 max-w-2xl text-lg text-foreground">
+        We respond within a few hours during business days. If you call and we
+        miss it, we call back, always.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 items-start gap-12 lg:grid-cols-2">
+      <div class="space-y-8">
+        <Card
+          className="gap-0 border-primary/30 py-8 text-center shadow-xl ring-0"
+        >
+          <CardContent className="px-8">
+            <p
+              class="mb-3 text-sm font-bold tracking-widest text-foreground uppercase"
+            >
+              Call Us Directly
+            </p>
+            <a
+              href={`tel:${companyPhoneNumber}`}
+              class="mb-3 block text-3xl font-black text-primary transition-colors hover:text-foreground"
+            >
+              {companyPhoneNumberDisplay}
+            </a>
+            <p class="text-sm text-foreground">Mon-Fri, 8am-6pm MST</p>
+            <p class="mt-1 text-xs text-foreground">
+              We answer. Not a call center.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="gap-0 border-border py-6 shadow-xl ring-0">
+          <CardContent className="px-6">
+            <p
+              class="mb-4 text-sm font-black tracking-widest text-foreground uppercase"
+            >
+              What happens next:
+            </p>
+            <ul class="space-y-4">
+              {
+                [
+                  {
+                    n: "1",
+                    title: "We review your submission",
+                    sub: "Within a few hours on business days",
+                  },
+                  {
+                    n: "2",
+                    title: "We confirm and collect access",
+                    sub: "Standard Google Ads account access",
+                  },
+                  {
+                    n: "3",
+                    title: "Audit + rewrite delivered",
+                    sub: "Full-scope review included",
+                  },
+                ].map(({ n, title, sub }) => (
+                  <li>
+                    <Item
+                      variant="outline"
+                      className="shadow-xl items-start bg-card"
+                    >
+                      <ItemMedia
+                        variant="icon"
+                        className="text-primary font-black"
+                      >
+                        {n}
+                      </ItemMedia>
+                      <ItemContent>
+                        <ItemTitle className="normal-case tracking-normal text-sm font-black">
+                          {title}
+                        </ItemTitle>
+                        <ItemDescription className="line-clamp-none text-xs">
+                          {sub}
+                        </ItemDescription>
+                      </ItemContent>
+                    </Item>
+                  </li>
+                ))
+              }
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="gap-0 overflow-hidden border-primary/40 py-0 shadow-xl ring-0"
+        >
+          <div
+            class="flex items-center gap-3 border-b border-primary/20 bg-primary/10 px-6 py-4"
+          >
+            <span class="text-xl">⚡</span>
+            <div>
+              <p
+                class="text-xs font-bold tracking-widest text-primary uppercase"
+              >
+                Skip the Queue
+              </p>
+              <p class="text-base leading-tight font-black text-foreground">
+                Jump to the Front of the Line
+              </p>
+            </div>
+          </div>
+          <CardContent className="px-6 py-5">
+            <p class="mb-5 text-sm leading-relaxed text-foreground">
+              Don't want to wait? Go straight to the exact service page and
+              choose the offer that fits. Fewer clicks. Better intent.
+            </p>
+            <div class="space-y-3">
+              <ServiceLinkCard
+                href={auditShortcut.href}
+                title={auditShortcut.title}
+                description={auditShortcut.description}
+                price={auditShortcut.price}
+                className="bg-primary/50 px-5 py-3.5 transition-colors"
+                priceClassName="text-xl font-black text-foreground transition-transform group-hover:translate-x-0.5"
+              />
+              <ServiceLinkCard
+                href={weeklyShortcut.href}
+                title={weeklyShortcut.title}
+                description={weeklyShortcut.description}
+                price={weeklyShortcut.price}
+              />
+              <ServiceLinkCard
+                href={gmbShortcut.href}
+                title={gmbShortcut.title}
+                description={gmbShortcut.description}
+                price={gmbShortcut.price}
+              />
+            </div>
+            <p class="mt-4 text-center text-xs text-foreground/60">
+              Pick the page that matches the intent, then close them there.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div class="space-y-6">
+        <Card className="gap-0 border-border py-8 shadow-xl ring-0">
+          <CardContent className="px-8">
+            <div id="contact-form-view" class="scroll-mt-25" data-contact-form-view>
+              <p class="mb-6 text-lg font-black text-foreground">
+                Send Us a Message
+              </p>
+              <form
+                class="space-y-5"
+                id="contact-form"
+                action={contactFormAction}
+                name="contact"
+                method="POST"
+                novalidate
+              >
+                <Field data-field data-field-name="name">
+                  <FieldLabel htmlFor="name">Name *</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      type="text"
+                      id="name"
+                      name="name"
+                      autoComplete="name"
+                      required
+                      placeholder="John Smith"
+                      aria-describedby="name-error"
+                    />
+                    <div
+                      id="name-error"
+                      data-error-for="name"
+                      class="text-xs font-normal text-destructive"
+                    >
+                    </div>
+                  </FieldContent>
+                </Field>
+                <Field data-field data-field-name="email">
+                  <FieldLabel htmlFor="email">Email *</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      type="email"
+                      id="email"
+                      name="email"
+                      autoComplete="email"
+                      required
+                      placeholder="Enter your email"
+                      aria-describedby="email-error"
+                    />
+                    <div
+                      id="email-error"
+                      data-error-for="email"
+                      class="text-xs font-normal text-destructive"
+                    >
+                    </div>
+                  </FieldContent>
+                </Field>
+                <Field data-field data-field-name="phone">
+                  <FieldLabel htmlFor="phone">Phone Number</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      autoComplete="tel"
+                      placeholder="(555) 000-0000"
+                      aria-describedby="phone-error"
+                    />
+                    <div
+                      id="phone-error"
+                      data-error-for="phone"
+                      class="text-xs font-normal text-destructive"
+                    >
+                    </div>
+                  </FieldContent>
+                </Field>
+                <Field data-field data-field-name="budget">
+                  <FieldLabel htmlFor="budget">Monthly Ad Budget *</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      type="text"
+                      id="budget"
+                      name="budget"
+                      required
+                      placeholder="$1,500 / month, $3k - $5k, or describe your budget"
+                      aria-describedby="budget-error"
+                    />
+                    <div
+                      id="budget-error"
+                      data-error-for="budget"
+                      class="text-xs font-normal text-destructive"
+                    >
+                    </div>
+                  </FieldContent>
+                </Field>
+                <Field data-field data-field-name="message">
+                  <FieldLabel htmlFor="message"
+                    >Biggest Problem With Your Ads</FieldLabel
+                  >
+                  <FieldContent>
+                    <Textarea
+                      id="message"
+                      name="message"
+                      rows={4}
+                      maxLength={2000}
+                      placeholder="I'm spending $1200 / month and getting almost no leads. My main issue is..."
+                      aria-describedby="message-error"
+                    />
+                    <div
+                      id="message-error"
+                      data-error-for="message"
+                      class="text-xs font-normal text-destructive"
+                    >
+                    </div>
+                  </FieldContent>
+                </Field>
+                <div
+                  class="absolute top-auto left-[-9999px] h-px w-px overflow-hidden"
+                >
+                  <label for="honeypot">Leave this field empty</label>
+                  <input
+                    type="text"
+                    id="honeypot"
+                    name="honeypot"
+                    tabindex="-1"
+                    autocomplete="off"
+                  />
+                </div>
+                {
+                  turnstileSiteKey && (
+                    <div class="flex justify-center">
+                      <div
+                        data-turnstile-container
+                        data-sitekey={turnstileSiteKey}
+                      />
+                      <input type="hidden" name="cf-turnstile-response" />
+                    </div>
+                  )
+                }
+                <p
+                  class="text-center text-sm text-destructive empty:hidden"
+                  data-form-error
+                >
+                </p>
+                <button
+                  type="submit"
+                  data-submit-button
+                  class="w-full bg-primary py-4 text-base font-black tracking-wide text-primary-foreground uppercase transition-colors hover:bg-primary/90"
+                >
+                  Send My Message
+                </button>
+                <p class="text-center text-xs text-foreground">
+                  No spam. No cold calls. Just results.
+                </p>
+              </form>
+            </div>
+
+            <div
+              id="contact-success-view"
+              class="hidden py-4"
+              data-contact-success-view
+            >
+              <div class="mb-8 text-center">
+                <div class="mb-4 text-5xl">✅</div>
+                <h3 class="mb-2 text-2xl font-black text-foreground">
+                  We Got It. You're In.
+                </h3>
+                <p class="text-sm leading-relaxed text-foreground">
+                  We'll reach out within the next few hours. Want the faster
+                  path?
+                  <span class="font-bold text-foreground">
+                    Go straight to the offer page that matches what you need.
+                  </span>
+                </p>
+              </div>
+
+              <div class="mb-7 border-t border-border pt-7">
+                <p
+                  class="mb-4 text-center text-xs font-bold tracking-widest text-primary uppercase"
+                >
+                  Jump to the Front of the Line
+                </p>
+                <div class="space-y-3">
+                  <ServiceLinkCard
+                    href={auditShortcut.href}
+                    title={auditShortcut.title}
+                    description={auditShortcut.submittedDescription}
+                    price={auditShortcut.price}
+                    className="bg-primary px-5 py-4 transition-colors hover:bg-primary/90"
+                    titleClassName="font-black text-foreground"
+                    priceClassName="text-xl font-black text-foreground transition-transform group-hover:translate-x-0.5"
+                  />
+                  <ServiceLinkCard
+                    href={weeklyShortcut.href}
+                    title={weeklyShortcut.title}
+                    description={weeklyShortcut.submittedDescription}
+                    price={weeklyShortcut.price}
+                    className="border border-border px-5 py-4 transition-colors hover:border-primary/50"
+                    titleClassName="font-black text-foreground"
+                  />
+                  <ServiceLinkCard
+                    href={gmbShortcut.href}
+                    title={gmbShortcut.submittedTitle ?? gmbShortcut.title}
+                    description={gmbShortcut.submittedDescription}
+                    price={gmbShortcut.price}
+                    className="border border-border px-5 py-4 transition-colors hover:border-primary/50"
+                    titleClassName="font-black text-foreground"
+                  />
+                </div>
+                <p class="mt-4 text-center text-xs text-foreground/60">
+                  Choose an option above to see how it works.
+                </p>
+              </div>
+
+              <p class="text-center text-xs text-foreground">
+                Rather wait? We'll email you shortly - check your inbox.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="gap-0 border-primary/20 py-6 shadow-xl ring-0">
+          <CardContent className="px-6">
+            <p
+              class="mb-4 text-xs font-bold tracking-widest text-primary uppercase"
+            >
+              Why 2To6X?
+            </p>
+            <p class="mb-5 text-sm leading-relaxed text-foreground">
+              Not an agency. Not a SaaS tool. Real people who open your account,
+              find every leak, and give you a clear fix plan.
+            </p>
+            <ul class="mb-6 space-y-2.5">
+              {
+                [
+                  "Full-scope review - not a quick skim",
+                  "Flat rate - no hourly billing surprises",
+                  "You keep full account ownership, always",
+                  "7 days post-delivery support included",
+                ].map((item) => (
+                  <li class="flex items-start gap-3 text-sm text-foreground">
+                    <span class="mt-0.5 shrink-0 font-black text-primary">
+                      ✓
+                    </span>
+                    {item}
+                  </li>
+                ))
+              }
+            </ul>
+            <blockquote class="border-l-2 border-primary/50 pl-4">
+              <p class="text-sm leading-relaxed text-foreground italic">
+                "{defaultTestimonials[2].quote}"
+              </p>
+              <footer class="mt-2 text-xs font-black text-foreground">
+                - {defaultTestimonials[2].name}
+              </footer>
+            </blockquote>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  declare global {
+    interface Window {
+      turnstile?: {
+        render: (
+          container: HTMLElement,
+          options: {
+            sitekey: string
+            theme: "light" | "dark"
+            size: "normal" | "flexible" | "compact"
+            callback: (token: string) => void
+            "expired-callback": () => void
+            "error-callback": () => void
+          }
+        ) => string
+        reset: (widgetId?: string) => void
+        remove: (widgetId: string) => void
+      }
+    }
+  }
+
+  const contactSection = document.querySelector("[data-contact-section]")
+  const contactForm = contactSection?.querySelector("#contact-form")
+  const turnstileContainer = contactSection?.querySelector(
+    "[data-turnstile-container]"
+  )
+  const turnstileInput = contactSection?.querySelector(
+    '[name="cf-turnstile-response"]'
+  )
+  const formView = contactSection?.querySelector("[data-contact-form-view]")
+  const successView = contactSection?.querySelector(
+    "[data-contact-success-view]"
+  )
+  const submitButton = contactSection?.querySelector("[data-submit-button]")
+  const formError = contactSection?.querySelector("[data-form-error]")
+  type ContactField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+  type ContactFormResult = {
+    ok?: boolean
+    errors?: Record<string, string>
+  }
+  let turnstileWidgetId = ""
+  let turnstileTheme: "light" | "dark" | "auto" = "auto"
+  let turnstileLoadPromise: Promise<void> | null = null
+
+  const TURNSTILE_SCRIPT_ID = "cloudflare-turnstile-api"
+  const TURNSTILE_SCRIPT_SRC =
+    "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+
+  const setTurnstileToken = (token: string) => {
+    if (turnstileInput instanceof HTMLInputElement) {
+      turnstileInput.value = token
+    }
+  }
+
+  const getTurnstileTheme = () =>
+    document.documentElement.classList.contains("dark") ? "dark" : "light"
+
+  const renderTurnstile = () => {
+    if (!(turnstileContainer instanceof HTMLElement)) return
+    if (!window.turnstile || turnstileWidgetId) return
+
+    const sitekey = turnstileContainer.dataset.sitekey
+    if (!sitekey) return
+
+    turnstileTheme = getTurnstileTheme()
+    turnstileWidgetId = window.turnstile.render(turnstileContainer, {
+      sitekey,
+      theme: turnstileTheme,
+      size: "flexible",
+      callback: setTurnstileToken,
+      "expired-callback": () => setTurnstileToken(""),
+      "error-callback": () => setTurnstileToken(""),
+    })
+  }
+
+  const loadTurnstile = () => {
+    if (!(turnstileContainer instanceof HTMLElement)) return Promise.resolve()
+
+    if (window.turnstile) {
+      renderTurnstile()
+      return Promise.resolve()
+    }
+
+    if (turnstileLoadPromise) return turnstileLoadPromise
+
+    turnstileLoadPromise = new Promise<void>((resolve, reject) => {
+      const existingScript = document.querySelector<HTMLScriptElement>(
+        `#${TURNSTILE_SCRIPT_ID}, script[src="${TURNSTILE_SCRIPT_SRC}"]`
+      )
+      const script = existingScript ?? document.createElement("script")
+
+      const handleLoad = () => {
+        renderTurnstile()
+        resolve()
+      }
+
+      const handleError = () => {
+        turnstileLoadPromise = null
+        reject(new Error("Failed to load Cloudflare Turnstile."))
+      }
+
+      script.addEventListener("load", handleLoad, { once: true })
+      script.addEventListener("error", handleError, { once: true })
+
+      if (!existingScript) {
+        script.id = TURNSTILE_SCRIPT_ID
+        script.src = TURNSTILE_SCRIPT_SRC
+        script.async = true
+        script.defer = true
+        document.head.append(script)
+      }
+    })
+
+    return turnstileLoadPromise
+  }
+
+  const refreshTurnstileTheme = () => {
+    if (!(turnstileContainer instanceof HTMLElement)) return
+    if (!window.turnstile || !turnstileWidgetId) return
+
+    if (getTurnstileTheme() === turnstileTheme) return
+
+    window.turnstile.remove(turnstileWidgetId)
+    turnstileWidgetId = ""
+    turnstileTheme = "auto"
+    setTurnstileToken("")
+    renderTurnstile()
+  }
+
+  const refreshTurnstileThemeAfterThemeUpdate = () => {
+    window.setTimeout(refreshTurnstileTheme, 0)
+  }
+
+  const requestTurnstile = () => {
+    void loadTurnstile().catch(() => {})
+  }
+
+  if (turnstileContainer) {
+    if (window.turnstile) {
+      renderTurnstile()
+    } else if (
+      contactSection instanceof HTMLElement &&
+      "IntersectionObserver" in window
+    ) {
+      const turnstileObserver = new IntersectionObserver(
+        (entries, observer) => {
+          if (!entries.some((entry) => entry.isIntersecting)) return
+
+          observer.disconnect()
+          requestTurnstile()
+        },
+        { rootMargin: "400px" }
+      )
+
+      turnstileObserver.observe(contactSection)
+    } else {
+      requestTurnstile()
+    }
+
+    contactForm?.addEventListener("focusin", requestTurnstile, { once: true })
+    contactForm?.addEventListener("click", requestTurnstile, { once: true })
+    window.addEventListener("theme-preference-change", refreshTurnstileTheme)
+    window
+      .matchMedia("(prefers-color-scheme: dark)")
+      .addEventListener("change", refreshTurnstileThemeAfterThemeUpdate)
+  }
+  const getFieldWrapper = (fieldName: string) =>
+    contactSection?.querySelector(`[data-field-name="${fieldName}"]`)
+  const getFieldControl = (fieldName: string) =>
+    contactSection?.querySelector(
+      `[name="${fieldName}"], [data-field-control="${fieldName}"]`
+    )
+
+  const getFieldMessage = (field: ContactField) => {
+    if (field.validity.valueMissing) {
+      switch (field.name) {
+        case "name":
+          return "Enter your name."
+        case "email":
+          return "Enter your email address."
+        case "budget":
+          return "Enter your monthly ad budget."
+        default:
+          return "This field is required."
+      }
+    }
+
+    if (field.validity.typeMismatch) {
+      if (field.name === "email") {
+        return "Enter a valid email address."
+      }
+    }
+
+    return ""
+  }
+
+  const clearErrors = () => {
+    formError && (formError.textContent = "")
+
+    contactSection
+      ?.querySelectorAll("[data-error-for]")
+      .forEach((errorElement) => (errorElement.textContent = ""))
+
+    contactSection?.querySelectorAll("[data-field]").forEach((fieldElement) => {
+      if (fieldElement instanceof HTMLElement) {
+        fieldElement.removeAttribute("data-invalid")
+      }
+    })
+
+    contactForm?.querySelectorAll("[name]").forEach((field) => {
+      if (!(field instanceof HTMLElement)) return
+
+      field.removeAttribute("aria-invalid")
+    })
+  }
+
+  const setFieldError = (fieldName: string, message: string) => {
+    const errorElement = contactSection?.querySelector(
+      `[data-error-for="${fieldName}"]`
+    )
+    const fieldWrapper = getFieldWrapper(fieldName)
+    const fieldControl = getFieldControl(fieldName)
+
+    if (errorElement instanceof HTMLElement) {
+      errorElement.textContent = message
+    }
+
+    if (fieldWrapper instanceof HTMLElement) {
+      fieldWrapper.setAttribute("data-invalid", "true")
+    }
+
+    if (fieldControl instanceof HTMLElement) {
+      fieldControl.setAttribute("aria-invalid", "true")
+    }
+  }
+
+  const clearFieldError = (fieldName: string) => {
+    const errorElement = contactSection?.querySelector(
+      `[data-error-for="${fieldName}"]`
+    )
+    const fieldWrapper = getFieldWrapper(fieldName)
+    const fieldControl = getFieldControl(fieldName)
+
+    if (errorElement instanceof HTMLElement) {
+      errorElement.textContent = ""
+    }
+
+    if (fieldWrapper instanceof HTMLElement) {
+      fieldWrapper.removeAttribute("data-invalid")
+    }
+
+    if (fieldControl instanceof HTMLElement) {
+      fieldControl.removeAttribute("aria-invalid")
+    }
+  }
+
+  const validateField = (field: ContactField) => {
+    const message = getFieldMessage(field)
+
+    if (!message) {
+      clearFieldError(field.name)
+      return true
+    }
+
+    setFieldError(field.name, message)
+    return false
+  }
+
+  const validateForm = () => {
+    if (!(contactForm instanceof HTMLFormElement)) return false
+
+    let firstInvalidFieldName = ""
+
+    const fields = Array.from(
+      contactForm.querySelectorAll("input[name], select[name], textarea[name]")
+    ) as ContactField[]
+
+    for (const field of fields) {
+      if (!field.name || field.name === "honeypot") continue
+      if (field.name === "cf-turnstile-response") continue
+
+      const isValid = validateField(field)
+
+      if (!isValid && !firstInvalidFieldName) {
+        firstInvalidFieldName = field.name
+      }
+    }
+
+    if (firstInvalidFieldName) {
+      const fieldControl = getFieldControl(firstInvalidFieldName)
+
+      if (fieldControl instanceof HTMLElement) {
+        fieldControl.focus()
+      }
+
+      if (formError instanceof HTMLElement) {
+        formError.textContent =
+          "Please fix the highlighted fields and try again."
+      }
+
+      return false
+    }
+
+    return true
+  }
+
+  contactForm?.querySelectorAll("[name]").forEach((field) => {
+    if (
+      !(field instanceof HTMLInputElement) &&
+      !(field instanceof HTMLSelectElement) &&
+      !(field instanceof HTMLTextAreaElement)
+    ) {
+      return
+    }
+
+    const eventName = field instanceof HTMLSelectElement ? "change" : "input"
+
+    field.addEventListener(eventName, () => {
+      if (formError instanceof HTMLElement && formError.textContent) {
+        formError.textContent = ""
+      }
+
+      validateField(field)
+    })
+  })
+
+  contactForm?.addEventListener("submit", async (event) => {
+    event.preventDefault()
+    clearErrors()
+
+    if (!(contactForm instanceof HTMLFormElement)) return
+
+    if (!validateForm()) {
+      return
+    }
+
+    if (
+      turnstileInput instanceof HTMLInputElement &&
+      turnstileContainer instanceof HTMLElement &&
+      !turnstileInput.value
+    ) {
+      if (formError instanceof HTMLElement) {
+        formError.textContent =
+          "Please complete the verification and try again."
+      }
+
+      return
+    }
+
+    if (submitButton instanceof HTMLButtonElement) {
+      submitButton.disabled = true
+      submitButton.textContent = "Sending..."
+    }
+
+    try {
+      const response = await fetch(contactForm.action, {
+        method: "POST",
+        body: new FormData(contactForm),
+        headers: {
+          accept: "application/json",
+        },
+      })
+
+      const result = (await response
+        .json()
+        .catch(() => null)) as ContactFormResult | null
+
+      if (response.ok && result?.ok) {
+        contactForm.reset()
+        setTurnstileToken("")
+        window.turnstile?.reset(turnstileWidgetId)
+        formView?.classList.add("hidden")
+        successView?.classList.remove("hidden")
+        return
+      }
+
+      if (result?.errors && typeof result.errors === "object") {
+        let formLevelError = ""
+
+        Object.entries(result.errors).forEach(([fieldName, message]) => {
+          if (typeof message !== "string") return
+
+          if (fieldName === "turnstile") {
+            formLevelError = message
+            return
+          }
+
+          setFieldError(fieldName, message)
+        })
+
+        if (formError instanceof HTMLElement) {
+          formError.textContent =
+            formLevelError || "Please fix the highlighted fields and try again."
+        }
+
+        return
+      }
+
+      throw new Error("Unexpected response")
+    } catch {
+      if (formError instanceof HTMLElement) {
+        formError.textContent =
+          "Something went wrong submitting the form. Please try again."
+      }
+    } finally {
+      if (submitButton instanceof HTMLButtonElement) {
+        submitButton.disabled = false
+        submitButton.textContent = "Send My Message"
+      }
+
+      if (turnstileWidgetId) {
+        setTurnstileToken("")
+        window.turnstile?.reset(turnstileWidgetId)
+      }
+    }
+  })
+</script>

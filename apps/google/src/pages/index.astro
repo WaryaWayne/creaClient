@@ -1,0 +1,268 @@
+---
+import Layout from "@/layouts/main.astro"
+import { CTAButton } from "@/components/CTAButton"
+import Hero from "@/components/Hero.astro"
+import BeforeAfter from "@/components/BeforeAfter.astro"
+import SocialProof from "@/components/SocialProof.astro"
+import FAQSection from "@/components/FAQSection.astro"
+import Problem from "@/components/Problem.astro"
+import Services from "@/components/Services.astro"
+import HowItWorks from "@/components/HowItWorks.astro"
+import OfferBlock from "@/components/OfferBlock.astro"
+import ContactSection from "@/components/ContactSection.astro"
+import { serviceTypes } from "@/data/service-types"
+import { getSchemaEntityModel, sharedServiceArea } from "@/lib/schema"
+import type { Service, WebPage, WebSite, WithContext } from "schema-dts"
+import { routes } from "@/lib/routes"
+import { siteConfig } from "@/lib/site-config"
+
+const faqs = [
+  {
+    q: "What if my Google Ads account is too much of a mess to fix?",
+    aHtml: `There's no such thing as too messy. We've seen accounts spending $10K / month with zero conversion tracking, campaigns targeting the wrong country, and ad copy that's been untouched since 2019. We've fixed all of it. If your account is beyond saving, we'll tell you straight. We'll also tell you exactly what to rebuild and how. You can also review the full <a href=\"${routes.google.frequentlyAskedQuestions}#audit-process\" class=\"font-semibold text-primary underline underline-offset-2 hover:no-underline\">audit process FAQ</a> first.`,
+  },
+  {
+    q: "Do I need to pause my ads while you work on them?",
+    aHtml: `No. We work in the background while your campaigns keep running. Once we hand over your new copy and recommendations, you decide when to implement. Most clients implement within 24 to 48 hours. We can walk you through every change if you need us to. If you want ongoing help after implementation, <a href=\"${routes.google.services.WeeklyStrategy}#what-happens\" class=\"font-semibold text-primary underline underline-offset-2 hover:no-underline\">weekly strategy sessions</a> cover live edits.`,
+  },
+  {
+    q: "How fast will I actually see results after making the changes?",
+    aHtml: `Google Ads results are almost immediate. You'll see data shifting within days of implementing the changes. Expect to see improvements in click-through rate within the first week. Lead volume improvements typically show up in 2 to 3 weeks as Google learns the new signals. Results compound over time; see the <a href=\"${routes.google.services.WeeklyStrategy}#results\" class=\"font-semibold text-primary underline underline-offset-2 hover:no-underline\">weekly results timeline</a>.`,
+  },
+  {
+    q: "What happens if I'm not happy with the work?",
+    a: "Then we fix it. We don't hide behind fine print. If the audit missed something, if the copy isn't right, or if you have questions, reach out and we deal with it. We're not a $39 / month app, we're real people who stand behind what we deliver. The 7 days of post-delivery support exists for exactly this reason.",
+  },
+  {
+    q: "Do you need my Google Ads login to do the audit?",
+    a: "Yes, we need read access to your Google Ads account to do a proper audit. We use Google's official Manager Account (MCC) access request, which means you grant us read-only access through Google's own system. We can't make changes without your approval, and you can revoke access at any time in two clicks.",
+  },
+]
+
+const heroHeadline = `Your Google Ads Can<br /><span class="text-primary">Work More Efficiently.</span><br />We'll Improve That <span class="text-primary font-black">Fast</span>`
+const heroCtas = [
+  {
+    label: "Compare Offers",
+    href: routes.google.home + "#offer",
+    target: "_self" as const,
+    variant: "default" as const,
+  },
+  {
+    label: "See the Process",
+    href: routes.google.home + "#how-it-works",
+    target: "_self" as const,
+    variant: "outline" as const,
+  },
+]
+const heroTrustPills = [
+  "No long-term contracts",
+  "Full account audit",
+  "One-time $300 project fee",
+]
+
+const siteUrl = Astro.site ?? new URL(Astro.url.origin)
+const basePath = import.meta.env.BASE_URL
+const { appSiteUrl, ids } = getSchemaEntityModel(siteUrl, basePath)
+const siteBaseUrl = new URL(
+  appSiteUrl.endsWith("/") ? appSiteUrl : `${appSiteUrl}/`
+)
+const pageUrl = routes.google.home
+const canonicalUrl = new URL(pageUrl, siteUrl).toString()
+const turnstileSiteKey = import.meta.env.TURNSTILE_SITE_KEY
+const brandLogoUrl = new URL(siteConfig.images.logo, siteBaseUrl).toString()
+
+const title = "Improve Google Ads ROI | Expert Google Ads Optimization | 2To6X"
+const description =
+  "We audit, rewrite, and optimize Google Ads campaigns for local businesses seeking better qualified clicks. One-time $300 project fee."
+const homepageServiceId = ids.googleHomepageService
+const homepageServiceSchema: WithContext<Service> = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": homepageServiceId,
+  name: "Google Ads Optimization Service",
+  description,
+  url: canonicalUrl,
+  serviceType: "Google Ads audit, rewrite, and optimization service",
+  provider: {
+    "@id": ids.googleProfessionalService,
+  },
+  areaServed: sharedServiceArea,
+}
+
+const schema: Array<
+  WithContext<WebSite> | WithContext<WebPage> | WithContext<Service>
+> = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": ids.appWebsite,
+    url: appSiteUrl,
+    name: "2To6X",
+    description,
+    publisher: {
+      "@id": ids.rootOrganization,
+    },
+  } as WithContext<WebSite>,
+  homepageServiceSchema,
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${canonicalUrl}#webpage`,
+    url: canonicalUrl,
+    name: title,
+    description,
+    isPartOf: {
+      "@id": ids.appWebsite,
+    },
+    mainEntity: {
+      "@id": homepageServiceId,
+    },
+    about: {
+      "@id": homepageServiceId,
+    },
+    primaryImageOfPage: {
+      "@type": "ImageObject",
+      url: brandLogoUrl,
+    },
+  } as WithContext<WebPage>,
+]
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonical={pageUrl}
+  ogType="website"
+  ogUrl={pageUrl}
+  twitterCard="summary_large_image"
+  schema={schema}
+>
+  <!-- HERO -->
+  <Hero
+    id="hero"
+    tagline="Google Ads Optimization"
+    headline={heroHeadline}
+    subheadlineHtml={[
+      // Many local businesses put $500 - $3,000 / month into Google Ads without enough qualified leads to show for it.
+      `Misaligned keywords. Generic copy. Unclear strategy. Every audit covers campaigns, copy, keywords, bids, and negatives.`, //  with <a href=\"${routes.google.services.AdsAudit}#pricing\" class=\"font-semibold text-primary underline underline-offset-2 hover:no-underline\">Google Ads Audit & Rewrite pricing</a>
+      `If you're comparing options first, <a href=\"${routes.google.pricing}#offers\" class=\"font-semibold text-primary underline underline-offset-2 hover:no-underline\">compare all offers</a> and then choose your best next step.`,
+    ]}
+    ctas={heroCtas}
+    trustPills={heroTrustPills}
+  />
+
+  <!-- THE PROBLEM -->
+  <Problem />
+
+  <!-- BEFORE / AFTER -->
+  <BeforeAfter />
+
+  <!-- SERVICES -->
+  <Services />
+
+  <!-- HOW IT WORKS -->
+  <HowItWorks />
+
+  <!-- INDUSTRIES WE SERVE -->
+  <section class="px-4 py-12" id="industries">
+    <div class="mx-auto max-w-6xl">
+      <div class="mb-12 text-center">
+        <p
+          class="mb-3 text-sm font-bold tracking-widest text-primary uppercase"
+        >
+          Industry-Specific Ads
+        </p>
+        <h2 class="text-4xl font-black md:text-5xl">
+          We Know Your Industry.<br />
+          <span class="text-primary">Not Just Google Ads.</span>
+        </h2>
+        <p class="mx-auto mt-4 max-w-2xl text-lg text-foreground">
+          Generic ad advice doesn't work. Every trade has different urgency
+          triggers, different buyer psychology, and different copy that
+          converts. Pick your industry and see exactly what's limiting your ads
+          and how we'd fix them.
+        </p>
+        <p class="mx-auto mt-3 max-w-2xl text-sm text-foreground">
+          Need a quick route first? Visit{" "}
+          <a
+            href={routes.google.industry.Index}
+            class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+          >
+            all industries
+          </a>
+          {" "}or review{" "}
+          <a
+            href={routes.google.pricing + "#which-one"}
+            class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+          >
+            offer decision guide
+          </a>
+          .
+        </p>
+      </div>
+
+      <div
+        class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4"
+      >
+        {
+          serviceTypes.map((s) => (
+            <a
+              href={`${routes.google.industry.Index}/${s.slug}`}
+              class="group flex flex-col items-center gap-2 border border-border bg-background p-5 text-center transition-colors hover:border-primary/40 hover:bg-primary/5 hover:backdrop-blur-sm"
+            >
+              <span class="text-sm font-black text-foreground transition-colors group-hover:text-primary">
+                {s.name}
+              </span>
+              <span class="text-xs leading-snug text-foreground/60">
+                {s.painPoints[0].title}
+              </span>
+            </a>
+          ))
+        }
+      </div>
+
+      <div class="mt-8 text-center">
+        <p class="mb-4 text-sm text-foreground">
+          Each page shows you real before/after ad examples, the exact campaign
+          issues limiting your results, and the stats behind your industry's
+          Google Ads landscape.
+        </p>
+        <CTAButton
+          variant="default"
+          href={routes.google.services.AdsAudit}
+          target="_self"
+        >
+          Improve My Ads for $300
+        </CTAButton>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOCIAL PROOF -->
+  <SocialProof subheading="Neither Do Our Clients." />
+
+  <!-- OFFER BLOCK -->
+  <OfferBlock />
+
+  <!-- FAQ -->
+  <FAQSection
+    id="faq"
+    faqs={faqs}
+    sectionClass="px-4 py-12"
+    containerClass="mx-auto max-w-3xl"
+    headingClass="mb-16 text-center"
+    eyebrow="FAQ"
+    titleHtml={`Every Objection.<span class="text-primary"> Answered.</span>`}
+    titleClass="text-4xl font-black md:text-5xl"
+    subtitle="If you're still on the fence, these answers will get you off it."
+  >
+    <div slot="footer">
+      <p class="mb-4 text-foreground">Still have a question? Just ask.</p>
+      <CTAButton variant="default" href={routes.google.contact} target="_self">
+        Contact us directly
+      </CTAButton>
+    </div>
+  </FAQSection>
+
+  <ContactSection turnstileSiteKey={turnstileSiteKey} />
+</Layout>

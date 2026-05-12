@@ -1,0 +1,193 @@
+---
+import Layout from "@/layouts/main.astro"
+import PathBreadcrumb from "@/components/PathBreadcrumb"
+import { serviceTypes } from "@/data/service-types"
+import type { BreadcrumbList, ItemList, WebPage, WithContext } from "schema-dts"
+import { routes } from "@/lib/routes"
+
+const pageTitle = "Industries We Serve | 2To6X"
+const pageDescription =
+  "Browse industry-specific Google Ads breakdowns for high-intent local service businesses. See common ad patterns, stronger examples, and practical campaign fixes by industry."
+const siteUrl = Astro.site ?? new URL(Astro.url.origin)
+const basePath = import.meta.env.BASE_URL
+const homeUrl = new URL(basePath, siteUrl).toString()
+const pageUrl = routes.google.industry.Index
+const canonicalUrl = new URL(pageUrl, siteUrl).toString()
+
+const pageSchemas: Array<
+  WithContext<WebPage> | WithContext<ItemList> | WithContext<BreadcrumbList>
+> = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${canonicalUrl}#webpage`,
+    url: canonicalUrl,
+    name: pageTitle,
+    description: pageDescription,
+    isPartOf: {
+      "@type": "WebSite",
+      "@id": `${homeUrl}#website`,
+      url: homeUrl,
+      name: "2To6X",
+    },
+    mainEntity: {
+      "@id": `${canonicalUrl}#itemlist`,
+    },
+    breadcrumb: {
+      "@id": `${canonicalUrl}#breadcrumb`,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": `${canonicalUrl}#itemlist`,
+    name: "2To6X industry Google Ads guides",
+    description: pageDescription,
+    url: canonicalUrl,
+    numberOfItems: serviceTypes.length,
+    itemListOrder: "https://schema.org/ItemListOrderAscending",
+    itemListElement: serviceTypes.map((industry, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: industry.name,
+      url: new URL(
+        routes.google.industry.Index + "/" + `${industry.slug}`,
+        siteUrl
+      ).toString(),
+    })),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "@id": `${canonicalUrl}#breadcrumb`,
+    name: "Industry breadcrumb",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Google",
+        item: homeUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Industry",
+        item: canonicalUrl,
+      },
+    ],
+  },
+]
+---
+
+<Layout
+  title={pageTitle}
+  description={pageDescription}
+  canonical={pageUrl}
+  ogType="website"
+  ogUrl={pageUrl}
+  schema={pageSchemas}
+>
+  <div class="mx-auto max-w-5xl px-4 py-8">
+    <PathBreadcrumb className="mb-4" location={Astro.url.pathname} />
+
+    <div class="mb-12 border-b border-border pb-10 text-center">
+      <div
+        class="mb-4 inline-block border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary uppercase backdrop-blur-xs"
+      >
+        Industries
+      </div>
+      <h1 class="mb-4 text-4xl font-black tracking-tight md:text-5xl">
+        By Industry
+      </h1>
+      <p
+        class="mx-auto max-w-2xl text-base leading-relaxed text-foreground/75 md:text-lg"
+      >
+        Pick your industry to see how high-intent Google Ads can be structured
+        to attract more qualified calls and improve budget focus.
+      </p>
+      <p class="mx-auto mt-3 max-w-2xl text-sm text-foreground/75">
+        If you want the fastest route first, compare offers on{" "}
+        <a
+          href={routes.google.pricing + "#offers"}
+          class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+        >
+          compare all offers
+        </a>
+        {" "}or go straight to the{" "}
+        <a
+          href={routes.google.services.AdsAudit + "#pricing"}
+          class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+        >
+          Google Ads Audit & Rewrite pricing
+        </a>
+        .
+      </p>
+      <div
+        class="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm text-foreground/60"
+      >
+        <span>{serviceTypes.length} active industry pages</span>
+        <span>Built for urgent, high-intent searches</span>
+      </div>
+    </div>
+
+    <div
+      class="mb-12 border border-primary/20 bg-primary/50 p-6 text-center backdrop-blur-xs"
+    >
+      <p class="text-sm leading-relaxed text-foreground">
+        <strong class="text-foreground">How to use this page:</strong> Open your industry
+        card and compare weak ad patterns versus high-converting ad structure, then
+        apply those fixes to your own campaigns.
+      </p>
+    </div>
+
+    <div class="mx-auto grid max-w-5xl gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {
+        serviceTypes.map((industry) => (
+          <a
+            href={`${routes.google.industry.Index}/${industry.slug}`}
+            class="group flex min-h-[250px] flex-col justify-between border border-border bg-background/80 p-6 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 hover:backdrop-blur-sm"
+          >
+            <div>
+              <p class="mb-4 text-xs font-semibold tracking-[0.2em] text-primary uppercase">
+                {industry.industry}
+              </p>
+              <h2 class="mb-3 text-2xl font-black tracking-tight text-foreground transition-colors group-hover:text-primary">
+                {industry.name}
+              </h2>
+              <p class="text-sm leading-relaxed text-foreground/75">
+                {industry.tagline}
+              </p>
+            </div>
+
+            <div class="mt-8 flex items-center justify-between border-t border-border pt-4 text-sm font-semibold text-foreground">
+              <span>View industry page</span>
+              <span class="text-primary transition-transform group-hover:translate-x-1">
+                -&gt;
+              </span>
+            </div>
+          </a>
+        ))
+      }
+    </div>
+
+    <div
+      class="mx-auto mt-16 max-w-4xl border border-border bg-primary/50 p-6 backdrop-blur-xs"
+    >
+      <p
+        class="mb-2 text-sm font-black tracking-widest text-foreground uppercase"
+      >
+        Need Campaign Help Fast?
+      </p>
+      <p class="text-sm leading-relaxed text-foreground/75">
+        If you want this implemented for your account, start with the
+        <a
+          href={routes.google.services.AdsAudit}
+          class="text-bold text-foreground underline underline-offset-2"
+        >
+          Ads Audit & Rewrite
+        </a>
+        and get a full-scope action plan.
+      </p>
+    </div>
+  </div>
+</Layout>

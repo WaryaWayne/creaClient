@@ -1,0 +1,410 @@
+---
+import Layout from "@/layouts/main.astro"
+import PathBreadcrumb from "@/components/PathBreadcrumb"
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+} from "@workspace/ui/components/item"
+import { PaymentCTA } from "@/components/PaymentCTA"
+import Hero from "@/components/Hero.astro"
+import ZarazViewContent from "@/components/ZarazViewContent.astro"
+import SocialProof from "@/components/SocialProof.astro"
+import FAQSection from "@/components/FAQSection.astro"
+import FeatureGrid from "@/components/services/FeatureGrid.astro"
+import FeaturesList from "@/components/services/FeaturesList.astro"
+import PricingCard from "@/components/services/PricingCard.astro"
+import { getSchemaEntityModel, sharedServiceArea } from "@/lib/schema"
+import { routes } from "@/lib/routes"
+import type { BreadcrumbList, Service, WebPage, WithContext } from "schema-dts"
+import { productPaymentLinks } from "@/lib/payment-links"
+
+const Weekly48PlanPaymentLink =
+  productPaymentLinks.weeklyStrategy48MeetingsPaymentLink
+const turnstileSiteKey = import.meta.env.TURNSTILE_SITE_KEY
+
+const siteUrl = Astro.site ?? new URL(Astro.url.origin)
+const basePath = import.meta.env.BASE_URL
+const { appSiteUrl, ids } = getSchemaEntityModel(siteUrl, basePath)
+const pageUrl = routes.google.services.WeeklyStrategy48Weeks
+const canonicalUrl = new URL(pageUrl, siteUrl).toString()
+const servicesUrl = new URL(routes.google.services.Index, siteUrl).toString()
+const providerId = ids.googleProfessionalService
+const serviceId = `${canonicalUrl}#service`
+const areaServed = sharedServiceArea
+
+const title =
+  "48 Weekly Google Ads Check-Ins | $1,799 Full-Year Optimization Plan | 2To6X"
+const description =
+  "Twelve months of weekly Google Ads check-ins across a full year. Live edits, consistent optimization, rate lock, and a one-time $1,799 payment discounted from $2,880 at $60 / week."
+
+const whyThisBundle = [
+  {
+    title: "You lock in a full operating rhythm",
+    desc: "No stop-start management. No long gaps between optimizations. A year of weekly attention turns Google Ads into a disciplined growth system.",
+  },
+  {
+    title: "The deepest discount",
+    desc: "This plan is discounted from $2,880 at the $60 / week base rate, which makes it the lowest effective session cost across the service line.",
+  },
+  {
+    title: "Best for serious lead gen businesses",
+    desc: "If Google Ads is not an experiment for you but a real acquisition channel, this is the package that matches that level of intent.",
+  },
+]
+
+const sessionBreakdown = [
+  {
+    title: "Quarter 1: Stabilize and Clean",
+    desc: "We tighten the account, reduce inefficient spend, and establish the first reliable baseline for what good performance should look like.",
+  },
+  {
+    title: "Quarter 2: Push What Works",
+    desc: "Once the account is cleaner, we scale stronger segments, improve offers, and keep testing the messaging that converts best.",
+  },
+  {
+    title: "Quarter 3: Protect Margins",
+    desc: "We keep monitoring search term drift, competition changes, rising CPCs, and slow inefficiencies that usually creep back into accounts.",
+  },
+  {
+    title: "Quarter 4: Compound the Year",
+    descHtml: `By the end of the year, you have a much richer optimization history than businesses doing random monthly check-ins or one-off account reviews. If you need a shorter runway first, start with the <a href="${routes.google.services.WeeklyStrategy12Weeks}#pricing" class="font-semibold text-primary underline underline-offset-2 hover:no-underline">3-month plan</a>.`,
+  },
+]
+
+const roadmap = [
+  {
+    time: "Quarter 1",
+    outcome:
+      "Inefficient spend gets cleaned up and the account starts behaving more predictably.",
+  },
+  {
+    time: "Quarter 2",
+    outcome:
+      "Winning copy, better bids, and cleaner traffic patterns become easier to identify and scale.",
+  },
+  {
+    time: "Quarter 3",
+    outcome:
+      "The account benefits from consistency instead of reacting to long stretches of neglect.",
+  },
+  {
+    time: "Quarter 4",
+    outcome:
+      "You finish the year with a much stronger system, not just a few isolated improvements.",
+  },
+]
+
+const plans = [
+  {
+    name: "Base Rate",
+    price: "$60",
+    per: "/ week",
+    billing: "Weekly Ads Strategy base rate",
+    description:
+      "The rate used to price every monthly, 3-month, and 12-month plan.",
+    href: productPaymentLinks.weeklyStrategySubscriptionPaymentLink,
+    label: "Start Weekly",
+    offerKey: "weeklyStrategy" as const,
+    highlight: false,
+  },
+  {
+    name: "3 Months",
+    price: "$499",
+    per: "one-time",
+    billing: "Most popular",
+    description: "Best for the first serious compounding phase.",
+    href: productPaymentLinks.weeklyStrategy12MeetingsPaymentLink,
+    label: "Buy 12 Sessions",
+    offerKey: "weeklyStrategy12Weeks" as const,
+    highlight: false,
+  },
+  {
+    name: "12 Months",
+    price: "$1,799",
+    per: "one-time",
+    billing: "Discounted from $2,880 at $60 / week",
+    description:
+      "Best if Google Ads is a core part of your growth engine and you want the lowest effective rate.",
+    href: Weekly48PlanPaymentLink,
+    label: "Buy 48 Sessions",
+    offerKey: "weeklyStrategy48Weeks" as const,
+    highlight: true,
+    badge: "Best Long-Term Value",
+  },
+]
+
+const faqs = [
+  {
+    q: "Who should buy the 12-month plan?",
+    a: "Businesses that already know Google Ads matters to their pipeline and want a full-year optimization rhythm instead of deciding month to month.",
+  },
+  {
+    q: "Do I need to use all 48 sessions inside one calendar year?",
+    a: "No. Sessions do not expire, so scheduling can flex if holidays, seasonality, or internal priorities shift.",
+  },
+  {
+    q: "Why not just do the 3-month plan repeatedly?",
+    a: "You can, but the 12-month plan gives you the best rate and removes the need to keep re-deciding whether to continue every quarter.",
+  },
+  {
+    q: "Can I start smaller and upgrade into this?",
+    aHtml: `Yes. Many clients begin with the <a href="${routes.google.services.WeeklyStrategy12Weeks}#pricing" class="font-semibold text-primary underline underline-offset-2 hover:no-underline">3-month plan</a> and move into the annual plan once they are confident weekly optimization is part of the operating model.`,
+  },
+]
+
+const heroCtas = [
+  {
+    label: "Buy 48 Sessions for $1,799",
+    target: "_blank" as const,
+    href: Weekly48PlanPaymentLink,
+    variant: "default" as const,
+    note: "One payment. Forty-eight live sessions. Discounted from $2,880 at $60 / week.",
+    paymentOfferKey: "weeklyStrategy48Weeks" as const,
+  },
+]
+
+const heroTrustPills = [
+  "12-month plan",
+  "Discounted from $2,880 at $60 / week",
+  "Lock in your rate",
+  "Best long-term value",
+]
+
+const schema: Array<
+  WithContext<BreadcrumbList> | WithContext<WebPage> | WithContext<Service>
+> = [
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "@id": `${canonicalUrl}#breadcrumb`,
+    name: "12-Month Google Ads Check-Ins breadcrumb",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Google", item: appSiteUrl },
+      { "@type": "ListItem", position: 2, name: "Services", item: servicesUrl },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: "12-Month Google Ads Check-Ins",
+        item: canonicalUrl,
+      },
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${canonicalUrl}#webpage`,
+    url: canonicalUrl,
+    name: title,
+    description,
+    isPartOf: {
+      "@id": ids.appWebsite,
+    },
+    mainEntity: {
+      "@id": serviceId,
+    },
+    about: {
+      "@id": serviceId,
+    },
+    breadcrumb: {
+      "@id": `${canonicalUrl}#breadcrumb`,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": serviceId,
+    name: "12-Month Google Ads Check-Ins",
+    description,
+    url: canonicalUrl,
+    serviceType: "12-month Google Ads optimization check-in plan",
+    areaServed,
+    provider: {
+      "@id": providerId,
+    },
+    offers: {
+      "@type": "Offer",
+      price: 1799,
+      priceCurrency: "CAD",
+      availability: "https://schema.org/InStock",
+      url: `${canonicalUrl}#pricing`,
+    },
+  },
+]
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonical={canonicalUrl}
+  ogType="website"
+  schema={schema}
+>
+  <div class="mx-auto max-w-5xl px-4 pt-8">
+    <PathBreadcrumb className="mb-4" location={Astro.url.pathname} />
+  </div>
+
+  <Hero
+    id="hero"
+    tagline="12-Month Google Ads Check-Ins"
+    headline={`A Full Year.<br /><span class="text-primary">No More Stop-Start Optimization.</span>`}
+    subheadline={[
+      "This is the plan for businesses treating Google Ads like a real growth channel. Weekly attention for a full year so the account stays sharp instead of drifting.",
+      "$1,799 one-time. Forty-eight live sessions. Discounted from $2,880 at the $60 / week base rate.",
+    ]}
+    ctas={heroCtas}
+    trustPills={heroTrustPills}
+  />
+  <ZarazViewContent contentKey="weeklyStrategy48Weeks" />
+
+  <FeatureGrid
+    id="why-this-plan"
+    eyebrow="Why 12 Months"
+    titleHtml={`The Best Fit If You Want<br /><span class="text-primary">A Real Year-Long Growth System.</span>`}
+    description="The businesses that win with Google Ads usually are not doing occasional tune-ups. They are making steady weekly decisions all year."
+    features={whyThisBundle}
+    cta={{
+      eyebrow: "48-Session Block",
+      heading: "Buy the annual session block.",
+      subheadline:
+        "Use this option when Google Ads is a long-term acquisition channel and weekly work needs to stay consistent.",
+      buttonLabel: "Buy 48 Sessions for $1,799",
+      href: Weekly48PlanPaymentLink,
+      target: "_blank",
+      paymentOfferKey: "weeklyStrategy48Weeks",
+    }}
+  />
+
+  <FeaturesList
+    id="what-happens"
+    eyebrow="Yearly Cadence"
+    titleHtml={`What Forty-Eight Sessions<br /><span class="text-primary">Let Us Actually Do.</span>`}
+    items={sessionBreakdown}
+    gridClassName="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12"
+    cta={{
+      eyebrow: "Yearly Cadence",
+      heading: "Order the 48-session block.",
+      subheadline:
+        "Forty-eight sessions gives the account a full year of steady weekly attention.",
+      buttonLabel: "Buy 48 Sessions for $1,799",
+      href: Weekly48PlanPaymentLink,
+      target: "_blank",
+      paymentOfferKey: "weeklyStrategy48Weeks",
+    }}
+  />
+
+  <section id="results" class="scroll-mt-25 px-4 py-20">
+    <div class="mx-auto max-w-4xl">
+      <div class="mb-14 text-center">
+        <p
+          class="mb-3 text-sm font-bold tracking-widest text-primary uppercase"
+        >
+          Annual Roadmap
+        </p>
+        <h2 class="text-4xl font-black md:text-5xl">
+          What A Year Of Weekly Attention<br /><span class="text-primary"
+            >Adds Up To.</span
+          >
+        </h2>
+      </div>
+      <div class="space-y-4">
+        {
+          roadmap.map(({ time, outcome }) => (
+            <Item
+              variant="outline"
+              className="items-center gap-6 bg-card shadow-xl"
+            >
+              <ItemMedia
+                variant="default"
+                className="w-28 shrink-0 justify-end"
+              >
+                <span class="text-sm font-black text-primary">{time}</span>
+              </ItemMedia>
+              <div class="h-8 w-px shrink-0 bg-primary/30" />
+              <ItemContent>
+                <ItemDescription className="line-clamp-none text-sm text-foreground">
+                  {outcome}
+                </ItemDescription>
+              </ItemContent>
+            </Item>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing" class="scroll-mt-25 px-4 py-20">
+    <div class="mx-auto max-w-5xl">
+      <div class="mb-14 text-center">
+        <p
+          class="mb-3 text-sm font-bold tracking-widest text-primary uppercase"
+        >
+          Pick The Commitment Level
+        </p>
+        <h2 class="text-4xl font-black md:text-5xl">
+          Flexible, Quarterly, Or Annual.<br /><span class="text-primary"
+            >Annual Wins on Value.</span
+          >
+        </h2>
+      </div>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {
+          plans.map((plan) => (
+            <PricingCard
+              variant="plan"
+              planName={plan.name}
+              price={plan.price}
+              per={plan.per}
+              planBilling={plan.billing}
+              description={plan.description}
+              ctaLabel={plan.label}
+              ctaHref={plan.href}
+              ctaTarget={plan.href.startsWith("http") ? "_blank" : "_self"}
+              paymentOfferKey={plan.offerKey}
+              highlight={plan.highlight}
+              badge={plan.badge}
+            />
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <SocialProof
+    eyebrow="Client Results"
+    heading="The Account You Work"
+    subheading="On Every Week Usually Beats The One You Check Once In A While."
+    cta={{
+      eyebrow: "Next Step",
+      heading: "Open the 48-session checkout.",
+      subheadline:
+        "Choose this when you want the best long-term rate and the least stop-start planning.",
+      buttonLabel: "Buy 48 Sessions for $1,799",
+      href: Weekly48PlanPaymentLink,
+      target: "_blank",
+      paymentOfferKey: "weeklyStrategy48Weeks",
+    }}
+  />
+
+  <FAQSection
+    id="faq"
+    faqs={faqs}
+    eyebrow="Questions"
+    title="12-Month Plan FAQ."
+    variant="cards"
+  >
+    <div slot="footer">
+      <PaymentCTA
+        client:load
+        variant={"default"}
+        target="_blank"
+        href={Weekly48PlanPaymentLink}
+        offerKey="weeklyStrategy48Weeks"
+        turnstileSiteKey={turnstileSiteKey}
+      >
+        Buy 48 Sessions for $1,799
+      </PaymentCTA>
+    </div>
+  </FAQSection>
+</Layout>

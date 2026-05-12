@@ -1,0 +1,37 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@workspace/db": ["../../packages/db/src/index.ts"],
+      "@workspace/db/*": ["../../packages/db/src/*"],
+      "@workspace/ui/*": ["../../packages/ui/src/*"],
+    },
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "diagnosticSeverity": {
+          "instanceOfSchema": "warning",
+          "globalFetch": "warning",
+          "globalFetchInEffect": "warning",
+          "preferSchemaOverJson": "warning",
+          "extendsNativeError": "warning",
+          "nodeBuiltinImport": "warning",
+          "globalDate": "warning",
+          "globalDateInEffect": "warning",
+          "globalConsole": "warning",
+          "globalConsoleInEffect": "warning",
+          "globalRandom": "warning",
+          "globalRandomInEffect": "warning",
+          "globalTimers": "warning",
+          "globalTimersInEffect": "warning",
+        },
+      },
+    ],
+  },
+  "$schema": "https://raw.githubusercontent.com/Effect-TS/language-service/refs/heads/main/schema.json",
+}

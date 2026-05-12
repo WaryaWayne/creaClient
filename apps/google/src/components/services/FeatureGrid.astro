@@ -1,0 +1,154 @@
+---
+import { Card, CardContent } from "@workspace/ui/components/card"
+import { CTAButton } from "@/components/CTAButton"
+import { PaymentCTA } from "@/components/PaymentCTA"
+import type { ZarazOfferKey } from "@/lib/zaraz"
+
+interface FeatureItem {
+  title: string
+  desc?: string
+  descHtml?: string
+}
+
+interface CtaConfig {
+  label?: string
+  buttonLabel?: string
+  href: string
+  target?: "_blank" | "_self"
+  eyebrow?: string
+  heading?: string
+  subheadline?: string
+  note?: string
+  paymentOfferKey?: ZarazOfferKey
+}
+
+interface Props {
+  id?: string
+  eyebrow: string
+  title?: string
+  titleHtml?: string
+  description?: string
+  descriptionHtml?: string
+  features: FeatureItem[]
+  sectionClass?: string
+  containerClass?: string
+  gridClassName?: string
+  cardClassName?: string
+  cardContentClassName?: string
+  featureTitleClassName?: string
+  featureDescriptionClassName?: string
+  cta?: CtaConfig
+  ctaNote?: string
+}
+
+const {
+  id,
+  eyebrow,
+  title,
+  titleHtml,
+  description,
+  descriptionHtml,
+  features,
+  sectionClass = "py-20 px-4",
+  containerClass = "max-w-5xl mx-auto",
+  gridClassName = "grid grid-cols-1 md:grid-cols-3 gap-6 mb-12",
+  cardClassName = "border-border shadow-xl gap-0 py-0 ring-0",
+  cardContentClassName = "px-6 py-6",
+  featureTitleClassName = "text-primary font-black text-lg mb-2",
+  featureDescriptionClassName = "text-foreground text-sm leading-relaxed",
+  cta,
+  ctaNote,
+} = Astro.props as Props
+const turnstileSiteKey = import.meta.env.TURNSTILE_SITE_KEY
+---
+
+<section id={id} class={`${sectionClass} ${id ? "scroll-mt-24" : ""}`}>
+  <div class={containerClass}>
+    <div class="mb-14 text-center">
+      <p class="mb-3 text-sm font-bold tracking-widest text-primary uppercase">
+        {eyebrow}
+      </p>
+      <h2 class="text-4xl font-black md:text-5xl">
+        {titleHtml ? <Fragment set:html={titleHtml} /> : title}
+      </h2>
+      {
+        descriptionHtml ? (
+          <p
+            class="mx-auto mt-4 max-w-2xl text-lg text-foreground"
+            set:html={descriptionHtml}
+          />
+        ) : (
+          description && (
+            <p class="mx-auto mt-4 max-w-2xl text-lg text-foreground">
+              {description}
+            </p>
+          )
+        )
+      }
+    </div>
+
+    <div class={gridClassName}>
+      {
+        features.map(({ title: featureTitle, desc, descHtml }) => (
+          <Card className={cardClassName}>
+            <CardContent className={cardContentClassName}>
+              <h3 class={featureTitleClassName}>{featureTitle}</h3>
+              {descHtml ? (
+                <p class={featureDescriptionClassName} set:html={descHtml} />
+              ) : (
+                <p class={featureDescriptionClassName}>{desc}</p>
+              )}
+            </CardContent>
+          </Card>
+        ))
+      }
+    </div>
+
+    <slot name="after-grid" />
+
+    {
+      cta && (
+        <div class="mx-auto max-w-2xl border border-primary/30 bg-primary/5 p-6 text-center backdrop-blur-sm">
+          {cta.eyebrow && (
+            <p class="mb-2 text-xs font-bold tracking-widest text-primary uppercase">
+              {cta.eyebrow}
+            </p>
+          )}
+          {cta.heading && (
+            <h3 class="mb-2 text-2xl font-black text-foreground">
+              {cta.heading}
+            </h3>
+          )}
+          {cta.subheadline && (
+            <p class="mx-auto mb-5 max-w-xl text-sm leading-relaxed text-foreground">
+              {cta.subheadline}
+            </p>
+          )}
+          {cta.paymentOfferKey ? (
+            <PaymentCTA
+              client:load
+              variant="default"
+              target={cta.target ?? "_self"}
+              href={cta.href}
+              offerKey={cta.paymentOfferKey}
+              turnstileSiteKey={turnstileSiteKey}
+            >
+              {cta.buttonLabel ?? cta.label}
+            </PaymentCTA>
+          ) : (
+            <CTAButton
+              variant="default"
+              target={cta.target ?? "_self"}
+              href={cta.href}
+            >
+              {cta.buttonLabel ?? cta.label}
+            </CTAButton>
+          )}
+          {(cta.note ?? ctaNote) && (
+            <p class="mt-3 text-xs text-foreground">{cta.note ?? ctaNote}</p>
+          )}
+        </div>
+      )
+    }
+  </div>
+</section>

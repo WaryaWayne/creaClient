@@ -1,0 +1,105 @@
+---
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@workspace/ui/components/item"
+import { CTAButton } from "@/components/CTAButton"
+import { routes } from "@/lib/routes"
+
+const steps = [
+  {
+    n: "1",
+    title: "You Tell Us What's Broken",
+    desc: "Fill out our short intake form. Tell us your monthly budget, your goals, and your biggest frustration with your current ads. Takes 3 minutes. No sales call required.",
+    detail: "Every audit covers campaigns, copy, keywords, bids, and negatives.",
+  },
+  {
+    n: "2",
+    title: "We Go to Work",
+    desc: "We audit your account, rewrite your copy, fix your keyword structure, review bids, and build your negative keyword list.",
+    detail: "You get a full written deliverable, not a vague slide deck.",
+  },
+  {
+    n: "3",
+    title: "You Implement With Clear Priorities",
+    desc: "We hand over your new ads, your audit report, and a plain-English explanation of every change we made and why, so you can improve the account without guessing.",
+    detail: "We're available for questions for 7 days after delivery.",
+  },
+]
+---
+
+<section class="px-4 py-12" id="how-it-works">
+  <div class="mx-auto max-w-4xl">
+    <div class="mb-16 text-center">
+      <p class="mb-3 text-sm font-bold tracking-widest text-primary uppercase">
+        The Process
+      </p>
+      <h2 class="text-4xl font-black md:text-5xl">
+        Three Steps.
+        <span class="text-primary"> Full Scope.</span>
+        <br />More Leads.
+      </h2>
+      <p class="mx-auto mt-4 max-w-2xl text-lg text-foreground">
+        We don't do 30-day onboarding calls or bloated strategy decks. We look
+        at what's broken, fix it, and hand it back to you.
+      </p>
+    </div>
+    <div class="mb-12 space-y-4">
+      {
+        steps.map(({ n, title, desc, detail }) => (
+          <Item variant="outline" className="bg-card">
+            <ItemMedia variant="icon">{n}</ItemMedia>
+            <ItemContent>
+              <ItemTitle>{title}</ItemTitle>
+              <ItemDescription className="line-clamp-none">
+                {desc}
+                {"\u00A0"}
+                <em>{detail}</em>
+              </ItemDescription>
+            </ItemContent>
+          </Item>
+        ))
+      }
+    </div>
+    <div
+      class="mx-auto max-w-2xl border border-primary/30 bg-primary/5 backdrop-blur-sm p-6 text-center"
+    >
+      <p class="mb-2 text-xs font-bold tracking-widest text-primary uppercase">
+        Start Here
+      </p>
+      <h3 class="mb-2 text-2xl font-black text-foreground">
+        Choose the package before the work begins.
+      </h3>
+      <p class="mb-5 text-sm text-foreground">
+        Ready to stop guessing and start getting leads?
+      </p>
+      <p class="mx-auto mb-5 max-w-2xl text-sm text-foreground">
+        Compare options on{" "}
+        <a
+          href={routes.google.pricing + "#which-one"}
+          class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+        >
+          offer decision guide
+        </a>
+        {" "}or go straight to{" "}
+        <a
+          href={routes.google.services.AdsAudit + "#pricing"}
+          class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+        >
+          Google Ads Audit & Rewrite pricing
+        </a>
+        .
+      </p>
+      <CTAButton
+        variant="default"
+        href={routes.google.home + "#offer"}
+        target="_self"
+      >
+        Compare Offers
+      </CTAButton>
+    </div>
+  </div>
+</section>

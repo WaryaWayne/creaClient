@@ -1,0 +1,250 @@
+---
+import Layout from "@/layouts/main.astro"
+import PathBreadcrumb from "@/components/PathBreadcrumb"
+import { offerCatalog, servicesIndexOffers } from "@/data/offers"
+import { serviceTypes } from "@/data/service-types"
+import { getSchemaEntityModel } from "@/lib/schema"
+import type { BreadcrumbList, ItemList, WebPage, WithContext } from "schema-dts"
+import { routes } from "@/lib/routes"
+
+const services = servicesIndexOffers
+
+const pageTitle =
+  "Google Ads & Local SEO Services | Audit, Profile & Strategy | 2To6X"
+const pageDescription =
+  "Browse all services offered by 2To6X: Google Ads audits, Google Business Profile optimization, and weekly optimization bundles to grow your leads."
+const pageUrl = routes.google.services.Index
+const siteUrl = Astro.site ?? new URL(Astro.url.origin)
+const canonicalUrl = new URL(pageUrl, siteUrl).toString()
+const basePath = import.meta.env.BASE_URL
+const { ids } = getSchemaEntityModel(siteUrl, basePath)
+const itemListId = `${canonicalUrl}#itemlist`
+const breadcrumbSchema: WithContext<BreadcrumbList> = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "@id": `${canonicalUrl}#breadcrumb`,
+  name: "Services breadcrumb",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Google",
+      item: new URL(basePath, siteUrl).toString(),
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Services",
+      item: canonicalUrl,
+    },
+  ],
+}
+
+const webPageSchema: WithContext<WebPage> = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": `${canonicalUrl}#webpage`,
+  name: pageTitle,
+  description: pageDescription,
+  url: canonicalUrl,
+  isPartOf: {
+    "@id": ids.appWebsite,
+  },
+  about: {
+    "@id": ids.googleProfessionalService,
+  },
+  mainEntity: {
+    "@id": itemListId,
+  },
+  breadcrumb: {
+    "@id": `${canonicalUrl}#breadcrumb`,
+  },
+}
+
+const itemListSchema: WithContext<ItemList> = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "@id": itemListId,
+  name: "2To6X Google services",
+  url: canonicalUrl,
+  itemListElement: services.map((service, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    name: service.title,
+    url: new URL(service.href, siteUrl).toString(),
+    description: service.description,
+  })),
+}
+---
+
+<Layout
+  title={pageTitle}
+  description={pageDescription}
+  ogType="website"
+  ogUrl={pageUrl}
+  ogDescription={pageDescription}
+  canonical={pageUrl}
+  schema={[webPageSchema, itemListSchema, breadcrumbSchema]}
+>
+  <div class="mx-auto max-w-5xl px-4 py-8">
+    <PathBreadcrumb className="mb-4" location={Astro.url.pathname} />
+
+    <div class="mb-12 border-b border-border pb-10 text-center">
+      <div
+        class="mb-4 inline-block border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary uppercase"
+      >
+        Services
+      </div>
+      <h1 class="mb-4 text-4xl font-black tracking-tight md:text-5xl">
+        What We Do
+      </h1>
+      <p
+        class="mx-auto max-w-2xl text-base leading-relaxed text-foreground/75 md:text-lg"
+      >
+        Six focused offers built to get more leads from Google, whether you need
+        a one-time improvement, a free traffic channel, or the right weekly
+        optimization bundle length.
+      </p>
+      <p class="mx-auto mt-3 max-w-2xl text-sm text-foreground/75">
+        Need help choosing quickly? Use{" "}
+        <a
+          href={routes.google.pricing + "#which-one"}
+          class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+        >
+          offer decision guide
+        </a>
+        {" "}or scan the{" "}
+        <a
+          href={routes.google.frequentlyAskedQuestions + "#getting-started"}
+          class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+        >
+          getting-started FAQ
+        </a>
+        .
+      </p>
+      <div
+        class="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm text-foreground/60"
+      >
+        <span>6 active offers</span>
+        <span>Starting from $60 / week</span>
+      </div>
+    </div>
+
+    <div
+      class="mb-12 border border-primary/20 bg-primary/5 p-6 text-center backdrop-blur-sm"
+    >
+      <p class="text-sm leading-relaxed text-foreground">
+        <strong class="text-foreground">Not sure which to pick?</strong> Start with
+        the Audit & Rewrite if you're running Google Ads and not happy with the results.
+        Add the Business Profile if you want free leads alongside your paid campaigns.
+        Book weekly sessions when you're ready to keep compounding, or jump straight
+        to the monthly, 3-month, or 12-month plans if you already know your timeframe.
+        You can also compare everything on{" "}
+        <a
+          href={routes.google.pricing + "#offers"}
+          class="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+        >
+          compare all offers
+        </a>
+        .
+      </p>
+    </div>
+
+    <div
+      id="services"
+      class="mx-auto grid max-w-4xl scroll-mt-25 gap-5 md:grid-cols-2 lg:grid-cols-3"
+    >
+      {
+        services.map(
+          ({ eyebrow, title, href, price, billing, description }) => (
+            <a
+              href={href}
+              class="group flex min-h-[260px] flex-col justify-between border border-border bg-background/80 p-6 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 hover:backdrop-blur-sm"
+            >
+              <div>
+                <p class="mb-4 text-xs font-semibold tracking-[0.2em] text-primary uppercase">
+                  {eyebrow}
+                </p>
+                <h2 class="mb-3 text-xl font-black tracking-tight text-foreground transition-colors group-hover:text-primary">
+                  {title}
+                </h2>
+                <p class="text-sm leading-relaxed text-foreground/75">
+                  {description}
+                </p>
+              </div>
+
+              <div class="mt-8 flex items-center justify-between border-t border-border pt-4">
+                <span class="text-sm font-black text-foreground">
+                  {price}
+                  <span class="ml-0.5 text-xs font-normal text-foreground/60">
+                    {billing}
+                  </span>
+                </span>
+                <span class="text-sm font-semibold text-primary transition-transform group-hover:translate-x-1">
+                  -&gt;
+                </span>
+              </div>
+            </a>
+          )
+        )
+      }
+    </div>
+
+    <div
+      class="mx-auto mt-16 max-w-4xl border border-border bg-background/60 p-6"
+    >
+      <p
+        class="mb-2 text-sm font-black tracking-widest text-foreground uppercase"
+      >
+        Not Sure Where to Start?
+      </p>
+      <p class="text-sm leading-relaxed text-foreground/75">
+        If you're running Google Ads and looking to improve spend, start with
+        the
+        <a
+          href={offerCatalog.adsAudit.href}
+          class="text-primary underline underline-offset-2"
+        >
+          Ads Audit & Rewrite
+        </a>
+        . For questions about which service fits your situation, the answer is almost
+        always the audit first.
+      </p>
+    </div>
+
+    <!-- INDUSTRIES STRIP -->
+    <div class="mx-auto mt-16 max-w-4xl">
+      <div class="mb-6 text-center">
+        <p
+          class="mb-2 text-xs font-bold tracking-widest text-primary uppercase"
+        >
+          By Industry
+        </p>
+        <h2 class="text-2xl font-black md:text-3xl">
+          See What Underperforming vs. Improved Looks Like <span
+            class="text-primary">for Your Trade</span
+          >
+        </h2>
+        <p
+          class="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-foreground/75"
+        >
+          We've mapped out real ad examples, common improvement areas, and
+          conversion stats for every major emergency service industry. Pick
+          yours and see exactly what we'd improve.
+        </p>
+      </div>
+      <div class="flex flex-wrap justify-center gap-2">
+        {
+          serviceTypes.map((s) => (
+            <a
+              href={`${routes.google.industry.Index}/${s.slug}`}
+              class="flex items-center gap-2 border border-border bg-background px-4 py-2.5 text-sm font-bold text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+            >
+              <span>{s.name}</span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</Layout>

@@ -1,0 +1,124 @@
+---
+import { Card, CardContent } from "@workspace/ui/components/card"
+
+export interface FAQItem {
+  q: string
+  a?: string
+  aHtml?: string
+}
+
+interface Props {
+  faqs: FAQItem[]
+  id?: string
+  variant?: "details" | "cards"
+  sectionClass?: string
+  containerClass?: string
+  headingClass?: string
+  eyebrow?: string
+  title?: string
+  titleHtml?: string
+  titleClass?: string
+  subtitle?: string
+  subtitleClass?: string
+  itemsClass?: string
+  footerClass?: string
+}
+
+const {
+  faqs,
+  id,
+  variant = "details",
+  sectionClass = "py-20 px-4",
+  containerClass = "max-w-3xl mx-auto",
+  headingClass = "text-center mb-14",
+  eyebrow = "Questions",
+  title = "FAQ",
+  titleHtml,
+  titleClass = "text-4xl font-black",
+  subtitle,
+  subtitleClass = "text-foreground mt-4",
+  itemsClass = "space-y-4 mb-12",
+  footerClass = "text-center",
+} = Astro.props as Props
+
+const hasFooter = Astro.slots.has("footer")
+---
+
+<section class={sectionClass} id={id}>
+  <div class={containerClass}>
+    <div class={headingClass}>
+      <p class="mb-3 text-sm font-bold tracking-widest text-primary uppercase">
+        {eyebrow}
+      </p>
+      {
+        titleHtml ? (
+          <h2 class={titleClass} set:html={titleHtml} />
+        ) : (
+          <h2 class={titleClass}>{title}</h2>
+        )
+      }
+      {subtitle && <p class={subtitleClass}>{subtitle}</p>}
+    </div>
+
+    <div class={itemsClass}>
+      {
+        variant === "cards"
+          ? faqs.map(({ q, a, aHtml }) => (
+              <Card className="border-border shadow-xl gap-0 py-0 ring-0">
+                <CardContent className="px-6 py-6">
+                  <p class="mb-2 font-black text-foreground">{q}</p>
+                  {aHtml ? (
+                    <p
+                      class="text-sm leading-relaxed text-foreground"
+                      set:html={aHtml}
+                    />
+                  ) : (
+                    <p class="text-sm leading-relaxed text-foreground">{a}</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          : faqs.map(({ q, a, aHtml }) => (
+              <details class="group border border-border bg-background">
+                <summary class="flex cursor-pointer list-none items-center justify-between px-6 py-5 font-black text-foreground [&::-webkit-details-marker]:hidden">
+                  {q}
+                  <span class="ml-4 shrink-0 text-primary transition-transform group-open:rotate-180">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </span>
+                </summary>
+                {aHtml ? (
+                  <p
+                    class="px-6 pb-5 text-sm leading-relaxed text-foreground"
+                    set:html={aHtml}
+                  />
+                ) : (
+                  <p class="px-6 pb-5 text-sm leading-relaxed text-foreground">
+                    {a}
+                  </p>
+                )}
+              </details>
+            ))
+      }
+    </div>
+
+    {
+      hasFooter && (
+        <div class={footerClass}>
+          <slot name="footer" />
+        </div>
+      )
+    }
+  </div>
+</section>

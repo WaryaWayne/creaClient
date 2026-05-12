@@ -1,0 +1,286 @@
+---
+import {
+  getSchemaEntityModel,
+  professionalServiceAddress,
+  sharedServiceArea,
+} from "@/lib/schema"
+import {
+  getCompanyPhoneNumber,
+  getContactEmail,
+  getSocialUrls,
+  siteConfig,
+} from "@/lib/site-config"
+import type {
+  AllowedSchemaNode,
+  OrganizationSchemaType,
+  SchemaInput,
+} from "@/lib/schema"
+import type {
+  ImageObject,
+  Organization,
+  ProfessionalService,
+  WithContext,
+} from "schema-dts"
+
+interface Props {
+  title?: string
+  description?: string
+  ogImage?: string
+  twitterImage?: string
+  ogType?: "website" | "article" | "product"
+  ogUrl?: string
+  ogDescription?: string
+  canonical?: string
+  schema?: SchemaInput
+  entityType?: OrganizationSchemaType
+  robots?:
+    | "index,follow"
+    | "noindex,follow"
+    | "index,nofollow"
+    | "noindex,nofollow"
+  twitterCard?: "summary" | "summary_large_image"
+  includeOrganizationSchema?: boolean
+}
+
+const {
+  title = siteConfig.defaultSeoTitle,
+  description = siteConfig.defaultSeoDescription,
+  ogImage,
+  twitterImage,
+  ogType = "website",
+  ogUrl,
+  ogDescription,
+  canonical,
+  schema,
+  entityType = "Organization",
+  robots = "index,follow",
+  twitterCard = "summary_large_image",
+  includeOrganizationSchema = true,
+} = Astro.props
+
+const siteName = siteConfig.name
+const basePath = import.meta.env.BASE_URL
+const siteUrl = Astro.site ?? new URL(Astro.url.origin)
+const { rootSiteUrl, appSiteUrl, ids } = getSchemaEntityModel(siteUrl, basePath)
+const siteBaseUrl = new URL(
+  appSiteUrl.endsWith("/") ? appSiteUrl : `${appSiteUrl}/`
+)
+
+const siteAssetPath = (filename: string) => {
+  const assetUrl = new URL(filename, siteBaseUrl)
+  return `${assetUrl.pathname}${assetUrl.search}`
+}
+const defaultOgImage = siteAssetPath(siteConfig.images.openGraph)
+const defaultTwitterImage = siteAssetPath(siteConfig.images.twitter)
+const defaultLogo = siteAssetPath(siteConfig.images.logo)
+const defaultFavicon = siteAssetPath(siteConfig.images.favicon)
+const defaultFaviconIco = siteAssetPath(siteConfig.images.faviconIco)
+const defaultPngFavicon = siteAssetPath(siteConfig.images.faviconPng)
+const faviconLinks = siteConfig.images.favicons.map((favicon) => ({
+  ...favicon,
+  href: siteAssetPath(favicon.path),
+}))
+const defaultManifest = siteAssetPath(siteConfig.app.manifest)
+const organizationDescription = siteConfig.descriptions.organization
+const contactEmail = getContactEmail()
+const companyPhoneNumber = getCompanyPhoneNumber()
+
+const normalizePath = (value: string) => {
+  if (!value) return value
+  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(value) || value.startsWith("//")) {
+    return value
+  }
+
+  if (value.startsWith("/")) {
+    return new URL(value, siteUrl).toString()
+  }
+
+  const trimmedValue = value.replace(/^\/+/, "")
+  return new URL(trimmedValue, siteBaseUrl).toString()
+}
+
+const toAbsoluteUrl = (value: string) => {
+  if (!value) return ""
+
+  try {
+    return new URL(value).toString()
+  } catch {
+    return normalizePath(value)
+  }
+}
+
+const canonicalUrl = canonical
+  ? toAbsoluteUrl(canonical)
+  : new URL(Astro.url.pathname, siteUrl).toString()
+const resolvedOgUrl = ogUrl ? toAbsoluteUrl(ogUrl) : canonicalUrl
+const ogImageUrl = toAbsoluteUrl(ogImage ?? defaultOgImage)
+const twitterImageUrl = toAbsoluteUrl(twitterImage ?? defaultTwitterImage)
+const logoUrl = toAbsoluteUrl(defaultLogo)
+const resolvedOgDescription = ogDescription ?? description
+const brandLogoImages = siteConfig.images.logoVariants.map(
+  (logo): ImageObject => ({
+    "@type": "ImageObject",
+    url: toAbsoluteUrl(siteAssetPath(logo.path)),
+    contentUrl: toAbsoluteUrl(siteAssetPath(logo.path)),
+    encodingFormat: logo.type,
+    ...("width" in logo ? { width: `${logo.width}px` } : {}),
+    ...("height" in logo ? { height: `${logo.height}px` } : {}),
+    caption: `${siteConfig.name} ${logo.theme} logo`,
+  })
+)
+const primaryLogoImage: ImageObject = {
+  "@type": "ImageObject",
+  url: logoUrl,
+  contentUrl: logoUrl,
+  encodingFormat: "image/png",
+  width: "512px",
+  height: "127px",
+  caption: `${siteConfig.name} logo`,
+}
+
+const { gmb, ...socialProfiles } = getSocialUrls()
+const socialUrls = Object.values(socialProfiles)
+  .filter(Boolean)
+  .map((url) => toAbsoluteUrl(url))
+
+const gmbUrl = gmb ? toAbsoluteUrl(gmb) : undefined
+
+const organizationSameAs = [gmbUrl, ...socialUrls].filter(
+  (url): url is string => Boolean(url)
+)
+
+const professionalServiceOpeningHours = [
+  {
+    "@type": "OpeningHoursSpecification" as const,
+    dayOfWeek: [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+    ] as const,
+    opens: "08:00",
+    closes: "20:00",
+  },
+]
+
+const organizationSchema: WithContext<Organization> = {
+  "@context": "https://schema.org",
+  "@type": entityType,
+  "@id": ids.rootOrganization,
+  name: siteName,
+  legalName: siteConfig.legalName,
+  url: rootSiteUrl,
+  logo: primaryLogoImage,
+  image: [primaryLogoImage, ...brandLogoImages],
+  email: contactEmail,
+  telephone: companyPhoneNumber,
+  description: organizationDescription,
+  sameAs: organizationSameAs,
+  contactPoint: [
+    {
+      "@type": "ContactPoint",
+      contactType: "customer service",
+      telephone: companyPhoneNumber,
+      email: contactEmail,
+      availableLanguage: ["en", "fr", "so"],
+    },
+  ],
+  address: professionalServiceAddress,
+}
+
+const professionalServiceSchema: WithContext<ProfessionalService> = {
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "@id": ids.googleProfessionalService,
+  name: `Google Ads Optimization by ${siteName}`,
+  url: appSiteUrl,
+  image: [primaryLogoImage, ...brandLogoImages],
+  logo: primaryLogoImage,
+  description: organizationDescription,
+  sameAs: organizationSameAs,
+  parentOrganization: {
+    "@id": ids.rootOrganization,
+  },
+  telephone: companyPhoneNumber,
+  email: contactEmail,
+  address: professionalServiceAddress,
+  areaServed: sharedServiceArea,
+  openingHoursSpecification: professionalServiceOpeningHours,
+  priceRange: "$$$$",
+}
+
+const additionalSchemas = Array.isArray(schema)
+  ? schema
+  : schema
+    ? [schema]
+    : []
+
+const globalSchemas: AllowedSchemaNode[] = includeOrganizationSchema
+  ? [organizationSchema, professionalServiceSchema]
+  : []
+
+const jsonLdSchemas: AllowedSchemaNode[] = [
+  ...globalSchemas,
+  ...additionalSchemas,
+]
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="robots" content={robots} />
+<meta name="application-name" content={siteConfig.name} />
+<meta name="apple-mobile-web-app-title" content={siteConfig.app.shortName} />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta
+  name="apple-mobile-web-app-status-bar-style"
+  content="black-translucent"
+/>
+
+<link rel="canonical" href={canonicalUrl} />
+<link rel="manifest" href={defaultManifest} />
+<link rel="icon" href={defaultFaviconIco} sizes="any" />
+<link rel="icon" type="image/svg+xml" href={defaultFavicon} />
+{
+  faviconLinks.map((favicon) => (
+    <link
+      rel="icon"
+      type={favicon.type}
+      sizes={favicon.sizes}
+      href={favicon.href}
+    />
+  ))
+}
+{
+  faviconLinks
+    .filter((favicon) => favicon.sizes === "180x180")
+    .map((favicon) => (
+      <link rel="apple-touch-icon" sizes={favicon.sizes} href={favicon.href} />
+    ))
+}
+<link rel="shortcut icon" href={defaultPngFavicon} />
+
+<meta property="og:site_name" content={siteName} />
+<meta property="og:locale" content="en_US" />
+<meta property="og:type" content={ogType} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={resolvedOgDescription} />
+<meta property="og:url" content={resolvedOgUrl} />
+<meta property="og:image" content={ogImageUrl} />
+<meta property="og:image:alt" content={title} />
+
+<meta name="twitter:card" content={twitterCard} />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={twitterImageUrl} />
+<meta name="twitter:image:alt" content={title} />
+
+{
+  jsonLdSchemas.map((item) => (
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(item)}
+    />
+  ))
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "name": "2to6x-com-google",
+  "compatibility_date": "2026-04-21",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist/client",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    "run_worker_first": true,
+  },
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+  },
+  // "r2_buckets": [
+  //   {
+  //     "binding": "CONTACT_BUCKET",
+  //     "bucket_name": "2-to-6x-contact-form-2026-apr-21",
+  //   },
+  // ],
+}
