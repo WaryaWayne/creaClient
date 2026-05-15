@@ -12,6 +12,10 @@ import { RegistryProvider } from '@effect/atom-react'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import { getLocale } from '#/paraglide/runtime'
+import {
+  defaultListingSearch,
+  defaultOpenHouseSearch,
+} from '#/features/listings/search'
 
 import appCss from '../styles.css?url'
 
@@ -45,7 +49,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       {
         name: 'description',
         content:
-          'Browse local CREA DDF listings, open houses, offices, and agents with URL-backed filters.',
+          'Browse local CREA DDF listings and open houses with office and agent credits attached to each listing.',
       },
     ],
     links: [
@@ -104,17 +108,19 @@ function SiteHeader() {
           CreaClient
         </Link>
         <nav className="flex flex-wrap items-center justify-end gap-1">
-          <Link to="/listings" search={{}} className={linkClass}>
+          <Link
+            to="/listings"
+            search={defaultListingSearch}
+            className={linkClass}
+          >
             Listings
           </Link>
-          <Link to="/open-houses" search={{}} className={linkClass}>
+          <Link
+            to="/open-houses"
+            search={defaultOpenHouseSearch}
+            className={linkClass}
+          >
             Open houses
-          </Link>
-          <Link to="/offices" search={{}} className={linkClass}>
-            Offices
-          </Link>
-          <Link to="/agents" search={{}} className={linkClass}>
-            Agents
           </Link>
         </nav>
       </div>
@@ -144,13 +150,13 @@ function NotFoundView() {
           This page is not available.
         </h1>
         <p className="text-sm leading-6 text-[var(--sea-ink-soft)]">
-          Browse the current CREA DDF listings, offices, agents, or open houses
-          from the main navigation.
+          Browse the current CREA DDF listings or open houses from the main
+          navigation.
         </p>
         <div>
           <Link
             to="/listings"
-            search={{}}
+            search={defaultListingSearch}
             className="inline-flex min-h-10 items-center rounded-md bg-[var(--sea-ink)] px-4 py-2 text-sm font-bold text-white no-underline"
           >
             View listings

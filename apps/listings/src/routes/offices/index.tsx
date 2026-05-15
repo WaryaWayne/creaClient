@@ -1,41 +1,9 @@
-import {
-  createFileRoute,
-  stripSearchParams,
-  useNavigate,
-} from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { OfficesPage } from '#/features/listings/components'
-import { officesQueryOptions } from '#/features/listings/queries'
-import {
-  compactDirectorySearch,
-  defaultDirectorySearch,
-  parseDirectorySearch,
-} from '#/features/listings/search'
-
-import type { DirectorySearch } from '#/features/listings/search'
+import { defaultListingSearch } from '#/features/listings/search'
 
 export const Route = createFileRoute('/offices/')({
-  validateSearch: parseDirectorySearch,
-  search: {
-    middlewares: [stripSearchParams(defaultDirectorySearch)],
+  beforeLoad: () => {
+    throw redirect({ to: '/listings', search: defaultListingSearch })
   },
-  loader: ({ context, search }) =>
-    context.queryClient.ensureQueryData(officesQueryOptions(search)),
-  head: () => ({
-    meta: [{ title: 'Offices | CREA Listings Browser' }],
-  }),
-  component: OfficesRoute,
 })
-
-function OfficesRoute() {
-  const data = Route.useLoaderData()
-  const navigate = useNavigate({ from: '/offices/' })
-
-  const onSearchChange = (search: DirectorySearch) => {
-    void navigate({
-      search: compactDirectorySearch(parseDirectorySearch(search)),
-    })
-  }
-
-  return <OfficesPage data={data} onSearchChange={onSearchChange} />
-}

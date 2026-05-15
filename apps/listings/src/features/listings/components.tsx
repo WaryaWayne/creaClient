@@ -5,11 +5,15 @@ import {
   BedDouble,
   Building2,
   CalendarDays,
+  ExternalLink,
+  FileImage,
+  FileText,
   Heart,
   Home,
   MapPin,
   NotebookPen,
   Phone,
+  PlayCircle,
   Search,
   Trash2,
   UserRound,
@@ -41,16 +45,19 @@ import {
   compactListingSearch,
   compactOpenHouseSearch,
   defaultListingSearch,
+  defaultOpenHouseSearch,
   listingSortOptions,
 } from './search'
 
 import type {
   DirectoryData,
+  DetailGroup,
   HomeData,
   ListingCard as ListingCardType,
   ListingDetail,
   ListingFacets,
   ListingsData,
+  MediaCard,
   OfficeCard,
   OpenHouseCard,
   PersonCard,
@@ -201,7 +208,243 @@ export function ListingActions({
   )
 }
 
-export function ListingCard({ listing }: { readonly listing: ListingCardType }) {
+function OpenHouseImageBadge({
+  openHouses,
+}: {
+  readonly openHouses: ReadonlyArray<OpenHouseCard>
+}) {
+  if (openHouses.length === 0) return null
+  const nextOpenHouse = openHouses[0]
+  return (
+    <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--sea-ink)] px-3 py-1 text-xs font-extrabold text-white shadow-sm">
+      <CalendarDays className="size-3.5" />
+      {nextOpenHouse
+        ? `${formatDate(nextOpenHouse.date)}${openHouses.length > 1 ? ` +${openHouses.length - 1}` : ''}`
+        : 'Open house'}
+    </div>
+  )
+}
+
+function OfficeCreditBlock({ office }: { readonly office: OfficeCard }) {
+  return (
+    <div className="grid gap-3 rounded-md border border-[var(--line)] bg-white/78 p-3">
+      <div className="flex items-start gap-3">
+        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--sand)] text-[var(--palm)]">
+          {office.imageUrl ? (
+            <img
+              src={office.imageUrl}
+              alt={office.officeName ?? 'Office logo'}
+              className="h-full w-full object-contain"
+              loading="lazy"
+            />
+          ) : (
+            <Building2 className="size-5" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-[var(--kicker)]">
+            Office
+          </p>
+          <p className="mt-1 font-extrabold text-[var(--sea-ink)]">
+            {office.officeName ?? 'Office'}
+          </p>
+          <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
+            {[office.address, office.city, office.province, office.postalCode]
+              .filter(Boolean)
+              .join(', ') || office.officeKey}
+          </p>
+          {office.phone ? (
+            <p className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--sea-ink-soft)]">
+              <Phone className="size-3" />
+              {office.phone}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AgentCreditBox({ agent }: { readonly agent: PersonCard }) {
+  return (
+    <div className="flex items-start gap-3 rounded-md border border-[var(--line)] bg-white/78 p-3">
+      <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--sand)] text-[var(--palm)]">
+        {agent.imageUrl ? (
+          <img
+            src={agent.imageUrl}
+            alt={personName(agent)}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <UserRound className="size-5" />
+        )}
+      </div>
+      <div className="min-w-0">
+        <p className="font-extrabold text-[var(--sea-ink)]">
+          {personName(agent)}
+        </p>
+        {agent.jobTitle ? (
+          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--kicker)]">
+            {agent.jobTitle}
+          </p>
+        ) : null}
+        <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
+          {agent.office?.officeName ??
+            ([agent.city, agent.province].filter(Boolean).join(', ') ||
+              agent.memberKey)}
+        </p>
+        {agent.phone ? (
+          <p className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--sea-ink-soft)]">
+            <Phone className="size-3" />
+            {agent.phone}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function ListingCredits({ listing }: { readonly listing: ListingCardType }) {
+  if (listing.offices.length === 0 && listing.agents.length === 0) return null
+  return (
+    <div className="grid gap-3 border-t border-[var(--line)] pt-3">
+      {listing.offices.map((office) => (
+        <OfficeCreditBlock office={office} key={office.officeKey} />
+      ))}
+      {listing.agents.length > 0 ? (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {listing.agents.map((agent) => (
+            <AgentCreditBox agent={agent} key={agent.memberKey} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+const mediaSortValue = (media: MediaCard) =>
+  media.sortOrder === null ? Number.MAX_SAFE_INTEGER : media.sortOrder
+
+const displayMedia = (media: ReadonlyArray<MediaCard>) => {
+  const seen = new Set<string>()
+  return [...media]
+    .filter((item) => item.mediaUrl !== null)
+    .sort((left, right) => {
+      if (left.preferredPhoto === true && right.preferredPhoto !== true)
+        return -1
+      if (right.preferredPhoto === true && left.preferredPhoto !== true)
+        return 1
+      return mediaSortValue(left) - mediaSortValue(right)
+    })
+    .filter((item) => {
+      if (item.mediaUrl === null) return false
+      if (seen.has(item.mediaUrl)) return false
+      seen.add(item.mediaUrl)
+      return true
+    })
+}
+
+const mediaCategory = (media: MediaCard) =>
+  (media.mediaCategory ?? media.longDescription ?? '').toLowerCase()
+
+const mediaUrlPath = (media: MediaCard) => {
+  if (media.mediaUrl === null) return ''
+  try {
+    return new URL(media.mediaUrl).pathname.toLowerCase()
+  } catch {
+    return media.mediaUrl.toLowerCase()
+  }
+}
+
+const hasImageExtension = (media: MediaCard) =>
+  /\.(avif|gif|jpe?g|png|webp)$/i.test(mediaUrlPath(media))
+
+const hasVideoExtension = (media: MediaCard) =>
+  /\.(m4v|mov|mp4|webm)$/i.test(mediaUrlPath(media))
+
+const isImageMedia = (media: MediaCard) => {
+  const category = mediaCategory(media)
+  if (category.includes('website') && !hasImageExtension(media)) return false
+  if (
+    category.includes('video') ||
+    category.includes('tour') ||
+    category.includes('document')
+  ) {
+    return false
+  }
+  if (
+    category.includes('photo') ||
+    category.includes('picture') ||
+    category.includes('logo')
+  ) {
+    return true
+  }
+  return hasImageExtension(media)
+}
+
+const isVideoMedia = (media: MediaCard) => {
+  const category = mediaCategory(media)
+  return (
+    category.includes('video') ||
+    category.includes('tour') ||
+    hasVideoExtension(media)
+  )
+}
+
+const isBlueprintMedia = (media: MediaCard) => {
+  const category = mediaCategory(media)
+  return (
+    category.includes('blueprint') ||
+    category.includes('floor plan') ||
+    category.includes('floorplan') ||
+    category.includes('site plan')
+  )
+}
+
+const isDocumentMedia = (media: MediaCard) => {
+  const category = mediaCategory(media)
+  return (
+    category.includes('document') ||
+    category.includes('brochure') ||
+    category.includes('certificate') ||
+    category.includes('financial') ||
+    /\.pdf$/i.test(mediaUrlPath(media))
+  )
+}
+
+const mediaTitle = (media: MediaCard, fallback: string) =>
+  media.longDescription ?? media.mediaCategory ?? fallback
+
+const mediaKey = (media: MediaCard) => media.mediaKey ?? media.mediaUrl ?? ''
+
+const mediaGroups = (media: ReadonlyArray<MediaCard>) => {
+  const all = displayMedia(media)
+  const photos = all.filter(isImageMedia)
+  const plans = all.filter(
+    (item) => isBlueprintMedia(item) && !isVideoMedia(item),
+  )
+  const documents = all.filter(
+    (item) =>
+      !isVideoMedia(item) && !isBlueprintMedia(item) && isDocumentMedia(item),
+  )
+  const videos = all.filter(isVideoMedia)
+  const other = all.filter(
+    (item) =>
+      !photos.includes(item) &&
+      !plans.includes(item) &&
+      !documents.includes(item) &&
+      !videos.includes(item),
+  )
+
+  return { all, photos, plans, documents, videos, other }
+}
+
+export function ListingCard({
+  listing,
+}: {
+  readonly listing: ListingCardType
+}) {
   return (
     <article className="overflow-hidden rounded-lg border border-[var(--line)] bg-white/82 shadow-[0_12px_30px_rgba(23,58,64,0.08)]">
       <div className="relative aspect-[4/3] bg-[var(--sand)]">
@@ -217,8 +460,11 @@ export function ListingCard({ listing }: { readonly listing: ListingCardType }) 
             <Home className="size-12" />
           </div>
         )}
-        <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-[var(--sea-ink)] shadow-sm">
-          {listing.status ?? 'Listing'}
+        <div className="absolute left-3 top-3 flex max-w-[calc(100%-5rem)] flex-wrap gap-2">
+          <div className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-[var(--sea-ink)] shadow-sm">
+            {listing.status ?? 'Listing'}
+          </div>
+          <OpenHouseImageBadge openHouses={listing.openHouses} />
         </div>
         <div className="absolute right-2 top-2 rounded-full bg-white/86 shadow-sm">
           <ListingActions listingKey={listing.listingKey} compact />
@@ -259,8 +505,9 @@ export function ListingCard({ listing }: { readonly listing: ListingCardType }) 
             {listing.remarks}
           </p>
         ) : null}
+        <ListingCredits listing={listing} />
         <div className="flex items-center justify-between border-t border-[var(--line)] pt-3 text-xs text-[var(--sea-ink-soft)]">
-          <span>{listing.office?.officeName ?? 'CREA DDF listing'}</span>
+          <span>{listing.listingId ?? 'CREA DDF listing'}</span>
           <Button asChild size="sm" variant="outline">
             <Link
               to="/listings/$listingKey"
@@ -501,28 +748,34 @@ export function HomePage({ data }: { readonly data: HomeData }) {
               Find the right listing from the local data already synced here.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--sea-ink-soft)]">
-              Browse listings, open houses, offices, and agents from the local
-              database through the CREA DDF client integration.
+              Browse listings and open houses from the local database. Office
+              and agent credits stay attached to the listings they represent.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button asChild size="lg">
-              <Link to="/listings" search={{}}>
+              <Link to="/listings" search={defaultListingSearch}>
                 <Search />
                 Browse listings
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link to="/open-houses" search={{}}>
+              <Link to="/open-houses" search={defaultOpenHouseSearch}>
                 <CalendarDays />
                 Open houses
               </Link>
             </Button>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <SummaryStat label="Listings shown" value={data.featuredListings.length} />
-            <SummaryStat label="Cities sampled" value={data.facets.cities.length} />
-            <SummaryStat label="Offices shown" value={data.offices.length} />
+            <SummaryStat
+              label="Listings shown"
+              value={data.featuredListings.length}
+            />
+            <SummaryStat
+              label="Cities sampled"
+              value={data.facets.cities.length}
+            />
+            <SummaryStat label="Open houses" value={data.openHouses.length} />
           </div>
         </div>
         {heroListing ? (
@@ -536,30 +789,23 @@ export function HomePage({ data }: { readonly data: HomeData }) {
           title="Latest listings"
           action={
             <Button asChild variant="outline">
-              <Link to="/listings" search={{}}>
+              <Link to="/listings" search={defaultListingSearch}>
                 View all
               </Link>
             </Button>
           }
         />
         <ListingsGrid listings={data.featuredListings.slice(0, 6)} />
-        <div className="grid gap-6 lg:grid-cols-3">
+        {data.openHouses.length > 0 ? (
           <DirectoryPanel title="Open houses">
             {data.openHouses.slice(0, 4).map((openHouse) => (
-              <OpenHouseRow openHouse={openHouse} key={openHouse.openHouseKey} />
+              <OpenHouseRow
+                openHouse={openHouse}
+                key={openHouse.openHouseKey}
+              />
             ))}
           </DirectoryPanel>
-          <DirectoryPanel title="Offices">
-            {data.offices.slice(0, 4).map((office) => (
-              <OfficeRow office={office} key={office.officeKey} />
-            ))}
-          </DirectoryPanel>
-          <DirectoryPanel title="Agents">
-            {data.agents.slice(0, 4).map((agent) => (
-              <AgentRow agent={agent} key={agent.memberKey} />
-            ))}
-          </DirectoryPanel>
-        </div>
+        ) : null}
       </section>
     </main>
   )
@@ -627,7 +873,7 @@ export function ListingDetailPage({
         <div className="rounded-lg border border-[var(--line)] bg-white/80 p-8">
           <h1 className="text-2xl font-extrabold">Listing not found</h1>
           <Button asChild className="mt-5">
-            <Link to="/listings" search={{}}>
+            <Link to="/listings" search={defaultListingSearch}>
               Back to listings
             </Link>
           </Button>
@@ -636,16 +882,18 @@ export function ListingDetailPage({
     )
   }
 
-  const gallery = listing.media.filter((media) => media.mediaUrl).slice(0, 8)
+  const groupedMedia = mediaGroups(listing.media)
+  const heroImageUrl =
+    listing.imageUrl ?? groupedMedia.photos[0]?.mediaUrl ?? null
 
   return (
     <main className="page-wrap grid gap-8 py-8">
       <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-white/80">
-          <div className="aspect-[16/10] bg-[var(--sand)]">
-            {listing.imageUrl ? (
+          <div className="relative aspect-[16/10] bg-[var(--sand)]">
+            {heroImageUrl ? (
               <img
-                src={listing.imageUrl}
+                src={heroImageUrl}
                 alt={listing.address}
                 className="h-full w-full object-cover"
               />
@@ -654,15 +902,18 @@ export function ListingDetailPage({
                 <Home className="size-14 text-[var(--sea-ink-soft)]" />
               </div>
             )}
+            <div className="absolute left-4 top-4">
+              <OpenHouseImageBadge openHouses={listing.openHouses} />
+            </div>
           </div>
-          {gallery.length > 1 ? (
-            <div className="grid grid-cols-4 gap-2 p-3">
-              {gallery.slice(1, 5).map((media) => (
+          {groupedMedia.photos.length > 1 ? (
+            <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-4">
+              {groupedMedia.photos.map((media) => (
                 <img
                   src={media.mediaUrl ?? ''}
                   alt={media.longDescription ?? listing.address}
                   className="aspect-[4/3] rounded-md object-cover"
-                  key={media.mediaKey ?? media.mediaUrl}
+                  key={mediaKey(media)}
                 />
               ))}
             </div>
@@ -694,12 +945,14 @@ export function ListingDetailPage({
             <MetricPill icon={BedDouble}>
               {listing.bedrooms ?? '-'} beds
             </MetricPill>
-            <MetricPill icon={Bath}>{listing.bathrooms ?? '-'} baths</MetricPill>
+            <MetricPill icon={Bath}>
+              {listing.bathrooms ?? '-'} baths
+            </MetricPill>
             <MetricPill icon={Building2}>
               {listing.parking ?? '-'} parking
             </MetricPill>
           </div>
-          <ContactBlock listing={listing} />
+          <CreditsBlock listing={listing} />
         </aside>
       </section>
       <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -724,25 +977,43 @@ export function ListingDetailPage({
               <DetailItem label="Photos" value={listing.photosCount} />
             </div>
           </InfoSection>
+          {listing.detailGroups.map((group) => (
+            <DetailGroupSection group={group} key={group.title} />
+          ))}
           {listing.rooms.length > 0 ? (
             <InfoSection title="Rooms">
               <div className="grid gap-2">
-                {listing.rooms.slice(0, 12).map((room) => (
+                {listing.rooms.map((room) => (
                   <div
-                    className="grid gap-1 rounded-md border border-[var(--line)] bg-white/70 p-3 sm:grid-cols-[1fr_auto]"
+                    className="grid gap-2 rounded-md border border-[var(--line)] bg-white/70 p-3 sm:grid-cols-[1fr_auto]"
                     key={room.roomKey ?? `${room.roomType}-${room.roomLevel}`}
                   >
-                    <span className="font-semibold text-[var(--sea-ink)]">
-                      {room.roomType ?? 'Room'}
-                    </span>
-                    <span className="text-sm text-[var(--sea-ink-soft)]">
-                      {[room.roomLevel, room.roomDimensions]
+                    <div>
+                      <p className="font-semibold text-[var(--sea-ink)]">
+                        {room.roomType ?? 'Room'}
+                      </p>
+                      {room.roomDescription ? (
+                        <p className="mt-1 text-sm leading-5 text-[var(--sea-ink-soft)]">
+                          {room.roomDescription}
+                        </p>
+                      ) : null}
+                    </div>
+                    <p className="text-sm text-[var(--sea-ink-soft)]">
+                      {[room.roomLevel, roomLabel(room)]
                         .filter(Boolean)
                         .join(' · ')}
-                    </span>
+                    </p>
                   </div>
                 ))}
               </div>
+            </InfoSection>
+          ) : null}
+          {groupedMedia.all.length > 0 ? (
+            <InfoSection title="Media">
+              <MediaGroupsView
+                listingAddress={listing.address}
+                media={groupedMedia}
+              />
             </InfoSection>
           ) : null}
         </div>
@@ -769,19 +1040,213 @@ export function ListingDetailPage({
   )
 }
 
+function MediaGroupsView({
+  listingAddress,
+  media,
+}: {
+  readonly listingAddress: string
+  readonly media: ReturnType<typeof mediaGroups>
+}) {
+  return (
+    <div className="grid gap-6">
+      {media.photos.length > 0 ? (
+        <MediaGrid title="Photos">
+          {media.photos.map((item) => (
+            <ImageMediaTile
+              media={item}
+              altFallback={listingAddress}
+              key={mediaKey(item)}
+            />
+          ))}
+        </MediaGrid>
+      ) : null}
+      {media.plans.length > 0 ? (
+        <MediaGrid title="Floor plans and blueprints">
+          {media.plans.map((item) => (
+            <LinkedMediaTile
+              icon={FileImage}
+              media={item}
+              altFallback={listingAddress}
+              key={mediaKey(item)}
+            />
+          ))}
+        </MediaGrid>
+      ) : null}
+      {media.documents.length > 0 ? (
+        <MediaGrid title="Documents">
+          {media.documents.map((item) => (
+            <LinkedMediaTile
+              icon={FileText}
+              media={item}
+              altFallback={listingAddress}
+              key={mediaKey(item)}
+            />
+          ))}
+        </MediaGrid>
+      ) : null}
+      {media.other.length > 0 ? (
+        <MediaGrid title="Other media">
+          {media.other.map((item) => (
+            <LinkedMediaTile
+              icon={FileText}
+              media={item}
+              altFallback={listingAddress}
+              key={mediaKey(item)}
+            />
+          ))}
+        </MediaGrid>
+      ) : null}
+      {media.videos.length > 0 ? (
+        <MediaGrid title="Videos and tours">
+          {media.videos.map((item) => (
+            <VideoMediaTile media={item} key={mediaKey(item)} />
+          ))}
+        </MediaGrid>
+      ) : null}
+    </div>
+  )
+}
+
+function MediaGrid({
+  title,
+  children,
+}: {
+  readonly title: string
+  readonly children: ReactNode
+}) {
+  return (
+    <div className="grid gap-3">
+      <h3 className="text-base font-extrabold text-[var(--sea-ink)]">
+        {title}
+      </h3>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{children}</div>
+    </div>
+  )
+}
+
+function ImageMediaTile({
+  media,
+  altFallback,
+}: {
+  readonly media: MediaCard
+  readonly altFallback: string
+}) {
+  return (
+    <figure className="overflow-hidden rounded-md border border-[var(--line)] bg-white/70">
+      <img
+        src={media.mediaUrl ?? ''}
+        alt={media.longDescription ?? altFallback}
+        className="aspect-[4/3] w-full object-cover"
+        loading="lazy"
+      />
+      {(media.longDescription ?? media.mediaCategory) ? (
+        <figcaption className="p-3 text-sm text-[var(--sea-ink-soft)]">
+          {media.longDescription ?? media.mediaCategory}
+        </figcaption>
+      ) : null}
+    </figure>
+  )
+}
+
+function LinkedMediaTile({
+  media,
+  altFallback,
+  icon: Icon,
+}: {
+  readonly media: MediaCard
+  readonly altFallback: string
+  readonly icon: typeof FileImage
+}) {
+  const isImage = hasImageExtension(media)
+  return (
+    <div className="overflow-hidden rounded-md border border-[var(--line)] bg-white/70">
+      {isImage ? (
+        <img
+          src={media.mediaUrl ?? ''}
+          alt={media.longDescription ?? altFallback}
+          className="aspect-[4/3] w-full object-contain bg-[var(--sand)]"
+          loading="lazy"
+        />
+      ) : (
+        <div className="flex aspect-[4/3] items-center justify-center bg-[var(--sand)] text-[var(--palm)]">
+          <Icon className="size-10" />
+        </div>
+      )}
+      <MediaLink media={media} label={mediaTitle(media, 'Open media')} />
+    </div>
+  )
+}
+
+function VideoMediaTile({ media }: { readonly media: MediaCard }) {
+  const directVideo = hasVideoExtension(media)
+  return (
+    <div className="overflow-hidden rounded-md border border-[var(--line)] bg-white/70">
+      {directVideo ? (
+        <video
+          src={media.mediaUrl ?? ''}
+          className="aspect-video w-full bg-black"
+          controls
+          preload="metadata"
+        />
+      ) : (
+        <div className="flex aspect-video items-center justify-center bg-[var(--sand)] text-[var(--palm)]">
+          <PlayCircle className="size-12" />
+        </div>
+      )}
+      <MediaLink
+        media={media}
+        label={mediaTitle(media, 'Open video or tour')}
+      />
+    </div>
+  )
+}
+
+function MediaLink({
+  media,
+  label,
+}: {
+  readonly media: MediaCard
+  readonly label: string
+}) {
+  return (
+    <a
+      className="flex items-start justify-between gap-3 p-3 text-sm font-semibold text-[var(--sea-ink)] no-underline hover:text-[var(--lagoon-deep)]"
+      href={media.mediaUrl ?? '#'}
+      target="_blank"
+      rel="noreferrer"
+    >
+      <span>
+        {label}
+        {media.mediaCategory ? (
+          <span className="mt-1 block text-xs font-semibold text-[var(--sea-ink-soft)]">
+            {media.mediaCategory}
+          </span>
+        ) : null}
+      </span>
+      <ExternalLink className="mt-0.5 size-4 shrink-0" />
+    </a>
+  )
+}
+
+function roomLabel(room: ListingDetail['rooms'][number]) {
+  if (room.roomDimensions !== null) return room.roomDimensions
+  if (room.roomLength === null || room.roomWidth === null) return null
+  return `${number.format(room.roomLength)} x ${number.format(room.roomWidth)} ${room.roomLengthWidthUnits ?? ''}`.trim()
+}
+
 function areaLabel(listing: ListingDetail) {
   if (!listing.livingArea) return null
   return `${number.format(listing.livingArea)} ${listing.livingAreaUnits ?? ''}`
 }
 
-function ContactBlock({ listing }: { readonly listing: ListingDetail }) {
+function CreditsBlock({ listing }: { readonly listing: ListingDetail }) {
+  if (listing.offices.length === 0 && listing.agents.length === 0) return null
   return (
     <div className="grid gap-3 rounded-lg border border-[var(--line)] bg-white/70 p-4">
       <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-[var(--kicker)]">
-        Listing contact
+        Listing credits
       </p>
-      {listing.agent ? <AgentRow agent={listing.agent} /> : null}
-      {listing.office ? <OfficeRow office={listing.office} /> : null}
+      <ListingCredits listing={listing} />
     </div>
   )
 }
@@ -798,6 +1263,22 @@ function InfoSection({
       <h2 className="text-xl font-extrabold text-[var(--sea-ink)]">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
+  )
+}
+
+function DetailGroupSection({ group }: { readonly group: DetailGroup }) {
+  return (
+    <InfoSection title={group.title}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {group.facts.map((item) => (
+          <DetailItem
+            label={item.label}
+            value={item.value}
+            key={`${group.title}-${item.label}`}
+          />
+        ))}
+      </div>
+    </InfoSection>
   )
 }
 
