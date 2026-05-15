@@ -37,7 +37,14 @@ import { ContactAgentButton } from './contact'
 import { ListingsGrid } from './listing-card'
 import { MediaGroupsView, mediaGroups, mediaKey } from './media'
 import { DetailItem, InfoSection, Pagination } from './shared'
-import { formatDate, number, openHouseTimeLabel, personName } from './utils'
+import {
+  formatDate,
+  looseSearchTokens,
+  looseValueMatches,
+  number,
+  openHouseTimeLabel,
+  personName,
+} from './utils'
 
 export function OfficesPage({
   data,
@@ -353,29 +360,35 @@ export function OpenHousesPage({
       filters={
         <div className="grid gap-3 md:grid-cols-[1fr_auto]">
           <LabeledInput
-            label="Listing key"
-            value={filters.listingKey}
-            onChange={(listingKey) => commit({ listingKey })}
+            label="Loose search"
+            value={filters.q}
+            placeholder="Date, address, city, time, or key"
+            onChange={(q) => commit({ q })}
           />
           <Button
             type="button"
             variant="outline"
-            onClick={() => commit({ listingKey: '' })}
+            onClick={() => commit({ q: '' })}
           >
             Clear
           </Button>
         </div>
       }
     >
-      <div className="grid gap-4 lg:grid-cols-2">
-        {data.items.map((openHouse) => (
-          <OpenHouseRow
-            openHouse={openHouse}
-            prominent
-            key={openHouse.openHouseKey}
-          />
-        ))}
-      </div>
+      {data.items.length > 0 ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {data.items.map((openHouse) => (
+            <OpenHouseRow
+              openHouse={openHouse}
+              prominent
+              searchQuery={routeSearch.q}
+              key={openHouse.openHouseKey}
+            />
+          ))}
+        </div>
+      ) : (
+        <DirectoryEmpty message="No open houses match that search." />
+      )}
       <Pagination
         page={routeSearch.page}
         hasNextPage={data.hasNextPage}
@@ -657,10 +670,12 @@ function SocialLinksList({
 function LabeledInput({
   label,
   value,
+  placeholder,
   onChange,
 }: {
   readonly label: string
   readonly value: string
+  readonly placeholder?: string
   readonly onChange: (value: string) => void
 }) {
   return (
@@ -668,7 +683,11 @@ function LabeledInput({
       <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
         {label}
       </Label>
-      <Input value={value} onChange={(event) => onChange(event.target.value)} />
+      <Input
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+      />
     </div>
   )
 }
@@ -819,10 +838,21 @@ export function AgentRow({
 export function OpenHouseRow({
   openHouse,
   prominent = false,
+  searchQuery = '',
 }: {
   readonly openHouse: OpenHouseCard
   readonly prominent?: boolean
+  readonly searchQuery?: string
 }) {
+  const dateLabel = formatDate(openHouse.date)
+  const timeLabel = openHouseTimeLabel(openHouse)
+  const propertyLocation = openHouse.property
+    ? [openHouse.property.city, openHouse.property.province]
+        .filter(Boolean)
+        .join(', ')
+    : ''
+  const listingLabel = openHouse.listingId ?? openHouse.listingKey
+
   return (
     <div
       className={cn(
@@ -842,13 +872,22 @@ export function OpenHouseRow({
                 prominent ? 'text-xl' : 'text-base',
               )}
             >
-              {formatDate(openHouse.date)}
+              <HighlightedValue value={dateLabel} query={searchQuery} />
             </p>
             <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--sea-ink-soft)]">
               <span className="inline-flex items-center gap-1">
                 <Clock className="size-3.5" />
-                {openHouseTimeLabel(openHouse)}
+                <HighlightedValue value={timeLabel} query={searchQuery} />
               </span>
+              {listingLabel ? (
+                <span className="inline-flex items-center gap-1">
+                  <Home className="size-3.5" />
+                  <HighlightedValue
+                    value={listingLabel}
+                    query={searchQuery}
+                  />
+                </span>
+              ) : null}
               {openHouse.status ? <span>{openHouse.status}</span> : null}
             </p>
             {openHouse.type ? (
@@ -895,13 +934,14 @@ export function OpenHouseRow({
             className="group grid gap-1 rounded-md border border-[var(--line)] bg-[var(--foam)] p-3 no-underline hover:border-[var(--lagoon-deep)]"
           >
             <span className="text-sm font-extrabold text-[var(--sea-ink)] group-hover:text-[var(--lagoon-deep)]">
-              {openHouse.property.address}
+              <HighlightedValue
+                value={openHouse.property.address}
+                query={searchQuery}
+              />
             </span>
             <span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--sea-ink-soft)]">
               <MapPin className="size-3.5" />
-              {[openHouse.property.city, openHouse.property.province]
-                .filter(Boolean)
-                .join(', ')}
+              <HighlightedValue value={propertyLocation} query={searchQuery} />
             </span>
           </Link>
         ) : null}
@@ -912,5 +952,53 @@ export function OpenHouseRow({
         ) : null}
       </div>
     </div>
+  )
+}
+
+const escapeRegex = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+function HighlightedValue({
+  value,
+  query,
+}: {
+  readonly value: string
+  readonly query: string
+}) {
+  if (!looseValueMatches(value, query)) return <>{value}</>
+
+  const tokens = looseSearchTokens(query)
+    .filter((token) => token.length > 0)
+    .sort((left, right) => right.length - left.length)
+
+  if (tokens.length === 0) return <>{value}</>
+
+  const tokenSet = new Set(tokens.map((token) => token.toLowerCase()))
+  const pattern = new RegExp(`(${tokens.map(escapeRegex).join('|')})`, 'gi')
+  const parts = value.split(pattern).filter((part) => part.length > 0)
+
+  if (parts.length <= 1) {
+    return (
+      <mark className="rounded bg-yellow-200/80 px-0.5 text-inherit">
+        {value}
+      </mark>
+    )
+  }
+
+  return (
+    <>
+      {parts.map((part, index) =>
+        tokenSet.has(part.toLowerCase()) ? (
+          <mark
+            className="rounded bg-yellow-200/80 px-0.5 text-inherit"
+            key={`${part}-${index}`}
+          >
+            {part}
+          </mark>
+        ) : (
+          part
+        ),
+      )}
+    </>
   )
 }

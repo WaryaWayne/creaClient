@@ -67,7 +67,7 @@ function OpenHousesRoute() {
   const onSearchChange = (next: OpenHouseSearch) => {
     const parsed = parseOpenHouseSearch(next)
     const nextSearch =
-      parsed.listingKey === search.listingKey ? parsed : { ...parsed, page: 1 }
+      parsed.q === search.q ? parsed : { ...parsed, page: 1 }
     const go = () =>
       void navigate({
         search: parseOpenHouseSearch(compactOpenHouseSearch(nextSearch)),

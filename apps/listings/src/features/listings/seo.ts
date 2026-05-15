@@ -350,8 +350,8 @@ export const openHousesSeoHead = (
   const listing = data?.items.find((item) => item.property)?.property
   const filteredLabel = listing
     ? ` for ${listing.address}`
-    : search.listingKey
-      ? ` for listing ${search.listingKey}`
+    : search.q
+      ? ` matching ${search.q}`
       : ''
 
   return createSeoHead({

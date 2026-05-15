@@ -59,7 +59,7 @@ function ListingOpenHousesPanel({
                 to="/open-houses"
                 search={{
                   ...defaultOpenHouseSearch,
-                  listingKey: listing.listingKey,
+                  q: listing.listingKey,
                 }}
               />
             }
@@ -236,7 +236,7 @@ export function OpenHouseDetailPage({
           </Button>
         </div>
         {openHouse.relatedOpenHouses.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             {openHouse.relatedOpenHouses.map((relatedOpenHouse) => (
               <OpenHouseRow
                 openHouse={relatedOpenHouse}

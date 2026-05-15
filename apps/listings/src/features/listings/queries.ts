@@ -213,12 +213,12 @@ export const openHousesQueryOptions = (search: OpenHouseSearch) =>
 
 export const openHousesInfiniteQueryOptions = (search: OpenHouseSearch) =>
   infiniteQueryOptions({
-    queryKey: ['open-houses', 'infinite', { listingKey: search.listingKey }],
+    queryKey: ['open-houses', 'infinite', { q: search.q }],
     initialPageParam: firstOpenHousePage,
     queryFn: ({ pageParam }) =>
       getOpenHousesData({
         data: {
-          listingKey: search.listingKey,
+          q: search.q,
           page: pageParam.page,
           cursor: pageParam.cursor,
         },

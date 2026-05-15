@@ -34,6 +34,21 @@ export const formatListingPrice = (listing: ListingCardType) => {
 
 export const formatDate = (value: string | null) => {
   if (!value) return 'Date available'
+  const localDate = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
+  if (localDate) {
+    return new Intl.DateTimeFormat('en-CA', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(
+      new Date(
+        Number(localDate[1]),
+        Number(localDate[2]) - 1,
+        Number(localDate[3]),
+      ),
+    )
+  }
+
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return new Intl.DateTimeFormat('en-CA', {
@@ -41,6 +56,20 @@ export const formatDate = (value: string | null) => {
     day: 'numeric',
     year: 'numeric',
   }).format(date)
+}
+
+export const formatLocalTime = (value: string | null) => {
+  if (!value) return null
+  const match = /^(\d{1,2}):(\d{2})(?::\d{2})?/.exec(value)
+  if (!match) return value
+
+  const hour = Number(match[1])
+  const minute = Number(match[2])
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return value
+
+  const period = hour >= 12 ? 'PM' : 'AM'
+  const hour12 = hour % 12 || 12
+  return `${hour12}:${match[2]} ${period}`
 }
 
 export const personName = (person: PersonCard) =>
@@ -70,8 +99,55 @@ export const activeListingFilterCount = (
   ].filter(Boolean).length
 
 export const openHouseTimeLabel = (openHouse: OpenHouseCard) =>
-  [openHouse.startTime, openHouse.endTime].filter(Boolean).join(' - ') ||
-  'Time available'
+  [formatLocalTime(openHouse.startTime), formatLocalTime(openHouse.endTime)]
+    .filter(Boolean)
+    .join(' - ') || 'Time available'
+
+export const looseSearchTokens = (value: string) =>
+  value
+    .trim()
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter(Boolean)
+
+export const normalizeLooseSearchText = (value: string) =>
+  value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+
+const looseSearchTokenVariants = (value: string) => {
+  const normalized = normalizeLooseSearchText(value)
+  const variants = new Set<string>()
+  if (normalized.length > 0) variants.add(normalized)
+
+  const compactTime = /^(\d{1,2})(am|pm)$/.exec(normalized)
+  if (compactTime !== null) {
+    const hour = Number(compactTime[1])
+    if (hour >= 1 && hour <= 12) variants.add(`${hour}00${compactTime[2]}`)
+  }
+
+  return Array.from(variants)
+}
+
+export const looseValueMatches = (value: string, query: string) => {
+  const tokens = looseSearchTokens(query)
+  if (tokens.length === 0) return false
+
+  const lowerValue = value.toLowerCase()
+  const normalizedValue = normalizeLooseSearchText(value)
+  return tokens.some((token) => {
+    const lowerToken = token.toLowerCase()
+    const normalizedTokens = looseSearchTokenVariants(token)
+    return (
+      lowerValue.includes(lowerToken) ||
+      normalizedTokens.some((normalizedToken) =>
+        normalizedValue.includes(normalizedToken),
+      )
+    )
+  })
+}
 
 const numericSearchValue = (value: ListingSearch['minPrice']) => {
   if (typeof value === 'number' && Number.isSafeInteger(value)) return value

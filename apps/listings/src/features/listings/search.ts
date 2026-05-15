@@ -61,7 +61,7 @@ export type AgentSearch = {
 }
 
 export type OpenHouseSearch = {
-  readonly listingKey: string
+  readonly q: string
   readonly page: number
 }
 
@@ -101,7 +101,7 @@ export const defaultAgentSearch: AgentSearch = {
 }
 
 export const defaultOpenHouseSearch: OpenHouseSearch = {
-  listingKey: '',
+  q: '',
   page: 1,
 }
 
@@ -208,7 +208,7 @@ export const parseOpenHouseSearch = (input: unknown): OpenHouseSearch => {
       : {}
 
   return {
-    listingKey: readString(value.listingKey),
+    q: readString(value.q) || readString(value.listingKey),
     page: readPage(value.page),
   }
 }
@@ -283,7 +283,7 @@ export const compactAgentSearch = (search: AgentSearch) => {
 
 export const compactOpenHouseSearch = (search: OpenHouseSearch) => {
   const output: Record<string, string | number> = {}
-  addIfPresent(output, 'listingKey', search.listingKey)
+  addIfPresent(output, 'q', search.q)
   if (search.page > 1) output.page = search.page
   return output
 }

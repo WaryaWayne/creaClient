@@ -2797,7 +2797,7 @@ const loadOpenHouses = Effect.fn('Listings.loadOpenHouses')(function* (
       },
     },
     filters: {
-      listingKey: search.listingKey || undefined,
+      q: search.q || undefined,
     },
     limit: DIRECTORY_PAGE_SIZE + 1,
     offset,
@@ -2813,7 +2813,7 @@ const loadOpenHouses = Effect.fn('Listings.loadOpenHouses')(function* (
       const openHouse = toOpenHouse(row)
       return openHouse === null ? [] : [openHouse]
     }),
-    search: { listingKey: search.listingKey, page },
+    search: { q: search.q, page },
     pageSize: DIRECTORY_PAGE_SIZE,
     hasNextPage,
     nextCursor: hasNextPage ? offset + DIRECTORY_PAGE_SIZE : null,
