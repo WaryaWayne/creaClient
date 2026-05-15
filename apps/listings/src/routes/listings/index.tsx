@@ -19,18 +19,12 @@ export const Route = createFileRoute('/listings/')({
   search: {
     middlewares: [stripSearchParams(defaultListingSearch)],
   },
-  loader: ({ context, search }) =>
-    context.queryClient.ensureQueryData(listingsQueryOptions(search)),
-  head: ({ search }) => {
-    const parsedSearch = parseListingSearch(search)
-    return {
-      meta: [
-        {
-          title: `Listings${parsedSearch.city ? ` in ${parsedSearch.city}` : ''} | CREA Listings Browser`,
-        },
-      ],
-    }
-  },
+  loaderDeps: ({ search }) => search,
+  loader: ({ context, deps }) =>
+    context.queryClient.ensureQueryData(listingsQueryOptions(deps)),
+  head: () => ({
+    meta: [{ title: 'Listings | CREA Listings Browser' }],
+  }),
   component: ListingsRoute,
 })
 
@@ -40,7 +34,9 @@ function ListingsRoute() {
 
   const onSearchChange = (search: ListingSearch) => {
     void navigate({
-      search: compactListingSearch(parseListingSearch(search)),
+      search: parseListingSearch(
+        compactListingSearch(parseListingSearch(search)),
+      ),
     })
   }
 

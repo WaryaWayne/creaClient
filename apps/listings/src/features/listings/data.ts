@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { Effect, Layer } from 'effect'
+import { Effect, Layer, Option } from 'effect'
 import { DdfDatabase, DdfDbClient } from '@warya/crea-ddf/db'
 import type { PropertyField } from '@warya/crea-ddf/db'
 import type {
@@ -42,6 +42,9 @@ type DdfMemberRaw = Partial<DdfMember>
 type DdfOfficeRaw = Partial<DdfOffice>
 type SchemaKey<T extends object> = Extract<keyof T, string>
 
+export const EXIT_EXCEL_OFFICE_KEY = '280726'
+export const EXIT_EXCEL_OFFICE_NAME = 'EXIT EXCEL REALTY'
+
 export type ListingCard = {
   readonly listingKey: string
   readonly listingId: string | null
@@ -82,29 +85,68 @@ export type ListingDetail = ListingCard & {
 
 export type PersonCard = {
   readonly memberKey: string
+  readonly memberMlsId: string | null
+  readonly nationalAssociationId: string | null
+  readonly officeNationalAssociationId: string | null
   readonly firstName: string | null
   readonly lastName: string | null
+  readonly middleName: string | null
+  readonly nickname: string | null
   readonly jobTitle: string | null
   readonly phone: string | null
+  readonly phoneExt: string | null
+  readonly tollFreePhone: string | null
+  readonly fax: string | null
+  readonly address: string | null
   readonly city: string | null
   readonly province: string | null
+  readonly postalCode: string | null
+  readonly country: string | null
+  readonly status: string | null
+  readonly type: string | null
+  readonly memberAor: string | null
+  readonly memberAorKey: string | null
   readonly officeKey: string | null
   readonly office: OfficeCard | null
   readonly imageUrl: string | null
   readonly media: ReadonlyArray<MediaCard>
+  readonly languages: ReadonlyArray<string>
+  readonly designations: ReadonlyArray<string>
+  readonly socialMedia: ReadonlyArray<SocialMediaCard>
 }
 
 export type OfficeCard = {
   readonly officeKey: string
+  readonly officeMlsId: string | null
+  readonly officeAorKey: string | null
+  readonly officeAor: string | null
+  readonly officeNationalAssociationId: string | null
+  readonly franchiseNationalAssociationId: string | null
+  readonly officeBrokerNationalAssociationId: string | null
   readonly officeName: string | null
   readonly phone: string | null
+  readonly phoneExt: string | null
+  readonly fax: string | null
   readonly city: string | null
   readonly province: string | null
+  readonly country: string | null
   readonly address: string | null
   readonly postalCode: string | null
   readonly officeType: string | null
+  readonly officeStatus: string | null
   readonly imageUrl: string | null
   readonly media: ReadonlyArray<MediaCard>
+  readonly socialMedia: ReadonlyArray<SocialMediaCard>
+}
+
+export type OfficeDetail = OfficeCard & {
+  readonly agents: ReadonlyArray<PersonCard>
+  readonly listings: ReadonlyArray<ListingCard>
+}
+
+export type AgentDetail = PersonCard & {
+  readonly listings: ReadonlyArray<ListingCard>
+  readonly openHouses: ReadonlyArray<OpenHouseCard>
 }
 
 export type OpenHouseCard = {
@@ -131,6 +173,12 @@ export type MediaCard = {
   readonly longDescription: string | null
   readonly preferredPhoto: boolean | null
   readonly sortOrder: number | null
+}
+
+export type SocialMediaCard = {
+  readonly socialMediaKey: string | null
+  readonly socialMediaType: string | null
+  readonly socialMediaUrlOrId: string | null
 }
 
 export type RoomCard = {
@@ -169,11 +217,56 @@ export type ListingsData = {
   readonly hasNextPage: boolean
 }
 
+export type ListingGroupSearchKey = 'city' | 'province' | 'status' | 'type'
+
+export type ListingGroupSummary = {
+  readonly groupSlug: string
+  readonly label: string
+  readonly pluralLabel: string
+  readonly valueCount: number
+  readonly listingCount: number
+}
+
+export type ListingGroupValueLink = {
+  readonly groupSlug: string
+  readonly groupLabel: string
+  readonly pluralLabel: string
+  readonly value: string
+  readonly valueSlug: string
+  readonly count: number
+}
+
+export type ListingGroupRouteInfo = {
+  readonly slug: string
+  readonly label: string
+  readonly pluralLabel: string
+  readonly description: string
+  readonly suppressedSearchKeys: ReadonlyArray<ListingGroupSearchKey>
+}
+
+export type GroupedListingsData = {
+  readonly requested: {
+    readonly groupSlug: string
+    readonly valueSlug: string
+  }
+  readonly group: ListingGroupRouteInfo | null
+  readonly matchedValue: ListingGroupValueLink | null
+  readonly listings: ReadonlyArray<ListingCard>
+  readonly facets: ListingFacets
+  readonly search: ListingSearch
+  readonly pageSize: number
+  readonly hasNextPage: boolean
+  readonly relatedGroups: ReadonlyArray<ListingGroupSummary>
+  readonly relatedValues: ReadonlyArray<ListingGroupValueLink>
+}
+
 export type DirectoryData<T> = {
   readonly items: ReadonlyArray<T>
   readonly search: DirectorySearch | AgentSearch | OpenHouseSearch
   readonly pageSize: number
   readonly hasNextPage: boolean
+  readonly nextCursor?: number | null
+  readonly previousCursor?: number | null
 }
 
 export type HomeData = {
@@ -200,7 +293,7 @@ const rawValue = <T extends object>(row: DbRow): Partial<T> =>
   asRecord(row.raw) as Partial<T>
 
 const lowerFirst = (value: string) =>
-  value.length === 0 ? value : `${value[0]?.toLowerCase()}${value.slice(1)}`
+  value.length === 0 ? value : `${value[0].toLowerCase()}${value.slice(1)}`
 
 const schemaValue = <T extends object>(
   row: DbRow,
@@ -228,6 +321,54 @@ const schemaNumber = <T extends object>(
 ): number | null => {
   const value = schemaValue<T>(row, key, dbKey)
   return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+const readCursor = (value: unknown): number | undefined => {
+  const first = Array.isArray(value) ? value[0] : value
+  const parsed =
+    typeof first === 'number'
+      ? first
+      : typeof first === 'string'
+        ? Number.parseInt(first, 10)
+        : Number.NaN
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : undefined
+}
+
+const parseOpenHousePageRequest = (
+  input: unknown,
+): OpenHouseSearch & { readonly cursor?: number } => {
+  const value =
+    input !== null && typeof input === 'object'
+      ? (input as Record<string, unknown>)
+      : {}
+  const search = parseOpenHouseSearch(value)
+  const cursor = readCursor(value.cursor)
+  return cursor === undefined ? search : { ...search, cursor }
+}
+
+type ListingGroupRequest = {
+  readonly groupSlug: string
+  readonly valueSlug: string
+  readonly search: ListingSearch
+}
+
+const readRequestString = (value: unknown) => {
+  const first = Array.isArray(value) ? value[0] : value
+  if (typeof first === 'number' && Number.isFinite(first)) return String(first)
+  return typeof first === 'string' ? first.trim() : ''
+}
+
+const parseListingGroupRequest = (input: unknown): ListingGroupRequest => {
+  const value =
+    input !== null && typeof input === 'object'
+      ? (input as Record<string, unknown>)
+      : {}
+
+  return {
+    groupSlug: readRequestString(value.groupSlug),
+    valueSlug: readRequestString(value.valueSlug),
+    search: parseListingSearch(value.search),
+  }
 }
 
 const schemaBoolean = <T extends object>(
@@ -266,6 +407,25 @@ const uniqueSorted = (values: ReadonlyArray<string | null>) =>
   Array.from(new Set(values.filter((value): value is string => !!value))).sort(
     (left, right) => left.localeCompare(right),
   )
+
+const groupValueNumber = new Intl.NumberFormat('en-CA', {
+  maximumFractionDigits: 2,
+})
+
+const slugifyGroupValue = (value: string | number) => {
+  const slug = String(value)
+    .trim()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase()
+  return slug || 'value'
+}
+
+const displayGroupValue = (value: string | number) =>
+  typeof value === 'number' ? groupValueNumber.format(value) : value
 
 const mediaRowsFrom = (row: DbRow): ReadonlyArray<DbRow> => {
   const raw = rawValue<DdfPropertyRaw & DdfMemberRaw & DdfOfficeRaw>(row)
@@ -378,6 +538,47 @@ const toMedia = (row: DbRow): MediaCard => ({
   sortOrder: schemaNumber<DdfMediaRecord>(row, 'Order', 'sortOrder'),
 })
 
+const toSocialMedia = (row: DbRow): SocialMediaCard => ({
+  socialMediaKey: stringValue(row, 'socialMediaKey'),
+  socialMediaType: stringValue(row, 'socialMediaType'),
+  socialMediaUrlOrId: stringValue(row, 'socialMediaUrlOrId'),
+})
+
+const stringItems = (row: DbRow, collectionKey: string, valueKey: string) =>
+  arrayValue(row, collectionKey).flatMap((item) => {
+    const value = stringValue(item, valueKey)
+    return value === null ? [] : [value]
+  })
+
+const schemaStringItems = <T extends object>(
+  row: DbRow,
+  key: SchemaKey<T>,
+  dbKey?: string,
+) => {
+  const value = schemaValue<T>(row, key, dbKey)
+  return Array.isArray(value)
+    ? value.flatMap((item) =>
+        typeof item === 'string' && item.length > 0 ? [item] : [],
+      )
+    : []
+}
+
+const memberLanguages = (row: DbRow) =>
+  uniqueSorted([
+    ...stringItems(row, 'languages', 'language'),
+    ...schemaStringItems<DdfMember>(row, 'MemberLanguages', 'memberLanguages'),
+  ])
+
+const memberDesignations = (row: DbRow) =>
+  uniqueSorted([
+    ...stringItems(row, 'designations', 'designation'),
+    ...schemaStringItems<DdfMember>(
+      row,
+      'MemberDesignation',
+      'memberDesignation',
+    ),
+  ])
+
 const toRoom = (row: DbRow): RoomCard => ({
   roomKey: schemaString<DdfRoomRecord>(row, 'RoomKey', 'roomKey'),
   roomType: schemaString<DdfRoomRecord>(row, 'RoomType', 'roomType'),
@@ -407,10 +608,31 @@ const toOffice = (row: DbRow | null | undefined): OfficeCard | null => {
   if (!officeKey) return null
   return {
     officeKey,
+    officeMlsId: schemaString<DdfOffice>(row, 'OfficeMlsId', 'officeMlsId'),
+    officeAorKey: schemaString<DdfOffice>(row, 'OfficeAORKey', 'officeAorKey'),
+    officeAor: schemaString<DdfOffice>(row, 'OfficeAOR', 'officeAor'),
+    officeNationalAssociationId: schemaString<DdfOffice>(
+      row,
+      'OfficeNationalAssociationId',
+      'officeNationalAssociationId',
+    ),
+    franchiseNationalAssociationId: schemaString<DdfOffice>(
+      row,
+      'FranchiseNationalAssociationId',
+      'franchiseNationalAssociationId',
+    ),
+    officeBrokerNationalAssociationId: schemaString<DdfOffice>(
+      row,
+      'OfficeBrokerNationalAssociationId',
+      'officeBrokerNationalAssociationId',
+    ),
     officeName: schemaString<DdfOffice>(row, 'OfficeName', 'officeName'),
     phone: schemaString<DdfOffice>(row, 'OfficePhone', 'phone'),
+    phoneExt: schemaString<DdfOffice>(row, 'OfficePhoneExt', 'phoneExt'),
+    fax: schemaString<DdfOffice>(row, 'OfficeFax', 'fax'),
     city: schemaString<DdfOffice>(row, 'OfficeCity', 'city'),
     province: schemaString<DdfOffice>(row, 'OfficeStateOrProvince', 'province'),
+    country: schemaString<DdfOffice>(row, 'OfficeCountry', 'country'),
     address:
       [
         schemaString<DdfOffice>(row, 'OfficeAddress1', 'address1'),
@@ -420,8 +642,10 @@ const toOffice = (row: DbRow | null | undefined): OfficeCard | null => {
         .join(', ') || null,
     postalCode: schemaString<DdfOffice>(row, 'OfficePostalCode', 'postalCode'),
     officeType: schemaString<DdfOffice>(row, 'OfficeType', 'officeType'),
+    officeStatus: schemaString<DdfOffice>(row, 'OfficeStatus', 'officeStatus'),
     imageUrl: imageFromRow(row),
     media: mediaRowsFrom(row).map(toMedia),
+    socialMedia: arrayValue(row, 'socialMedia').map(toSocialMedia),
   }
 }
 
@@ -431,16 +655,56 @@ const toPerson = (row: DbRow | null | undefined): PersonCard | null => {
   if (!memberKey) return null
   return {
     memberKey,
+    memberMlsId: schemaString<DdfMember>(row, 'MemberMlsId', 'memberMlsId'),
+    nationalAssociationId: schemaString<DdfMember>(
+      row,
+      'MemberNationalAssociationId',
+      'nationalAssociationId',
+    ),
+    officeNationalAssociationId: schemaString<DdfMember>(
+      row,
+      'OfficeNationalAssociationId',
+      'officeNationalAssociationId',
+    ),
     firstName: schemaString<DdfMember>(row, 'MemberFirstName', 'firstName'),
     lastName: schemaString<DdfMember>(row, 'MemberLastName', 'lastName'),
+    middleName: schemaString<DdfMember>(row, 'MemberMiddleName', 'middleName'),
+    nickname: schemaString<DdfMember>(row, 'MemberNickname', 'nickname'),
     jobTitle: schemaString<DdfMember>(row, 'JobTitle', 'jobTitle'),
     phone: schemaString<DdfMember>(row, 'MemberOfficePhone', 'phone'),
+    phoneExt: schemaString<DdfMember>(
+      row,
+      'MemberOfficePhoneExt',
+      'officePhoneExt',
+    ),
+    tollFreePhone: schemaString<DdfMember>(
+      row,
+      'MemberTollFreePhone',
+      'tollFreePhone',
+    ),
+    fax: schemaString<DdfMember>(row, 'MemberFax', 'fax'),
+    address:
+      [
+        schemaString<DdfMember>(row, 'MemberAddress1', 'address1'),
+        schemaString<DdfMember>(row, 'MemberAddress2', 'address2'),
+      ]
+        .filter(Boolean)
+        .join(', ') || null,
     city: schemaString<DdfMember>(row, 'MemberCity', 'city'),
     province: schemaString<DdfMember>(row, 'MemberStateOrProvince', 'province'),
+    postalCode: schemaString<DdfMember>(row, 'MemberPostalCode', 'postalCode'),
+    country: schemaString<DdfMember>(row, 'MemberCountry', 'country'),
+    status: schemaString<DdfMember>(row, 'MemberStatus', 'status'),
+    type: schemaString<DdfMember>(row, 'MemberType', 'type'),
+    memberAor: schemaString<DdfMember>(row, 'MemberAOR', 'memberAor'),
+    memberAorKey: schemaString<DdfMember>(row, 'MemberAORKey', 'memberAorKey'),
     officeKey: schemaString<DdfMember>(row, 'OfficeKey', 'officeKey'),
     office: toOffice(asRecord(row.office)),
     imageUrl: imageFromRow(row),
     media: mediaRowsFrom(row).map(toMedia),
+    languages: memberLanguages(row),
+    designations: memberDesignations(row),
+    socialMedia: arrayValue(row, 'socialMedia').map(toSocialMedia),
   }
 }
 
@@ -543,8 +807,8 @@ const toListingCard = (row: DbRow): ListingCard => {
       'ModificationTimestamp',
       'modificationTimestamp',
     ),
-    agent: listAgent ?? agents[0] ?? null,
-    office: listOffice ?? offices[0] ?? null,
+    agent: listAgent ?? agents.at(0) ?? null,
+    office: listOffice ?? offices.at(0) ?? null,
     agents,
     offices,
     openHouses: arrayValue(row, 'openHouses').flatMap((item) => {
@@ -767,6 +1031,119 @@ const listingFilters = (search: ListingSearch) => ({
   minBathrooms: numericFilter(search.minBaths),
 })
 
+const groupedListingFilters = (
+  search: ListingSearch,
+  group: ListingGroupDefinition,
+) => {
+  const filters = { ...listingFilters(search) }
+  const suppressed = new Set(group.suppressedSearchKeys ?? [])
+  if (suppressed.has('city')) filters.city = undefined
+  if (suppressed.has('province')) filters.province = undefined
+  if (suppressed.has('status')) filters.standardStatus = undefined
+  if (suppressed.has('type')) filters.propertySubType = undefined
+  return filters
+}
+
+const groupValueParts = (value: unknown): ReadonlyArray<string | number> => {
+  if (Array.isArray(value)) return value.flatMap(groupValueParts)
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? [trimmed] : []
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) return [value]
+  return []
+}
+
+const groupValuesFromRow = (
+  row: DbRow,
+  group: ListingGroupDefinition,
+): ReadonlyArray<string | number> => {
+  const seen = new Set<string>()
+  return groupValueParts(
+    schemaValue<DdfProperty>(row, group.schemaKey, group.field),
+  )
+    .map((value) => ({
+      value,
+      slug: slugifyGroupValue(value),
+    }))
+    .filter(({ slug }) => {
+      if (seen.has(slug)) return false
+      seen.add(slug)
+      return true
+    })
+    .map(({ value }) => value)
+}
+
+const rowHasGroupValueSlug = (
+  row: DbRow,
+  group: ListingGroupDefinition,
+  valueSlug: string,
+) =>
+  groupValuesFromRow(row, group).some(
+    (value) => slugifyGroupValue(value) === valueSlug,
+  )
+
+const listingKeyFromRow = (row: DbRow) =>
+  schemaString<DdfProperty>(row, 'ListingKey', 'listingKey')
+
+type ListingGroupIndex = {
+  readonly summaries: ReadonlyArray<ListingGroupSummary>
+  readonly topValues: ReadonlyArray<ListingGroupValueLink>
+  readonly valuesByGroup: ReadonlyMap<
+    string,
+    ReadonlyArray<ListingGroupValueLink>
+  >
+}
+
+type ListingGroupValueAccumulator = {
+  readonly value: string
+  count: number
+}
+
+const GROUPED_RELATED_VALUE_LIMIT = 36
+
+const sortGroupValueLinks = (values: ReadonlyArray<ListingGroupValueLink>) =>
+  [...values].sort(
+    (left, right) =>
+      right.count - left.count || left.value.localeCompare(right.value),
+  )
+
+const makeGroupValueLink = (
+  group: ListingGroupDefinition,
+  valueSlug: string,
+  value: string,
+  count: number,
+): ListingGroupValueLink => ({
+  groupSlug: group.slug,
+  groupLabel: group.label,
+  pluralLabel: group.pluralLabel,
+  value,
+  valueSlug,
+  count,
+})
+
+const listingAgentKeys = (row: DbRow) =>
+  [
+    schemaString<DdfProperty>(row, 'ListAgentKey', 'listAgentKey'),
+    schemaString<DdfProperty>(row, 'CoListAgentKey', 'coListAgentKey'),
+    schemaString<DdfProperty>(row, 'CoListAgentKey2', 'coListAgentKey2'),
+    schemaString<DdfProperty>(row, 'CoListAgentKey3', 'coListAgentKey3'),
+  ].filter((key): key is string => key !== null)
+
+const listingOfficeKeys = (row: DbRow) =>
+  [
+    schemaString<DdfProperty>(row, 'ListOfficeKey', 'listOfficeKey'),
+    schemaString<DdfProperty>(row, 'CoListOfficeKey', 'coListOfficeKey'),
+    schemaString<DdfProperty>(row, 'CoListOfficeKey2', 'coListOfficeKey2'),
+    schemaString<DdfProperty>(row, 'CoListOfficeKey3', 'coListOfficeKey3'),
+  ].filter((key): key is string => key !== null)
+
+const listingHasAgent = (row: DbRow, agentKey: string) =>
+  listingAgentKeys(row).includes(agentKey)
+
+const listingHasOffice = (row: DbRow, officeKey: string) =>
+  listingOfficeKeys(row).includes(officeKey)
+
 const listingOrder = (
   sort: ListingSort,
 ): ReadonlyArray<{
@@ -804,7 +1181,24 @@ const listingSelect = [
   'publicRemarks',
   'modificationTimestamp',
   'listAgentKey',
+  'coListAgentKey',
+  'coListAgentKey2',
+  'coListAgentKey3',
   'listOfficeKey',
+  'coListOfficeKey',
+  'coListOfficeKey2',
+  'coListOfficeKey3',
+] as const
+
+const activePropertyKeySelect = [
+  'listAgentKey',
+  'coListAgentKey',
+  'coListAgentKey2',
+  'coListAgentKey3',
+  'listOfficeKey',
+  'coListOfficeKey',
+  'coListOfficeKey2',
+  'coListOfficeKey3',
 ] as const
 
 const detailSelect = [
@@ -884,16 +1278,456 @@ const detailSelect = [
   'yearBuilt',
 ] as const
 
+type ListingGroupValueKind = 'scalar' | 'array'
+
+type ListingGroupDefinition = {
+  readonly slug: string
+  readonly field: PropertyField
+  readonly schemaKey: SchemaKey<DdfProperty>
+  readonly label: string
+  readonly pluralLabel: string
+  readonly description: string
+  readonly valueKind: ListingGroupValueKind
+  readonly suppressedSearchKeys?: ReadonlyArray<ListingGroupSearchKey>
+}
+
+const listingGroupDefinitions = [
+  {
+    slug: 'property-sub-type',
+    field: 'propertySubType',
+    schemaKey: 'PropertySubType',
+    label: 'Property type',
+    pluralLabel: 'Property types',
+    description: 'Listings grouped by CREA property subtype.',
+    valueKind: 'scalar',
+    suppressedSearchKeys: ['type'],
+  },
+  {
+    slug: 'business-type',
+    field: 'businessType',
+    schemaKey: 'BusinessType',
+    label: 'Business type',
+    pluralLabel: 'Business types',
+    description: 'Commercial listings grouped by business category.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'lease-amount-frequency',
+    field: 'leaseAmountFrequency',
+    schemaKey: 'LeaseAmountFrequency',
+    label: 'Lease frequency',
+    pluralLabel: 'Lease frequencies',
+    description: 'Listings grouped by lease payment frequency.',
+    valueKind: 'scalar',
+  },
+  {
+    slug: 'lease-per-unit',
+    field: 'leasePerUnit',
+    schemaKey: 'LeasePerUnit',
+    label: 'Lease per unit',
+    pluralLabel: 'Lease per unit values',
+    description: 'Listings grouped by lease area unit.',
+    valueKind: 'scalar',
+  },
+  {
+    slug: 'price-per-unit',
+    field: 'pricePerUnit',
+    schemaKey: 'PricePerUnit',
+    label: 'Price per unit',
+    pluralLabel: 'Price per unit values',
+    description: 'Listings grouped by sale price area unit.',
+    valueKind: 'scalar',
+  },
+  {
+    slug: 'water-body-name',
+    field: 'waterBodyName',
+    schemaKey: 'WaterBodyName',
+    label: 'Water body',
+    pluralLabel: 'Water bodies',
+    description: 'Listings grouped by attached lake, river, ocean, or canal.',
+    valueKind: 'scalar',
+  },
+  {
+    slug: 'view',
+    field: 'view',
+    schemaKey: 'View',
+    label: 'View',
+    pluralLabel: 'Views',
+    description: 'Listings grouped by view features.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'number-of-buildings',
+    field: 'numberOfBuildings',
+    schemaKey: 'NumberOfBuildings',
+    label: 'Number of buildings',
+    pluralLabel: 'Building counts',
+    description: 'Listings grouped by total building count.',
+    valueKind: 'scalar',
+  },
+  {
+    slug: 'number-of-units-total',
+    field: 'numberOfUnitsTotal',
+    schemaKey: 'NumberOfUnitsTotal',
+    label: 'Number of units',
+    pluralLabel: 'Unit counts',
+    description: 'Listings grouped by total unit count.',
+    valueKind: 'scalar',
+  },
+  {
+    slug: 'lot-features',
+    field: 'lotFeatures',
+    schemaKey: 'LotFeatures',
+    label: 'Lot feature',
+    pluralLabel: 'Lot features',
+    description: 'Listings grouped by lot features.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'lot-size-area',
+    field: 'lotSizeArea',
+    schemaKey: 'LotSizeArea',
+    label: 'Lot size area',
+    pluralLabel: 'Lot size areas',
+    description: 'Listings grouped by exact lot size area.',
+    valueKind: 'scalar',
+  },
+  {
+    slug: 'neighborhood',
+    field: 'cityRegion',
+    schemaKey: 'CityRegion',
+    label: 'Neighborhood',
+    pluralLabel: 'Neighborhoods',
+    description: 'Listings grouped by city region or neighborhood.',
+    valueKind: 'scalar',
+  },
+  {
+    slug: 'subdivision-name',
+    field: 'subdivisionName',
+    schemaKey: 'SubdivisionName',
+    label: 'Subdivision',
+    pluralLabel: 'Subdivisions',
+    description: 'Listings grouped by subdivision name.',
+    valueKind: 'scalar',
+  },
+  {
+    slug: 'community-features',
+    field: 'communityFeatures',
+    schemaKey: 'CommunityFeatures',
+    label: 'Community feature',
+    pluralLabel: 'Community features',
+    description: 'Listings grouped by community feature.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'parking-features',
+    field: 'parkingFeatures',
+    schemaKey: 'ParkingFeatures',
+    label: 'Parking feature',
+    pluralLabel: 'Parking features',
+    description: 'Listings grouped by parking feature.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'architectural-style',
+    field: 'architecturalStyle',
+    schemaKey: 'ArchitecturalStyle',
+    label: 'Architectural style',
+    pluralLabel: 'Architectural styles',
+    description: 'Listings grouped by architectural style.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'building-features',
+    field: 'buildingFeatures',
+    schemaKey: 'BuildingFeatures',
+    label: 'Building feature',
+    pluralLabel: 'Building features',
+    description: 'Listings grouped by building feature.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'heating',
+    field: 'heating',
+    schemaKey: 'Heating',
+    label: 'Heating',
+    pluralLabel: 'Heating values',
+    description: 'Listings grouped by heating system.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'cooling',
+    field: 'cooling',
+    schemaKey: 'Cooling',
+    label: 'Cooling',
+    pluralLabel: 'Cooling values',
+    description: 'Listings grouped by cooling system.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'basement',
+    field: 'basement',
+    schemaKey: 'Basement',
+    label: 'Basement',
+    pluralLabel: 'Basement values',
+    description: 'Listings grouped by basement type.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'exterior-features',
+    field: 'exteriorFeatures',
+    schemaKey: 'ExteriorFeatures',
+    label: 'Exterior feature',
+    pluralLabel: 'Exterior features',
+    description: 'Listings grouped by exterior feature.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'flooring',
+    field: 'flooring',
+    schemaKey: 'Flooring',
+    label: 'Flooring',
+    pluralLabel: 'Flooring values',
+    description: 'Listings grouped by flooring.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'construction-materials',
+    field: 'constructionMaterials',
+    schemaKey: 'ConstructionMaterials',
+    label: 'Construction material',
+    pluralLabel: 'Construction materials',
+    description: 'Listings grouped by construction material.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'roof',
+    field: 'roof',
+    schemaKey: 'Roof',
+    label: 'Roof',
+    pluralLabel: 'Roof values',
+    description: 'Listings grouped by roof type.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'utilities',
+    field: 'utilities',
+    schemaKey: 'Utilities',
+    label: 'Utility',
+    pluralLabel: 'Utilities',
+    description: 'Listings grouped by available utility.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'water-source',
+    field: 'waterSource',
+    schemaKey: 'WaterSource',
+    label: 'Water source',
+    pluralLabel: 'Water sources',
+    description: 'Listings grouped by water source.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'sewer',
+    field: 'sewer',
+    schemaKey: 'Sewer',
+    label: 'Sewer',
+    pluralLabel: 'Sewer values',
+    description: 'Listings grouped by sewer service.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'electric',
+    field: 'electric',
+    schemaKey: 'Electric',
+    label: 'Electric',
+    pluralLabel: 'Electric values',
+    description: 'Listings grouped by electric service.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'waterfront-features',
+    field: 'waterfrontFeatures',
+    schemaKey: 'WaterfrontFeatures',
+    label: 'Waterfront feature',
+    pluralLabel: 'Waterfront features',
+    description: 'Listings grouped by waterfront feature.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'pool-features',
+    field: 'poolFeatures',
+    schemaKey: 'PoolFeatures',
+    label: 'Pool feature',
+    pluralLabel: 'Pool features',
+    description: 'Listings grouped by pool feature.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'appliances',
+    field: 'appliances',
+    schemaKey: 'Appliances',
+    label: 'Appliance',
+    pluralLabel: 'Appliances',
+    description: 'Listings grouped by included appliance.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'security-features',
+    field: 'securityFeatures',
+    schemaKey: 'SecurityFeatures',
+    label: 'Security feature',
+    pluralLabel: 'Security features',
+    description: 'Listings grouped by security feature.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'current-use',
+    field: 'currentUse',
+    schemaKey: 'CurrentUse',
+    label: 'Current use',
+    pluralLabel: 'Current uses',
+    description: 'Listings grouped by current use.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'possible-use',
+    field: 'possibleUse',
+    schemaKey: 'PossibleUse',
+    label: 'Possible use',
+    pluralLabel: 'Possible uses',
+    description: 'Listings grouped by possible use.',
+    valueKind: 'array',
+  },
+  {
+    slug: 'zoning',
+    field: 'zoning',
+    schemaKey: 'Zoning',
+    label: 'Zoning',
+    pluralLabel: 'Zoning values',
+    description: 'Listings grouped by zoning value.',
+    valueKind: 'scalar',
+  },
+] as const satisfies ReadonlyArray<ListingGroupDefinition>
+
+const listingGroupPublicInfo = (
+  group: ListingGroupDefinition,
+): ListingGroupRouteInfo => ({
+  slug: group.slug,
+  label: group.label,
+  pluralLabel: group.pluralLabel,
+  description: group.description,
+  suppressedSearchKeys: group.suppressedSearchKeys ?? [],
+})
+
+const listingGroupDefinitionOption = (slug: string) =>
+  Option.fromNullishOr(
+    listingGroupDefinitions.find((group) => group.slug === slug),
+  )
+
+const uniquePropertyFields = (fields: ReadonlyArray<PropertyField>) =>
+  Array.from(new Set(fields))
+
+const listingGroupFields = uniquePropertyFields(
+  listingGroupDefinitions.map((group) => group.field),
+)
+
+const groupedListingSelect = uniquePropertyFields([
+  ...listingSelect,
+  ...listingGroupFields,
+])
+
+const listingGroupIndexSelect = uniquePropertyFields([
+  'listingKey',
+  ...listingGroupFields,
+])
+
+const mediaSelect = [
+  'mediaKey',
+  'mediaUrl',
+  'mediaCategory',
+  'longDescription',
+  'preferredPhoto',
+  'sortOrder',
+] as const
+
+const socialMediaSelect = [
+  'socialMediaKey',
+  'socialMediaType',
+  'socialMediaUrlOrId',
+] as const
+const languageSelect = ['language'] as const
+const designationSelect = ['designation'] as const
+
+const officeSelect = [
+  'officeKey',
+  'officeMlsId',
+  'officeAorKey',
+  'officeAor',
+  'officeNationalAssociationId',
+  'franchiseNationalAssociationId',
+  'officeBrokerNationalAssociationId',
+  'officeName',
+  'phone',
+  'phoneExt',
+  'fax',
+  'city',
+  'province',
+  'country',
+  'address1',
+  'address2',
+  'postalCode',
+  'officeType',
+  'officeStatus',
+  'media',
+] as const
+
+const memberSelect = [
+  'memberKey',
+  'memberMlsId',
+  'nationalAssociationId',
+  'officeNationalAssociationId',
+  'firstName',
+  'lastName',
+  'middleName',
+  'nickname',
+  'jobTitle',
+  'phone',
+  'officePhoneExt',
+  'tollFreePhone',
+  'fax',
+  'address1',
+  'address2',
+  'city',
+  'province',
+  'postalCode',
+  'country',
+  'status',
+  'type',
+  'memberAor',
+  'memberAorKey',
+  'officeKey',
+  'media',
+] as const
+
+const officeInclude = {
+  media: { select: mediaSelect },
+  socialMedia: { select: socialMediaSelect },
+} as const
+
+const memberInclude = {
+  media: { select: mediaSelect },
+  socialMedia: { select: socialMediaSelect },
+  languages: { select: languageSelect },
+  designations: { select: designationSelect },
+  office: {
+    select: officeSelect,
+  },
+} as const
+
 const propertyInclude = {
   media: {
-    select: [
-      'mediaKey',
-      'mediaUrl',
-      'mediaCategory',
-      'longDescription',
-      'preferredPhoto',
-      'sortOrder',
-    ],
+    select: mediaSelect,
   },
   openHouses: {
     select: [
@@ -908,54 +1742,16 @@ const propertyInclude = {
     ],
   },
   listAgent: {
-    select: [
-      'memberKey',
-      'firstName',
-      'lastName',
-      'jobTitle',
-      'phone',
-      'officeKey',
-      'media',
-    ],
+    select: memberSelect,
   },
   coListAgents: {
-    select: [
-      'memberKey',
-      'firstName',
-      'lastName',
-      'jobTitle',
-      'phone',
-      'officeKey',
-      'media',
-    ],
+    select: memberSelect,
   },
   listOffice: {
-    select: [
-      'officeKey',
-      'officeName',
-      'phone',
-      'city',
-      'province',
-      'address1',
-      'address2',
-      'postalCode',
-      'officeType',
-      'media',
-    ],
+    select: officeSelect,
   },
   coListOffices: {
-    select: [
-      'officeKey',
-      'officeName',
-      'phone',
-      'city',
-      'province',
-      'address1',
-      'address2',
-      'postalCode',
-      'officeType',
-      'media',
-    ],
+    select: officeSelect,
   },
 } as const
 
@@ -979,9 +1775,10 @@ const ddfClientLayer = DdfDbClient.layer.pipe(
   Layer.provide(DdfDatabase.layerConfig),
 )
 
-const runServerEffect = <A, E>(
-  effect: Effect.Effect<A, E, DdfDbClient>,
-): Promise<A> => Effect.runPromise(effect.pipe(Effect.provide(ddfClientLayer)))
+const runServerEffect = <TValue, TError>(
+  effect: Effect.Effect<TValue, TError, DdfDbClient>,
+): Promise<TValue> =>
+  Effect.runPromise(effect.pipe(Effect.provide(ddfClientLayer)))
 
 const buildFacets = Effect.fn('Listings.buildFacets')(function* () {
   const client = yield* DdfDbClient
@@ -1014,6 +1811,105 @@ const buildFacets = Effect.fn('Listings.buildFacets')(function* () {
   } satisfies ListingFacets
 })
 
+const buildListingGroupIndex = Effect.fn('Listings.buildListingGroupIndex')(
+  function* () {
+    const client = yield* DdfDbClient
+    const valuesByGroup = new Map<
+      string,
+      Map<string, ListingGroupValueAccumulator>
+    >()
+    const listingKeysByGroup = new Map<string, Set<string>>()
+
+    for (const group of listingGroupDefinitions) {
+      valuesByGroup.set(group.slug, new Map())
+      listingKeysByGroup.set(group.slug, new Set())
+    }
+
+    let offset = 0
+    let hasMoreListings = true
+
+    while (hasMoreListings) {
+      const rows = (yield* client.properties.list({
+        select: listingGroupIndexSelect,
+        filters: { active: true },
+        limit: 500,
+        offset,
+        orderBy: [{ field: 'modificationTimestamp', direction: 'desc' }],
+      })) as ReadonlyArray<DbRow>
+
+      for (const row of rows) {
+        const listingKey = listingKeyFromRow(row)
+        for (const group of listingGroupDefinitions) {
+          const values = groupValuesFromRow(row, group)
+          if (values.length > 0 && listingKey !== null) {
+            listingKeysByGroup.get(group.slug)?.add(listingKey)
+          }
+
+          const groupValues = valuesByGroup.get(group.slug)
+          if (groupValues === undefined) continue
+
+          for (const value of values) {
+            const valueSlug = slugifyGroupValue(value)
+            const current = groupValues.get(valueSlug)
+            if (current === undefined) {
+              groupValues.set(valueSlug, {
+                value: displayGroupValue(value),
+                count: 1,
+              })
+            } else {
+              current.count += 1
+            }
+          }
+        }
+      }
+
+      hasMoreListings = rows.length === 500
+      offset += rows.length
+    }
+
+    const valueLinksByGroup = new Map<
+      string,
+      ReadonlyArray<ListingGroupValueLink>
+    >()
+
+    for (const group of listingGroupDefinitions) {
+      const groupValues = valuesByGroup.get(group.slug) ?? new Map()
+      const links = sortGroupValueLinks(
+        Array.from(groupValues.entries()).map(([valueSlug, value]) =>
+          makeGroupValueLink(group, valueSlug, value.value, value.count),
+        ),
+      )
+      valueLinksByGroup.set(group.slug, links)
+    }
+
+    const summaries = listingGroupDefinitions
+      .map((group) => {
+        const values = valueLinksByGroup.get(group.slug) ?? []
+        return {
+          groupSlug: group.slug,
+          label: group.label,
+          pluralLabel: group.pluralLabel,
+          valueCount: values.length,
+          listingCount: listingKeysByGroup.get(group.slug)?.size ?? 0,
+        } satisfies ListingGroupSummary
+      })
+      .filter((summary) => summary.valueCount > 0 && summary.listingCount > 0)
+      .sort(
+        (left, right) =>
+          right.listingCount - left.listingCount ||
+          left.pluralLabel.localeCompare(right.pluralLabel),
+      )
+
+    return {
+      summaries,
+      valuesByGroup: valueLinksByGroup,
+      topValues: sortGroupValueLinks(
+        Array.from(valueLinksByGroup.values()).flat(),
+      ),
+    } satisfies ListingGroupIndex
+  },
+)
+
 const loadListings = Effect.fn('Listings.loadListings')(function* (
   search: ListingSearch,
 ) {
@@ -1042,6 +1938,162 @@ const loadListings = Effect.fn('Listings.loadListings')(function* (
     hasNextPage: rows.length > LISTINGS_PAGE_SIZE,
   } satisfies ListingsData
 })
+
+const loadGroupedListingCards = Effect.fn('Listings.loadGroupedListingCards')(
+  function* (
+    group: ListingGroupDefinition,
+    valueSlug: string,
+    search: ListingSearch,
+  ) {
+    const client = yield* DdfDbClient
+    const matchedRows: DbRow[] = []
+    let offset = 0
+    let hasMoreListings = true
+
+    while (hasMoreListings) {
+      const rows = (yield* client.properties.list({
+        select: groupedListingSelect,
+        filters: groupedListingFilters(search, group),
+        limit: 500,
+        offset,
+        orderBy: listingOrder(search.sort),
+      })) as ReadonlyArray<DbRow>
+
+      matchedRows.push(
+        ...rows.filter((row) => rowHasGroupValueSlug(row, group, valueSlug)),
+      )
+
+      hasMoreListings = rows.length === 500
+      offset += rows.length
+    }
+
+    const pageOffset = (search.page - 1) * LISTINGS_PAGE_SIZE
+    const pageRows = matchedRows.slice(
+      pageOffset,
+      pageOffset + LISTINGS_PAGE_SIZE,
+    )
+    const detailRows = (yield* Effect.all(
+      pageRows.flatMap((row) => {
+        const listingKey = listingKeyFromRow(row)
+        return listingKey === null
+          ? []
+          : [
+              client.properties.get(listingKey, {
+                select: groupedListingSelect,
+                include: propertyInclude,
+              }),
+            ]
+      }),
+      { concurrency: 6 },
+    )) as ReadonlyArray<DbRow | null>
+
+    return {
+      listings: detailRows.flatMap((row) =>
+        row === null ? [] : [toListingCard(row)],
+      ),
+      hasNextPage: matchedRows.length > pageOffset + LISTINGS_PAGE_SIZE,
+    }
+  },
+)
+
+const groupedFallbackData = ({
+  request,
+  search,
+  facets,
+  index,
+  groupOption,
+}: {
+  readonly request: {
+    readonly groupSlug: string
+    readonly valueSlug: string
+  }
+  readonly search: ListingSearch
+  readonly facets: ListingFacets
+  readonly index: ListingGroupIndex
+  readonly groupOption: Option.Option<ListingGroupDefinition>
+}): GroupedListingsData => {
+  const group = Option.isSome(groupOption) ? groupOption.value : null
+  const groupValues =
+    group === null ? [] : (index.valuesByGroup.get(group.slug) ?? [])
+
+  return {
+    requested: request,
+    group: group === null ? null : listingGroupPublicInfo(group),
+    matchedValue: null,
+    listings: [],
+    facets,
+    search,
+    pageSize: LISTINGS_PAGE_SIZE,
+    hasNextPage: false,
+    relatedGroups: index.summaries,
+    relatedValues: (groupValues.length > 0
+      ? groupValues
+      : index.topValues
+    ).slice(0, GROUPED_RELATED_VALUE_LIMIT),
+  }
+}
+
+const loadGroupedListings = Effect.fn('Listings.loadGroupedListings')(
+  function* (request: ListingGroupRequest) {
+    const search = request.search
+    const groupSlug = slugifyGroupValue(request.groupSlug)
+    const valueSlug = slugifyGroupValue(request.valueSlug)
+    const [index, facets] = yield* Effect.all(
+      [buildListingGroupIndex(), buildFacets()],
+      { concurrency: 2 },
+    )
+    const groupOption = listingGroupDefinitionOption(groupSlug)
+    const normalizedRequest = { groupSlug, valueSlug }
+
+    if (Option.isNone(groupOption)) {
+      return groupedFallbackData({
+        request: normalizedRequest,
+        search,
+        facets,
+        index,
+        groupOption,
+      })
+    }
+
+    const group = groupOption.value
+    const groupValues = index.valuesByGroup.get(group.slug) ?? []
+    const matchedValueOption = Option.fromNullishOr(
+      groupValues.find((value) => value.valueSlug === valueSlug),
+    )
+
+    if (Option.isNone(matchedValueOption)) {
+      return groupedFallbackData({
+        request: normalizedRequest,
+        search,
+        facets,
+        index,
+        groupOption,
+      })
+    }
+
+    const matchedValue = matchedValueOption.value
+    const groupedListings = yield* loadGroupedListingCards(
+      group,
+      matchedValue.valueSlug,
+      search,
+    )
+
+    return {
+      requested: normalizedRequest,
+      group: listingGroupPublicInfo(group),
+      matchedValue,
+      listings: groupedListings.listings,
+      facets,
+      search,
+      pageSize: LISTINGS_PAGE_SIZE,
+      hasNextPage: groupedListings.hasNextPage,
+      relatedGroups: index.summaries,
+      relatedValues: groupValues
+        .filter((value) => value.valueSlug !== matchedValue.valueSlug)
+        .slice(0, GROUPED_RELATED_VALUE_LIMIT),
+    } satisfies GroupedListingsData
+  },
+)
 
 const loadHome = Effect.fn('Listings.loadHome')(function* () {
   const client = yield* DdfDbClient
@@ -1175,96 +2227,218 @@ const loadOffices = Effect.fn('Listings.loadOffices')(function* (
   search: DirectorySearch,
 ) {
   const client = yield* DdfDbClient
-  const rows = (yield* client.offices.list({
-    select: [
-      'officeKey',
-      'officeName',
-      'phone',
-      'city',
-      'province',
-      'address1',
-      'address2',
-      'postalCode',
-      'officeType',
-      'media',
-    ],
-    filters: {
-      active: true,
-      city: search.city || undefined,
-      province: search.province || undefined,
-    },
-    limit: DIRECTORY_PAGE_SIZE + 1,
-    offset: (search.page - 1) * DIRECTORY_PAGE_SIZE,
-    orderBy: [{ field: 'officeName', direction: 'asc' }],
-  })) as ReadonlyArray<DbRow>
+  const row = (yield* client.offices.get(EXIT_EXCEL_OFFICE_KEY, {
+    select: officeSelect,
+    include: officeInclude,
+  })) as DbRow | null
+  const office = toOffice(row)
+  if (office === null) {
+    return {
+      items: [],
+      search: { ...search, page: 1 },
+      pageSize: DIRECTORY_PAGE_SIZE,
+      hasNextPage: false,
+    } satisfies DirectoryData<OfficeDetail>
+  }
+
+  const listingRows: DbRow[] = []
+  let offset = 0
+  let hasMoreListings = true
+
+  while (hasMoreListings) {
+    const page = (yield* client.properties.list({
+      select: listingSelect,
+      includeRaw: true,
+      include: propertyInclude,
+      filters: {
+        active: true,
+      },
+      limit: 500,
+      offset,
+      orderBy: [{ field: 'modificationTimestamp', direction: 'desc' }],
+    })) as ReadonlyArray<DbRow>
+
+    listingRows.push(
+      ...page.filter((item) => listingHasOffice(item, office.officeKey)),
+    )
+    hasMoreListings = page.length === 500
+    offset += page.length
+  }
+
+  const listings = listingRows.map(toListingCard)
+  const agents = sortAgents(
+    uniqueBy(
+      listings.flatMap((listing) => listing.agents),
+      (agent) => agent.memberKey,
+    ),
+  )
 
   return {
-    items: rows.slice(0, DIRECTORY_PAGE_SIZE).flatMap((row) => {
-      const office = toOffice(row)
-      return office === null ? [] : [office]
-    }),
-    search,
+    items: [{ ...office, agents, listings }],
+    search: { ...search, page: 1 },
     pageSize: DIRECTORY_PAGE_SIZE,
-    hasNextPage: rows.length > DIRECTORY_PAGE_SIZE,
-  } satisfies DirectoryData<OfficeCard>
+    hasNextPage: false,
+  } satisfies DirectoryData<OfficeDetail>
 })
+
+const loadActiveOfficeAgentKeys = Effect.fn(
+  'Listings.loadActiveOfficeAgentKeys',
+)(function* () {
+  const client = yield* DdfDbClient
+  const keys = new Set<string>()
+  let offset = 0
+  let hasMoreListings = true
+
+  while (hasMoreListings) {
+    const rows = (yield* client.properties.list({
+      select: activePropertyKeySelect,
+      filters: {
+        active: true,
+      },
+      limit: 500,
+      offset,
+      orderBy: [{ field: 'modificationTimestamp', direction: 'desc' }],
+    })) as ReadonlyArray<DbRow>
+
+    for (const row of rows) {
+      if (!listingHasOffice(row, EXIT_EXCEL_OFFICE_KEY)) continue
+      for (const key of listingAgentKeys(row)) {
+        keys.add(key)
+      }
+    }
+
+    hasMoreListings = rows.length === 500
+    offset += rows.length
+  }
+
+  return Array.from(keys)
+})
+
+const sortAgents = (agents: ReadonlyArray<PersonCard>) =>
+  [...agents].sort((left, right) => {
+    const leftName = [left.lastName, left.firstName, left.memberKey]
+      .filter((value): value is string => value !== null)
+      .join(' ')
+    const rightName = [right.lastName, right.firstName, right.memberKey]
+      .filter((value): value is string => value !== null)
+      .join(' ')
+    return leftName.localeCompare(rightName)
+  })
 
 const loadAgents = Effect.fn('Listings.loadAgents')(function* (
   search: AgentSearch,
 ) {
   const client = yield* DdfDbClient
-  const rows = (yield* client.members.list({
-    select: [
-      'memberKey',
-      'firstName',
-      'lastName',
-      'jobTitle',
-      'phone',
-      'city',
-      'province',
-      'officeKey',
-      'media',
-    ],
-    include: {
-      office: {
-        select: [
-          'officeKey',
-          'officeName',
-          'phone',
-          'city',
-          'province',
-          'address1',
-          'address2',
-          'postalCode',
-          'officeType',
-          'media',
-        ],
+  const activeAgentKeys = yield* loadActiveOfficeAgentKeys()
+  const activeAgentKeySet = new Set(activeAgentKeys)
+
+  if (activeAgentKeys.length === 0) {
+    return {
+      items: [],
+      search: { ...search, officeKey: EXIT_EXCEL_OFFICE_KEY },
+      pageSize: DIRECTORY_PAGE_SIZE,
+      hasNextPage: false,
+    } satisfies DirectoryData<PersonCard>
+  }
+
+  const agents: PersonCard[] = []
+  let offset = 0
+  let hasMoreMembers = true
+
+  while (hasMoreMembers) {
+    const rows = (yield* client.members.list({
+      select: memberSelect,
+      includeRaw: true,
+      include: memberInclude,
+      filters: {
+        active: true,
+        officeKey: EXIT_EXCEL_OFFICE_KEY,
       },
-    },
-    filters: {
-      active: true,
-      officeKey: search.officeKey || undefined,
-    },
-    limit: DIRECTORY_PAGE_SIZE + 1,
-    offset: (search.page - 1) * DIRECTORY_PAGE_SIZE,
-    orderBy: [{ field: 'lastName', direction: 'asc' }],
-  })) as ReadonlyArray<DbRow>
+      limit: 500,
+      offset,
+      orderBy: [{ field: 'lastName', direction: 'asc' }],
+    })) as ReadonlyArray<DbRow>
+
+    for (const row of rows) {
+      const agent = toPerson(row)
+      if (agent !== null && activeAgentKeySet.has(agent.memberKey)) {
+        agents.push(agent)
+      }
+    }
+
+    hasMoreMembers = rows.length === 500
+    offset += rows.length
+  }
+
+  const sortedAgents = sortAgents(agents)
+  const pageOffset = (search.page - 1) * DIRECTORY_PAGE_SIZE
+  const pageItems = sortedAgents.slice(
+    pageOffset,
+    pageOffset + DIRECTORY_PAGE_SIZE,
+  )
 
   return {
-    items: rows.slice(0, DIRECTORY_PAGE_SIZE).flatMap((row) => {
-      const agent = toPerson(row)
-      return agent === null ? [] : [agent]
-    }),
-    search,
+    items: pageItems,
+    search: { ...search, officeKey: EXIT_EXCEL_OFFICE_KEY },
     pageSize: DIRECTORY_PAGE_SIZE,
-    hasNextPage: rows.length > DIRECTORY_PAGE_SIZE,
+    hasNextPage: sortedAgents.length > pageOffset + DIRECTORY_PAGE_SIZE,
   } satisfies DirectoryData<PersonCard>
 })
 
-const loadOpenHouses = Effect.fn('Listings.loadOpenHouses')(function* (
-  search: OpenHouseSearch,
+const loadAgentDetail = Effect.fn('Listings.loadAgentDetail')(function* (
+  agentKey: string,
 ) {
   const client = yield* DdfDbClient
+  const agent = toPerson(
+    (yield* client.members.get(agentKey, {
+      select: memberSelect,
+      includeRaw: true,
+      include: memberInclude,
+    })) as DbRow | null,
+  )
+  if (agent === null || agent.officeKey !== EXIT_EXCEL_OFFICE_KEY) return null
+
+  const rows: DbRow[] = []
+  let offset = 0
+  let hasMoreListings = true
+
+  while (hasMoreListings) {
+    const page = (yield* client.properties.list({
+      select: listingSelect,
+      includeRaw: true,
+      include: propertyInclude,
+      filters: {
+        active: true,
+      },
+      limit: 500,
+      offset,
+      orderBy: [{ field: 'modificationTimestamp', direction: 'desc' }],
+    })) as ReadonlyArray<DbRow>
+
+    rows.push(...page.filter((row) => listingHasAgent(row, agentKey)))
+    hasMoreListings = page.length === 500
+    offset += page.length
+  }
+
+  const listings = rows.map(toListingCard)
+  const openHouses = uniqueBy(
+    listings.flatMap((listing) => listing.openHouses),
+    (openHouse) => openHouse.openHouseKey,
+  )
+
+  return {
+    ...agent,
+    listings,
+    openHouses,
+  } satisfies AgentDetail
+})
+
+const loadOpenHouses = Effect.fn('Listings.loadOpenHouses')(function* (
+  search: OpenHouseSearch & { readonly cursor?: number },
+) {
+  const client = yield* DdfDbClient
+  const offset = search.cursor ?? (search.page - 1) * DIRECTORY_PAGE_SIZE
+  const page = Math.floor(offset / DIRECTORY_PAGE_SIZE) + 1
   const rows = (yield* client.openHouses.list({
     select: [
       'openHouseKey',
@@ -1287,18 +2461,25 @@ const loadOpenHouses = Effect.fn('Listings.loadOpenHouses')(function* (
       listingKey: search.listingKey || undefined,
     },
     limit: DIRECTORY_PAGE_SIZE + 1,
-    offset: (search.page - 1) * DIRECTORY_PAGE_SIZE,
-    orderBy: [{ field: 'openHouseDate', direction: 'desc' }],
+    offset,
+    orderBy: [
+      { field: 'openHouseDate', direction: 'desc' },
+      { field: 'openHouseKey', direction: 'desc' },
+    ],
   })) as ReadonlyArray<DbRow>
+  const hasNextPage = rows.length > DIRECTORY_PAGE_SIZE
 
   return {
     items: rows.slice(0, DIRECTORY_PAGE_SIZE).flatMap((row) => {
       const openHouse = toOpenHouse(row)
       return openHouse === null ? [] : [openHouse]
     }),
-    search,
+    search: { listingKey: search.listingKey, page },
     pageSize: DIRECTORY_PAGE_SIZE,
-    hasNextPage: rows.length > DIRECTORY_PAGE_SIZE,
+    hasNextPage,
+    nextCursor: hasNextPage ? offset + DIRECTORY_PAGE_SIZE : null,
+    previousCursor:
+      offset > 0 ? Math.max(0, offset - DIRECTORY_PAGE_SIZE) : null,
   } satisfies DirectoryData<OpenHouseCard>
 })
 
@@ -1309,6 +2490,10 @@ export const getHomeData = createServerFn({ method: 'GET' }).handler(() =>
 export const getListingsData = createServerFn({ method: 'GET' })
   .inputValidator(parseListingSearch)
   .handler(({ data }) => runServerEffect(loadListings(data)))
+
+export const getGroupedListingsData = createServerFn({ method: 'GET' })
+  .inputValidator(parseListingGroupRequest)
+  .handler(({ data }) => runServerEffect(loadGroupedListings(data)))
 
 export const getListingDetail = createServerFn({ method: 'GET' })
   .inputValidator((input: unknown) => {
@@ -1346,6 +2531,19 @@ export const getAgentsData = createServerFn({ method: 'GET' })
   .inputValidator(parseAgentSearch)
   .handler(({ data }) => runServerEffect(loadAgents(data)))
 
+export const getAgentDetail = createServerFn({ method: 'GET' })
+  .inputValidator((input: unknown) => {
+    const value =
+      input !== null && typeof input === 'object'
+        ? (input as Record<string, unknown>)
+        : {}
+    const agentKey =
+      typeof value.agentKey === 'string' ? value.agentKey.trim() : ''
+    if (!agentKey) throw new Error('agentKey is required')
+    return { agentKey }
+  })
+  .handler(({ data }) => runServerEffect(loadAgentDetail(data.agentKey)))
+
 export const getOpenHousesData = createServerFn({ method: 'GET' })
-  .inputValidator(parseOpenHouseSearch)
+  .inputValidator(parseOpenHousePageRequest)
   .handler(({ data }) => runServerEffect(loadOpenHouses(data)))

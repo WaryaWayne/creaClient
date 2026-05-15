@@ -17,6 +17,8 @@ import { Route as ListingsIndexRouteImport } from './routes/listings/index'
 import { Route as AgentsIndexRouteImport } from './routes/agents/index'
 import { Route as OpenHousesOpenHouseKeyRouteImport } from './routes/open-houses/$openHouseKey'
 import { Route as ListingsListingKeyRouteImport } from './routes/listings/$listingKey'
+import { Route as AgentsAgentKeyRouteImport } from './routes/agents/$agentKey'
+import { Route as SearchGroupValueRouteImport } from './routes/search/$group/$value'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const McpRoute = McpRouteImport.update({
@@ -59,6 +61,16 @@ const ListingsListingKeyRoute = ListingsListingKeyRouteImport.update({
   path: '/listings/$listingKey',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentsAgentKeyRoute = AgentsAgentKeyRouteImport.update({
+  id: '/agents/$agentKey',
+  path: '/agents/$agentKey',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchGroupValueRoute = SearchGroupValueRouteImport.update({
+  id: '/search/$group/$value',
+  path: '/search/$group/$value',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -68,6 +80,7 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/mcp': typeof McpRoute
+  '/agents/$agentKey': typeof AgentsAgentKeyRoute
   '/listings/$listingKey': typeof ListingsListingKeyRoute
   '/open-houses/$openHouseKey': typeof OpenHousesOpenHouseKeyRoute
   '/agents/': typeof AgentsIndexRoute
@@ -75,10 +88,12 @@ export interface FileRoutesByFullPath {
   '/offices/': typeof OfficesIndexRoute
   '/open-houses/': typeof OpenHousesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/search/$group/$value': typeof SearchGroupValueRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/mcp': typeof McpRoute
+  '/agents/$agentKey': typeof AgentsAgentKeyRoute
   '/listings/$listingKey': typeof ListingsListingKeyRoute
   '/open-houses/$openHouseKey': typeof OpenHousesOpenHouseKeyRoute
   '/agents': typeof AgentsIndexRoute
@@ -86,11 +101,13 @@ export interface FileRoutesByTo {
   '/offices': typeof OfficesIndexRoute
   '/open-houses': typeof OpenHousesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/search/$group/$value': typeof SearchGroupValueRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/mcp': typeof McpRoute
+  '/agents/$agentKey': typeof AgentsAgentKeyRoute
   '/listings/$listingKey': typeof ListingsListingKeyRoute
   '/open-houses/$openHouseKey': typeof OpenHousesOpenHouseKeyRoute
   '/agents/': typeof AgentsIndexRoute
@@ -98,12 +115,14 @@ export interface FileRoutesById {
   '/offices/': typeof OfficesIndexRoute
   '/open-houses/': typeof OpenHousesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/search/$group/$value': typeof SearchGroupValueRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/mcp'
+    | '/agents/$agentKey'
     | '/listings/$listingKey'
     | '/open-houses/$openHouseKey'
     | '/agents/'
@@ -111,10 +130,12 @@ export interface FileRouteTypes {
     | '/offices/'
     | '/open-houses/'
     | '/api/auth/$'
+    | '/search/$group/$value'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/mcp'
+    | '/agents/$agentKey'
     | '/listings/$listingKey'
     | '/open-houses/$openHouseKey'
     | '/agents'
@@ -122,10 +143,12 @@ export interface FileRouteTypes {
     | '/offices'
     | '/open-houses'
     | '/api/auth/$'
+    | '/search/$group/$value'
   id:
     | '__root__'
     | '/'
     | '/mcp'
+    | '/agents/$agentKey'
     | '/listings/$listingKey'
     | '/open-houses/$openHouseKey'
     | '/agents/'
@@ -133,11 +156,13 @@ export interface FileRouteTypes {
     | '/offices/'
     | '/open-houses/'
     | '/api/auth/$'
+    | '/search/$group/$value'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   McpRoute: typeof McpRoute
+  AgentsAgentKeyRoute: typeof AgentsAgentKeyRoute
   ListingsListingKeyRoute: typeof ListingsListingKeyRoute
   OpenHousesOpenHouseKeyRoute: typeof OpenHousesOpenHouseKeyRoute
   AgentsIndexRoute: typeof AgentsIndexRoute
@@ -145,6 +170,7 @@ export interface RootRouteChildren {
   OfficesIndexRoute: typeof OfficesIndexRoute
   OpenHousesIndexRoute: typeof OpenHousesIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  SearchGroupValueRoute: typeof SearchGroupValueRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -205,6 +231,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListingsListingKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agents/$agentKey': {
+      id: '/agents/$agentKey'
+      path: '/agents/$agentKey'
+      fullPath: '/agents/$agentKey'
+      preLoaderRoute: typeof AgentsAgentKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search/$group/$value': {
+      id: '/search/$group/$value'
+      path: '/search/$group/$value'
+      fullPath: '/search/$group/$value'
+      preLoaderRoute: typeof SearchGroupValueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -218,6 +258,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   McpRoute: McpRoute,
+  AgentsAgentKeyRoute: AgentsAgentKeyRoute,
   ListingsListingKeyRoute: ListingsListingKeyRoute,
   OpenHousesOpenHouseKeyRoute: OpenHousesOpenHouseKeyRoute,
   AgentsIndexRoute: AgentsIndexRoute,
@@ -225,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   OfficesIndexRoute: OfficesIndexRoute,
   OpenHousesIndexRoute: OpenHousesIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  SearchGroupValueRoute: SearchGroupValueRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

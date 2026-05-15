@@ -45,35 +45,34 @@ import {
 } from '#/components/ui/select'
 import { cn } from '#/lib/utils'
 
+import { listingFiltersAtom, openHouseFiltersAtom } from './state'
 import {
-  agentFiltersAtom,
-  listingFiltersAtom,
-  officeFiltersAtom,
-  openHouseFiltersAtom,
-} from './state'
-import {
-  compactAgentSearch,
-  compactDirectorySearch,
   compactListingSearch,
   compactOpenHouseSearch,
   defaultListingSearch,
   defaultOpenHouseSearch,
   listingSortOptions,
 } from './search'
+import { EXIT_EXCEL_OFFICE_NAME } from './data'
 
 import type {
+  AgentDetail,
   DirectoryData,
   DetailGroup,
+  GroupedListingsData,
   HomeData,
   ListingCard as ListingCardType,
   ListingDetail,
   ListingFacets,
+  ListingGroupSearchKey,
   ListingsData,
   MediaCard,
   OfficeCard,
+  OfficeDetail,
   OpenHouseDetail,
   OpenHouseCard,
   PersonCard,
+  SocialMediaCard,
 } from './data'
 import type {
   AgentSearch,
@@ -295,7 +294,6 @@ function OpenHouseImageBadge({
 }) {
   if (openHouses.length === 0) return null
   const nextOpenHouse = openHouses[0]
-  if (!nextOpenHouse) return null
 
   return (
     <Link
@@ -330,7 +328,13 @@ function OfficeCreditBlock({ office }: { readonly office: OfficeCard }) {
             Office
           </p>
           <p className="mt-1 font-extrabold text-[var(--sea-ink)]">
-            {office.officeName ?? 'Office'}
+            <Link
+              to="/offices"
+              search={{ city: '', province: '', page: 1 }}
+              className="text-[var(--sea-ink)] no-underline hover:text-[var(--lagoon-deep)]"
+            >
+              {office.officeName ?? 'Office'}
+            </Link>
           </p>
           <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
             {[office.address, office.city, office.province, office.postalCode]
@@ -365,9 +369,13 @@ function AgentCreditBox({ agent }: { readonly agent: PersonCard }) {
         )}
       </div>
       <div className="min-w-0">
-        <p className="font-extrabold text-[var(--sea-ink)]">
+        <Link
+          to="/agents/$agentKey"
+          params={{ agentKey: agent.memberKey }}
+          className="font-extrabold text-[var(--sea-ink)] no-underline hover:text-[var(--lagoon-deep)]"
+        >
           {personName(agent)}
-        </p>
+        </Link>
         {agent.jobTitle ? (
           <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--kicker)]">
             {agent.jobTitle}
@@ -475,6 +483,100 @@ function AgentMessageForm({
             Message
           </span>
           <Textarea name="message" required className="min-h-28 bg-white/80" />
+        </label>
+        <Button type="submit" className="justify-self-start">
+          <Send />
+          Submit
+        </Button>
+      </form>
+    </div>
+  )
+}
+
+function ContactAgentButton({
+  agent,
+  buttonLabel = 'Contact agent',
+}: {
+  readonly agent: PersonCard
+  readonly buttonLabel?: string
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <>
+      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
+        <MessageSquare />
+        {buttonLabel}
+      </Button>
+      <DetailsDialog
+        title={`Contact ${personName(agent)}`}
+        open={open}
+        onOpenChange={setOpen}
+      >
+        <AgentLeadForm agent={agent} onSubmitted={() => setOpen(false)} />
+      </DetailsDialog>
+    </>
+  )
+}
+
+function AgentLeadForm({
+  agent,
+  onSubmitted,
+}: {
+  readonly agent: PersonCard
+  readonly onSubmitted: () => void
+}) {
+  const submitLead = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    console.log('agent-contact-lead', {
+      agentKey: agent.memberKey,
+      agentName: personName(agent),
+      officeKey: agent.officeKey,
+      officeName: agent.office?.officeName,
+      email: form.get('email'),
+      phone: form.get('phone'),
+      message: form.get('message'),
+    })
+    event.currentTarget.reset()
+    onSubmitted()
+  }
+
+  return (
+    <div className="grid gap-4">
+      <div className="rounded-md border border-[var(--line)] bg-[var(--foam)] p-3">
+        <p className="font-extrabold text-[var(--sea-ink)]">
+          {personName(agent)}
+        </p>
+        <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
+          {[agent.jobTitle, agent.office?.officeName]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+      </div>
+      <form className="grid gap-3" onSubmit={submitLead}>
+        <label className="grid gap-1.5">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+            Email
+          </span>
+          <Input name="email" type="email" required className="bg-white/80" />
+        </label>
+        <label className="grid gap-1.5">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+            Phone number
+          </span>
+          <Input name="phone" type="tel" required className="bg-white/80" />
+        </label>
+        <label className="grid gap-1.5">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+            Message
+          </span>
+          <Textarea
+            name="message"
+            required
+            className="min-h-28 bg-white/80"
+            defaultValue={`Hi ${personName(agent)}, I would like more information.`}
+          />
         </label>
         <Button type="submit" className="justify-self-start">
           <Send />
@@ -769,14 +871,17 @@ export function ListingsGrid({
 export function ListingFilters({
   search,
   facets,
+  hiddenFields = [],
   onChange,
 }: {
   readonly search: ListingSearch
   readonly facets: ListingFacets
+  readonly hiddenFields?: ReadonlyArray<ListingGroupSearchKey>
   readonly onChange: (search: ListingSearch) => void
 }) {
   const [filters, setFilters] = useAtom(listingFiltersAtom)
   const searchKey = JSON.stringify(search)
+  const hiddenFieldSet = new Set(hiddenFields)
 
   useEffect(() => {
     setFilters(search)
@@ -798,34 +903,42 @@ export function ListingFilters({
           Every change is reflected in the URL.
         </p>
       </div>
-      <SelectFilter
-        label="City"
-        value={filters.city}
-        placeholder="All cities"
-        options={facets.cities}
-        onChange={(city) => commit({ city })}
-      />
-      <SelectFilter
-        label="Province"
-        value={filters.province}
-        placeholder="All provinces"
-        options={facets.provinces}
-        onChange={(province) => commit({ province })}
-      />
-      <SelectFilter
-        label="Status"
-        value={filters.status}
-        placeholder="All statuses"
-        options={facets.statuses}
-        onChange={(status) => commit({ status })}
-      />
-      <SelectFilter
-        label="Type"
-        value={filters.type}
-        placeholder="All property types"
-        options={facets.types}
-        onChange={(type) => commit({ type })}
-      />
+      {hiddenFieldSet.has('city') ? null : (
+        <SelectFilter
+          label="City"
+          value={filters.city}
+          placeholder="All cities"
+          options={facets.cities}
+          onChange={(city) => commit({ city })}
+        />
+      )}
+      {hiddenFieldSet.has('province') ? null : (
+        <SelectFilter
+          label="Province"
+          value={filters.province}
+          placeholder="All provinces"
+          options={facets.provinces}
+          onChange={(province) => commit({ province })}
+        />
+      )}
+      {hiddenFieldSet.has('status') ? null : (
+        <SelectFilter
+          label="Status"
+          value={filters.status}
+          placeholder="All statuses"
+          options={facets.statuses}
+          onChange={(status) => commit({ status })}
+        />
+      )}
+      {hiddenFieldSet.has('type') ? null : (
+        <SelectFilter
+          label="Type"
+          value={filters.type}
+          placeholder="All property types"
+          options={facets.types}
+          onChange={(type) => commit({ type })}
+        />
+      )}
       <div className="grid grid-cols-2 gap-3">
         <label className="grid gap-1.5">
           <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
@@ -950,8 +1063,177 @@ export function ListingsPage({
   )
 }
 
+export function GroupedListingsPage({
+  data,
+  onSearchChange,
+}: {
+  readonly data: GroupedListingsData
+  readonly onSearchChange: (search: ListingSearch) => void
+}) {
+  if (data.group === null || data.matchedValue === null) {
+    return <ListingGroupFallback data={data} />
+  }
+
+  return (
+    <main className="page-wrap grid gap-8 py-8 lg:grid-cols-[290px_1fr]">
+      <ListingFilters
+        search={data.search}
+        facets={data.facets}
+        hiddenFields={data.group.suppressedSearchKeys}
+        onChange={onSearchChange}
+      />
+      <section className="grid gap-5">
+        <div className="rounded-lg border border-[var(--line)] bg-white/72 p-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+            {data.group.label}
+          </p>
+          <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+            {data.matchedValue.value}
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
+            {data.group.description} Keep filtering this grouped page by city,
+            province, status, price, beds, baths, or sort order.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2 text-sm font-semibold text-[var(--sea-ink-soft)]">
+            <span className="rounded-full border border-[var(--line)] bg-white/72 px-3 py-1">
+              {number.format(data.matchedValue.count)} active listings in this
+              group
+            </span>
+            <span className="rounded-full border border-[var(--line)] bg-white/72 px-3 py-1">
+              Page {data.search.page} · Showing {data.listings.length}
+            </span>
+          </div>
+        </div>
+        <ListingsGrid listings={data.listings} />
+        <Pagination
+          page={data.search.page}
+          hasNextPage={data.hasNextPage}
+          onPage={(page) => onSearchChange({ ...data.search, page })}
+        />
+        <RelatedListingPages
+          title={`More ${data.group.pluralLabel.toLowerCase()}`}
+          values={data.relatedValues}
+        />
+      </section>
+    </main>
+  )
+}
+
+function ListingGroupFallback({
+  data,
+}: {
+  readonly data: GroupedListingsData
+}) {
+  const title =
+    data.group === null
+      ? 'Listing group not found'
+      : `${data.group.label} not found`
+
+  return (
+    <main className="page-wrap grid gap-6 py-8">
+      <section className="rounded-lg border border-[var(--line)] bg-white/72 p-6">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+          Grouped search
+        </p>
+        <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+          {title}
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
+          The route did not match a current active listing value. Pick one of
+          the related grouped pages below.
+        </p>
+        <Button asChild className="mt-5">
+          <Link to="/listings" search={defaultListingSearch}>
+            View all listings
+          </Link>
+        </Button>
+      </section>
+      <RelatedListingPages
+        title={
+          data.group === null
+            ? 'Available grouped listing pages'
+            : `Available ${data.group.pluralLabel.toLowerCase()}`
+        }
+        values={data.relatedValues}
+      />
+      <ListingGroupDirectory groups={data.relatedGroups} />
+    </main>
+  )
+}
+
+function RelatedListingPages({
+  title,
+  values,
+}: {
+  readonly title: string
+  readonly values: GroupedListingsData['relatedValues']
+}) {
+  if (values.length === 0) return null
+
+  return (
+    <section className="grid gap-3">
+      <h2 className="display-title text-2xl font-bold text-[var(--sea-ink)]">
+        {title}
+      </h2>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {values.map((value) => (
+          <Link
+            to="/search/$group/$value"
+            params={{ group: value.groupSlug, value: value.valueSlug }}
+            search={defaultListingSearch}
+            className="group rounded-lg border border-[var(--line)] bg-white/72 p-4 text-[var(--sea-ink)] no-underline transition hover:border-[var(--lagoon-deep)]"
+            key={`${value.groupSlug}-${value.valueSlug}`}
+          >
+            <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
+              {value.groupLabel}
+            </span>
+            <span className="mt-1 block text-lg font-extrabold group-hover:text-[var(--lagoon-deep)]">
+              {value.value}
+            </span>
+            <span className="mt-2 block text-sm font-semibold text-[var(--sea-ink-soft)]">
+              {number.format(value.count)} listings
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function ListingGroupDirectory({
+  groups,
+}: {
+  readonly groups: GroupedListingsData['relatedGroups']
+}) {
+  if (groups.length === 0) return null
+
+  return (
+    <section className="grid gap-3">
+      <h2 className="display-title text-2xl font-bold text-[var(--sea-ink)]">
+        Group fields
+      </h2>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {groups.map((group) => (
+          <div
+            className="rounded-lg border border-[var(--line)] bg-white/66 p-4"
+            key={group.groupSlug}
+          >
+            <p className="text-sm font-extrabold text-[var(--sea-ink)]">
+              {group.pluralLabel}
+            </p>
+            <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
+              {number.format(group.valueCount)} values ·{' '}
+              {number.format(group.listingCount)} listings
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export function HomePage({ data }: { readonly data: HomeData }) {
-  const heroListing = data.featuredListings[0]
+  const heroListing = data.featuredListings.at(0) ?? null
   return (
     <main>
       <section className="page-wrap grid gap-8 py-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
@@ -1083,7 +1365,7 @@ function ListingOpenHousesPanel({
 }: {
   readonly listing: ListingDetail
 }) {
-  const firstOpenHouse = listing.openHouses[0]
+  const firstOpenHouse = listing.openHouses.at(0) ?? null
   const hasMultipleOpenHouses = listing.openHouses.length > 1
 
   return (
@@ -1714,65 +1996,52 @@ function DetailItem({
 
 export function OfficesPage({
   data,
-  onSearchChange,
 }: {
-  readonly data: DirectoryData<OfficeCard>
-  readonly onSearchChange: (search: DirectorySearch) => void
+  readonly data: DirectoryData<OfficeDetail>
+  readonly onSearchChange?: (search: DirectorySearch) => void
 }) {
-  const [filters, setFilters] = useAtom(officeFiltersAtom)
-  const routeSearch = data.search as DirectorySearch
-  const searchKey = JSON.stringify(routeSearch)
+  const office = data.items.at(0) ?? null
 
-  useEffect(() => {
-    setFilters(routeSearch)
-  }, [routeSearch, searchKey, setFilters])
-
-  const commit = (patch: Partial<DirectorySearch>) => {
-    const next = { ...filters, ...patch, page: patch.page ?? 1 }
-    setFilters(next)
-    onSearchChange(compactDirectorySearch(next) as DirectorySearch)
-  }
-
-  return (
-    <DirectoryPageShell
-      eyebrow="Directory"
-      title="Offices"
-      description="Browse offices from the local CREA DDF database."
-      filters={
-        <div className="grid gap-3 md:grid-cols-3">
-          <LabeledInput
-            label="City"
-            value={filters.city}
-            onChange={(city) => commit({ city })}
-          />
-          <LabeledInput
-            label="Province"
-            value={filters.province}
-            onChange={(province) => commit({ province })}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => commit({ city: '', province: '' })}
-          >
-            Clear
+  if (office === null) {
+    return (
+      <main className="page-wrap py-14">
+        <div className="rounded-lg border border-[var(--line)] bg-white/80 p-8">
+          <h1 className="text-2xl font-extrabold">Office not found</h1>
+          <p className="mt-2 text-sm text-[var(--sea-ink-soft)]">
+            EXIT EXCEL REALTY was not found in the local office table.
+          </p>
+          <Button asChild className="mt-5">
+            <Link to="/listings" search={defaultListingSearch}>
+              Back to listings
+            </Link>
           </Button>
         </div>
-      }
-    >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {data.items.map((office) => (
-          <DirectoryCard key={office.officeKey}>
-            <OfficeRow office={office} prominent />
-          </DirectoryCard>
-        ))}
-      </div>
-      <Pagination
-        page={routeSearch.page}
-        hasNextPage={data.hasNextPage}
-        onPage={(page) => commit({ page })}
-      />
-    </DirectoryPageShell>
+      </main>
+    )
+  }
+
+  return <OfficeDetailView office={office} />
+}
+
+function OfficeMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  readonly icon: typeof Building2
+  readonly label: string
+  readonly value: string
+}) {
+  return (
+    <div className="rounded-md border border-[var(--line)] bg-white/72 p-3">
+      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--sea-ink-soft)]">
+        <Icon className="size-3.5" />
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-extrabold text-[var(--sea-ink)]">
+        {value}
+      </p>
+    </div>
   )
 }
 
@@ -1783,63 +2052,223 @@ export function AgentsPage({
   readonly data: DirectoryData<PersonCard>
   readonly onSearchChange: (search: AgentSearch) => void
 }) {
-  const [filters, setFilters] = useAtom(agentFiltersAtom)
   const routeSearch = data.search as AgentSearch
-  const searchKey = JSON.stringify(routeSearch)
-
-  useEffect(() => {
-    setFilters(routeSearch)
-  }, [routeSearch, searchKey, setFilters])
-
-  const commit = (patch: Partial<AgentSearch>) => {
-    const next = { ...filters, ...patch, page: patch.page ?? 1 }
-    setFilters(next)
-    onSearchChange(compactAgentSearch(next) as AgentSearch)
-  }
 
   return (
     <DirectoryPageShell
-      eyebrow="Directory"
-      title="Agents"
-      description="Browse member records and narrow the list by office key."
-      filters={
-        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-          <LabeledInput
-            label="Office key"
-            value={filters.officeKey}
-            onChange={(officeKey) => commit({ officeKey })}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => commit({ officeKey: '' })}
-          >
-            Clear
-          </Button>
-        </div>
-      }
+      eyebrow="Members"
+      title={`${EXIT_EXCEL_OFFICE_NAME} Agents`}
+      description={`Showing only EXIT EXCEL REALTY members attached to active listings.`}
     >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {data.items.map((agent) => (
-          <DirectoryCard key={agent.memberKey}>
-            <AgentRow agent={agent} prominent />
-          </DirectoryCard>
-        ))}
-      </div>
+      {data.items.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {data.items.map((agent) => (
+            <DirectoryCard key={agent.memberKey}>
+              <AgentRow agent={agent} prominent />
+            </DirectoryCard>
+          ))}
+        </div>
+      ) : (
+        <DirectoryEmpty message="No EXIT EXCEL REALTY members have active listings in the local property table." />
+      )}
       <Pagination
         page={routeSearch.page}
         hasNextPage={data.hasNextPage}
-        onPage={(page) => commit({ page })}
+        onPage={(page) => onSearchChange({ ...routeSearch, page })}
       />
     </DirectoryPageShell>
   )
 }
 
+export function AgentDetailPage({
+  agent,
+}: {
+  readonly agent: AgentDetail | null
+}) {
+  if (agent === null) {
+    return (
+      <main className="page-wrap py-14">
+        <div className="rounded-lg border border-[var(--line)] bg-white/80 p-8">
+          <h1 className="text-2xl font-extrabold">Agent not found</h1>
+          <Button asChild className="mt-5">
+            <Link to="/agents" search={{ officeKey: '', page: 1 }}>
+              Back to agents
+            </Link>
+          </Button>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="page-wrap grid gap-6 py-8">
+      <section className="grid gap-6 rounded-lg border border-[var(--line)] bg-white/78 p-5 lg:grid-cols-[auto_1fr_auto] lg:items-start">
+        <div className="flex size-28 items-center justify-center overflow-hidden rounded-lg bg-[var(--sand)] text-[var(--palm)]">
+          {agent.imageUrl ? (
+            <img
+              src={agent.imageUrl}
+              alt={personName(agent)}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <UserRound className="size-12" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+            Agent
+          </p>
+          <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+            {personName(agent)}
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-[var(--sea-ink-soft)]">
+            {[agent.jobTitle, agent.type, agent.status]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+          <p className="mt-1 text-sm leading-6 text-[var(--sea-ink-soft)]">
+            {[agent.office?.officeName, agent.city, agent.province]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 lg:justify-end">
+          <ContactAgentButton agent={agent} />
+          <Button asChild variant="outline">
+            <Link to="/offices" search={{ city: '', province: '', page: 1 }}>
+              <Building2 />
+              Office
+            </Link>
+          </Button>
+        </div>
+      </section>
+      <section className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
+        <div className="grid gap-6">
+          <InfoSection title="Agent details">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <DetailItem label="Agent key" value={agent.memberKey} />
+              <DetailItem label="MLS member ID" value={agent.memberMlsId} />
+              <DetailItem
+                label="National association ID"
+                value={agent.nationalAssociationId}
+              />
+              <DetailItem
+                label="Office national ID"
+                value={agent.officeNationalAssociationId}
+              />
+              <DetailItem label="AOR" value={agent.memberAor} />
+              <DetailItem label="AOR key" value={agent.memberAorKey} />
+              <DetailItem label="Office key" value={agent.officeKey} />
+              <DetailItem label="Nickname" value={agent.nickname} />
+            </div>
+          </InfoSection>
+          <InfoSection title="Contact and location">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <DetailItem label="Phone" value={agent.phone} />
+              <DetailItem label="Phone extension" value={agent.phoneExt} />
+              <DetailItem label="Toll-free phone" value={agent.tollFreePhone} />
+              <DetailItem label="Fax" value={agent.fax} />
+              <DetailItem label="Address" value={agent.address} />
+              <DetailItem label="City" value={agent.city} />
+              <DetailItem label="Province" value={agent.province} />
+              <DetailItem label="Postal code" value={agent.postalCode} />
+              <DetailItem label="Country" value={agent.country} />
+            </div>
+          </InfoSection>
+          <AgentTagsSection
+            title="Languages"
+            values={agent.languages}
+            emptyLabel="No languages are attached."
+          />
+          <AgentTagsSection
+            title="Designations"
+            values={agent.designations}
+            emptyLabel="No designations are attached."
+          />
+          <InfoSection title="Listings">
+            {agent.listings.length > 0 ? (
+              <ListingsGrid listings={agent.listings} />
+            ) : (
+              <DirectoryEmpty message="No active listings are attached to this agent." />
+            )}
+          </InfoSection>
+          <InfoSection title="Related open houses">
+            {agent.openHouses.length > 0 ? (
+              <div className="grid gap-4 lg:grid-cols-2">
+                {agent.openHouses.map((openHouse) => (
+                  <OpenHouseRow
+                    openHouse={openHouse}
+                    prominent
+                    key={openHouse.openHouseKey}
+                  />
+                ))}
+              </div>
+            ) : (
+              <DirectoryEmpty message="No open houses are attached to this agent's active listings." />
+            )}
+          </InfoSection>
+        </div>
+        <aside className="island-shell grid content-start gap-5 rounded-lg p-5 lg:sticky lg:top-24">
+          <AgentRow agent={agent} prominent />
+          {agent.office ? (
+            <div className="grid gap-3 border-t border-[var(--line)] pt-5">
+              <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-[var(--kicker)]">
+                Office
+              </p>
+              <OfficeRow office={agent.office} prominent />
+              <Button asChild variant="outline">
+                <Link
+                  to="/offices"
+                  search={{ city: '', province: '', page: 1 }}
+                >
+                  Office details
+                </Link>
+              </Button>
+            </div>
+          ) : null}
+          <SocialLinksList socialMedia={agent.socialMedia} />
+        </aside>
+      </section>
+    </main>
+  )
+}
+
+function AgentTagsSection({
+  title,
+  values,
+  emptyLabel,
+}: {
+  readonly title: string
+  readonly values: ReadonlyArray<string>
+  readonly emptyLabel: string
+}) {
+  return (
+    <InfoSection title={title}>
+      {values.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {values.map((value) => (
+            <span
+              className="rounded-full border border-[var(--line)] bg-white/80 px-3 py-1 text-sm font-semibold text-[var(--sea-ink)]"
+              key={value}
+            >
+              {value}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-[var(--sea-ink-soft)]">{emptyLabel}</p>
+      )}
+    </InfoSection>
+  )
+}
+
 export function OpenHousesPage({
   data,
+  isPaging = false,
   onSearchChange,
 }: {
   readonly data: DirectoryData<OpenHouseCard>
+  readonly isPaging?: boolean
   readonly onSearchChange: (search: OpenHouseSearch) => void
 }) {
   const [filters, setFilters] = useAtom(openHouseFiltersAtom)
@@ -1890,6 +2319,7 @@ export function OpenHousesPage({
       <Pagination
         page={routeSearch.page}
         hasNextPage={data.hasNextPage}
+        isPending={isPaging}
         onPage={(page) => commit({ page })}
       />
     </DirectoryPageShell>
@@ -1906,7 +2336,7 @@ function DirectoryPageShell({
   readonly eyebrow: string
   readonly title: string
   readonly description: string
-  readonly filters: ReactNode
+  readonly filters?: ReactNode
   readonly children: ReactNode
 }) {
   return (
@@ -1921,10 +2351,241 @@ function DirectoryPageShell({
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
           {description}
         </p>
-        <div className="mt-5">{filters}</div>
+        {filters ? <div className="mt-5">{filters}</div> : null}
       </section>
       {children}
     </main>
+  )
+}
+
+function DirectoryEmpty({ message }: { readonly message: string }) {
+  return (
+    <div className="rounded-lg border border-dashed border-[var(--line)] bg-white/70 p-8 text-center">
+      <p className="text-lg font-bold text-[var(--sea-ink)]">{message}</p>
+    </div>
+  )
+}
+
+function OfficeAgentLinkCard({ agent }: { readonly agent: PersonCard }) {
+  return (
+    <Link
+      to="/agents/$agentKey"
+      params={{ agentKey: agent.memberKey }}
+      className="group flex items-center gap-3 rounded-md border border-[var(--line)] bg-white/74 p-3 text-[var(--sea-ink)] no-underline hover:border-[var(--lagoon-deep)] hover:text-[var(--lagoon-deep)]"
+    >
+      <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--sand)] text-[var(--palm)]">
+        {agent.imageUrl ? (
+          <img
+            src={agent.imageUrl}
+            alt={personName(agent)}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <UserRound className="size-5" />
+        )}
+      </div>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-extrabold">
+          {personName(agent)}
+        </span>
+        <span className="mt-0.5 block truncate text-xs font-semibold text-[var(--sea-ink-soft)]">
+          {agent.jobTitle ?? agent.memberKey}
+        </span>
+      </span>
+      <ArrowRight className="size-4 shrink-0 transition group-hover:translate-x-0.5" />
+    </Link>
+  )
+}
+
+function OfficeDetailView({ office }: { readonly office: OfficeDetail }) {
+  const groupedMedia = mediaGroups(office.media)
+  const heroImageUrl =
+    office.imageUrl ?? groupedMedia.photos.at(0)?.mediaUrl ?? null
+
+  return (
+    <main className="page-wrap grid gap-6 py-8">
+      <section className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
+        <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-white/78">
+          <div className="grid gap-0 md:grid-cols-[minmax(0,1fr)_280px]">
+            <div className="grid content-between gap-6 p-6">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+                  Office
+                </p>
+                <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+                  {office.officeName ?? EXIT_EXCEL_OFFICE_NAME}
+                </h1>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
+                  {[
+                    office.address,
+                    office.city,
+                    office.province,
+                    office.postalCode,
+                  ]
+                    .filter(Boolean)
+                    .join(', ') || `Office key ${office.officeKey}`}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild>
+                  <Link to="/agents" search={{ officeKey: '', page: 1 }}>
+                    <Users />
+                    Agents
+                  </Link>
+                </Button>
+                {office.phone ? (
+                  <Button asChild variant="outline">
+                    <a href={`tel:${office.phone}`}>
+                      <Phone />
+                      Call office
+                    </a>
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+            <div className="min-h-64 bg-[var(--sand)] text-[var(--palm)] md:min-h-full">
+              {heroImageUrl ? (
+                <img
+                  src={heroImageUrl}
+                  alt={office.officeName ?? 'Office logo'}
+                  className="h-full w-full object-contain p-8"
+                />
+              ) : (
+                <div className="flex h-full min-h-64 items-center justify-center">
+                  <Building2 className="size-16" />
+                </div>
+              )}
+            </div>
+          </div>
+          {groupedMedia.photos.length > 1 ? (
+            <div className="grid grid-cols-2 gap-2 border-t border-[var(--line)] p-3 sm:grid-cols-4">
+              {groupedMedia.photos.slice(0, 4).map((media) => (
+                <img
+                  src={media.mediaUrl ?? ''}
+                  alt={media.longDescription ?? office.officeName ?? 'Office'}
+                  className="aspect-[4/3] rounded-md bg-[var(--sand)] object-cover"
+                  loading="lazy"
+                  key={mediaKey(media)}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <aside className="island-shell grid content-start gap-5 rounded-lg p-5 lg:sticky lg:top-24">
+          <OfficeRow office={office} prominent />
+          <div className="grid grid-cols-2 gap-3">
+            <OfficeMetric
+              icon={Users}
+              label="Agents"
+              value={number.format(office.agents.length)}
+            />
+            <OfficeMetric
+              icon={Home}
+              label="Listings"
+              value={number.format(office.listings.length)}
+            />
+          </div>
+          <SocialLinksList socialMedia={office.socialMedia} />
+        </aside>
+      </section>
+      <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+        <InfoSection title="Office details">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DetailItem label="Office key" value={office.officeKey} />
+            <DetailItem label="MLS office ID" value={office.officeMlsId} />
+            <DetailItem
+              label="National association ID"
+              value={office.officeNationalAssociationId}
+            />
+            <DetailItem
+              label="Franchise ID"
+              value={office.franchiseNationalAssociationId}
+            />
+            <DetailItem
+              label="Broker national ID"
+              value={office.officeBrokerNationalAssociationId}
+            />
+            <DetailItem label="AOR" value={office.officeAor} />
+            <DetailItem label="AOR key" value={office.officeAorKey} />
+            <DetailItem label="Type" value={office.officeType} />
+            <DetailItem label="Status" value={office.officeStatus} />
+          </div>
+        </InfoSection>
+        <InfoSection title="Address and contact">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DetailItem label="Address" value={office.address} />
+            <DetailItem label="City" value={office.city} />
+            <DetailItem label="Province" value={office.province} />
+            <DetailItem label="Postal code" value={office.postalCode} />
+            <DetailItem label="Country" value={office.country} />
+            <DetailItem label="Phone" value={office.phone} />
+            <DetailItem label="Phone extension" value={office.phoneExt} />
+            <DetailItem label="Fax" value={office.fax} />
+          </div>
+        </InfoSection>
+      </section>
+      <InfoSection title="Agents">
+        {office.agents.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {office.agents.map((agent) => (
+              <OfficeAgentLinkCard agent={agent} key={agent.memberKey} />
+            ))}
+          </div>
+        ) : (
+          <DirectoryEmpty message="No active agents are attached to this office's listings." />
+        )}
+      </InfoSection>
+      <InfoSection title="Office listings">
+        {office.listings.length > 0 ? (
+          <ListingsGrid listings={office.listings} />
+        ) : (
+          <DirectoryEmpty message="No active listings are attached to this office." />
+        )}
+      </InfoSection>
+      {groupedMedia.all.length > 0 ? (
+        <InfoSection title="Media">
+          <MediaGroupsView
+            listingAddress={office.officeName ?? EXIT_EXCEL_OFFICE_NAME}
+            media={groupedMedia}
+          />
+        </InfoSection>
+      ) : null}
+    </main>
+  )
+}
+
+function SocialLinksList({
+  socialMedia,
+}: {
+  readonly socialMedia: ReadonlyArray<SocialMediaCard>
+}) {
+  if (socialMedia.length === 0) {
+    return (
+      <div className="rounded-md border border-dashed border-[var(--line)] bg-white/60 p-3 text-sm text-[var(--sea-ink-soft)]">
+        No social media links are attached.
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid gap-3">
+      <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-[var(--kicker)]">
+        Social
+      </p>
+      {socialMedia.map((item) => (
+        <a
+          className="flex items-center justify-between gap-3 rounded-md border border-[var(--line)] bg-white/70 p-3 text-sm font-semibold text-[var(--sea-ink)] no-underline hover:text-[var(--lagoon-deep)]"
+          href={item.socialMediaUrlOrId ?? '#'}
+          target="_blank"
+          rel="noreferrer"
+          key={item.socialMediaKey ?? item.socialMediaUrlOrId}
+        >
+          <span>{item.socialMediaType ?? 'Social link'}</span>
+          <ExternalLink className="size-4" />
+        </a>
+      ))}
+    </div>
   )
 }
 
@@ -1962,10 +2623,27 @@ export function OfficeRow({
   readonly office: OfficeCard
   readonly prominent?: boolean
 }) {
+  const identifiers = [
+    `Office key ${office.officeKey}`,
+    office.officeMlsId ? `MLS ${office.officeMlsId}` : null,
+    office.officeNationalAssociationId
+      ? `National ${office.officeNationalAssociationId}`
+      : null,
+  ].filter(Boolean)
+
   return (
     <div className="flex items-start gap-3">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[var(--sand)] text-[var(--palm)]">
-        <Building2 className="size-5" />
+      <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--sand)] text-[var(--palm)]">
+        {office.imageUrl ? (
+          <img
+            src={office.imageUrl}
+            alt={office.officeName ?? 'Office logo'}
+            className="h-full w-full object-contain"
+            loading="lazy"
+          />
+        ) : (
+          <Building2 className="size-5" />
+        )}
       </div>
       <div className="min-w-0">
         <p
@@ -1979,6 +2657,9 @@ export function OfficeRow({
         <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
           {[office.city, office.province].filter(Boolean).join(', ') ||
             office.officeKey}
+        </p>
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--sea-ink-soft)]">
+          {identifiers.join(' · ')}
         </p>
         {office.phone ? (
           <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[var(--sea-ink-soft)]">
@@ -1999,30 +2680,65 @@ export function AgentRow({
   readonly prominent?: boolean
 }) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[var(--sand)] text-[var(--palm)]">
-        <UserRound className="size-5" />
-      </div>
-      <div className="min-w-0">
-        <p
-          className={cn(
-            'font-extrabold text-[var(--sea-ink)]',
-            prominent ? 'text-lg' : 'text-sm',
+    <div className="grid gap-4">
+      <div className="flex items-start gap-3">
+        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--sand)] text-[var(--palm)]">
+          {agent.imageUrl ? (
+            <img
+              src={agent.imageUrl}
+              alt={personName(agent)}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <UserRound className="size-5" />
           )}
-        >
-          {personName(agent)}
-        </p>
-        <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
-          {agent.office?.officeName ??
-            [agent.city, agent.province].filter(Boolean).join(', ') ??
-            agent.memberKey}
-        </p>
-        {agent.phone ? (
-          <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[var(--sea-ink-soft)]">
-            <Phone className="size-3" />
-            {agent.phone}
+        </div>
+        <div className="min-w-0">
+          <Link
+            to="/agents/$agentKey"
+            params={{ agentKey: agent.memberKey }}
+            className={cn(
+              'font-extrabold text-[var(--sea-ink)] no-underline hover:text-[var(--lagoon-deep)]',
+              prominent ? 'text-lg' : 'text-sm',
+            )}
+          >
+            {personName(agent)}
+          </Link>
+          {agent.jobTitle ? (
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--kicker)]">
+              {agent.jobTitle}
+            </p>
+          ) : null}
+          <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
+            {agent.office?.officeName ||
+              [agent.city, agent.province].filter(Boolean).join(', ') ||
+              agent.memberKey}
           </p>
-        ) : null}
+          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--sea-ink-soft)]">
+            Agent key {agent.memberKey}
+            {agent.officeKey ? ` · Office key ${agent.officeKey}` : ''}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-[var(--sea-ink-soft)]">
+            {agent.phone ? (
+              <span className="inline-flex items-center gap-1">
+                <Phone className="size-3" />
+                {agent.phone}
+              </span>
+            ) : null}
+            {agent.type ? <span>{agent.type}</span> : null}
+            {agent.status ? <span>{agent.status}</span> : null}
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button asChild size="sm">
+          <Link to="/agents/$agentKey" params={{ agentKey: agent.memberKey }}>
+            <UserRound />
+            Details
+          </Link>
+        </Button>
+        <ContactAgentButton agent={agent} buttonLabel="Contact" />
       </div>
     </div>
   )
@@ -2121,10 +2837,12 @@ export function OpenHouseRow({
 function Pagination({
   page,
   hasNextPage,
+  isPending = false,
   onPage,
 }: {
   readonly page: number
   readonly hasNextPage: boolean
+  readonly isPending?: boolean
   readonly onPage: (page: number) => void
 }) {
   return (
@@ -2132,7 +2850,7 @@ function Pagination({
       <Button
         type="button"
         variant="outline"
-        disabled={page <= 1}
+        disabled={isPending || page <= 1}
         onClick={() => onPage(Math.max(1, page - 1))}
       >
         Previous
@@ -2143,7 +2861,7 @@ function Pagination({
       <Button
         type="button"
         variant="outline"
-        disabled={!hasNextPage}
+        disabled={isPending || !hasNextPage}
         onClick={() => onPage(page + 1)}
       >
         Next

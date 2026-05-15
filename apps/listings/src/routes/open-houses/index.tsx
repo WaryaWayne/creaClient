@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query'
 import {
   createFileRoute,
   stripSearchParams,
@@ -5,7 +7,7 @@ import {
 } from '@tanstack/react-router'
 
 import { OpenHousesPage } from '#/features/listings/components'
-import { openHousesQueryOptions } from '#/features/listings/queries'
+import { openHousesInfiniteQueryOptions } from '#/features/listings/queries'
 import {
   compactOpenHouseSearch,
   defaultOpenHouseSearch,
@@ -19,8 +21,12 @@ export const Route = createFileRoute('/open-houses/')({
   search: {
     middlewares: [stripSearchParams(defaultOpenHouseSearch)],
   },
-  loader: ({ context, search }) =>
-    context.queryClient.ensureQueryData(openHousesQueryOptions(search)),
+  loaderDeps: ({ search }) => search,
+  loader: ({ context, deps }) =>
+    context.queryClient.ensureInfiniteQueryData({
+      ...openHousesInfiniteQueryOptions(deps),
+      pages: deps.page,
+    }),
   head: () => ({
     meta: [{ title: 'Open Houses | CREA Listings Browser' }],
   }),
@@ -28,14 +34,69 @@ export const Route = createFileRoute('/open-houses/')({
 })
 
 function OpenHousesRoute() {
-  const data = Route.useLoaderData()
+  const search = Route.useSearch()
+  const query = useSuspenseInfiniteQuery(openHousesInfiniteQueryOptions(search))
   const navigate = useNavigate({ from: '/open-houses/' })
+  const loadedPageCount = query.data.pages.length
+  const pageIndex = search.page - 1
+  const loadedPage = query.data.pages[pageIndex]
+  const lastLoadedPage = query.data.pages.at(-1)
 
-  const onSearchChange = (search: OpenHouseSearch) => {
-    void navigate({
-      search: compactOpenHouseSearch(parseOpenHouseSearch(search)),
-    })
+  if (lastLoadedPage === undefined) {
+    throw new Error('Open houses query returned no pages')
   }
 
-  return <OpenHousesPage data={data} onSearchChange={onSearchChange} />
+  useEffect(() => {
+    if (
+      search.page <= loadedPageCount ||
+      !query.hasNextPage ||
+      query.isFetchingNextPage
+    ) {
+      return
+    }
+
+    void query.fetchNextPage()
+  }, [
+    search.page,
+    loadedPageCount,
+    query.hasNextPage,
+    query.isFetchingNextPage,
+    query.fetchNextPage,
+  ])
+
+  const onSearchChange = (next: OpenHouseSearch) => {
+    const parsed = parseOpenHouseSearch(next)
+    const nextSearch =
+      parsed.listingKey === search.listingKey ? parsed : { ...parsed, page: 1 }
+    const go = () =>
+      void navigate({
+        search: compactOpenHouseSearch(nextSearch),
+      })
+
+    if (
+      nextSearch.page === loadedPageCount + 1 &&
+      query.hasNextPage &&
+      !query.isFetchingNextPage
+    ) {
+      void query.fetchNextPage().then(go)
+      return
+    }
+
+    go()
+  }
+
+  return (
+    <OpenHousesPage
+      data={
+        loadedPage ?? {
+          ...lastLoadedPage,
+          items: [],
+          search,
+          hasNextPage: query.hasNextPage,
+        }
+      }
+      isPaging={query.isFetchingNextPage}
+      onSearchChange={onSearchChange}
+    />
+  )
 }

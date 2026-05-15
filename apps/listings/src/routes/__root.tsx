@@ -13,6 +13,8 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import { getLocale } from '#/paraglide/runtime'
 import {
+  defaultAgentSearch,
+  defaultDirectorySearch,
   defaultListingSearch,
   defaultOpenHouseSearch,
 } from '#/features/listings/search'
@@ -121,6 +123,16 @@ function SiteHeader() {
             className={linkClass}
           >
             Open houses
+          </Link>
+          <Link
+            to="/offices"
+            search={defaultDirectorySearch}
+            className={linkClass}
+          >
+            Office
+          </Link>
+          <Link to="/agents" search={defaultAgentSearch} className={linkClass}>
+            Agents
           </Link>
         </nav>
       </div>
