@@ -15,7 +15,11 @@ import type { ListingDetail, OpenHouseDetail } from '../data'
 import { defaultListingSearch, defaultOpenHouseSearch } from '../search'
 import { OpenHouseRow } from './directory-pages'
 import { ListingActions } from './listing-actions'
-import { ListingCredits, OpenHouseImageBadge } from './listing-card'
+import {
+  ListingCredits,
+  ListingsGrid,
+  OpenHouseImageBadge,
+} from './listing-card'
 import { MediaGroupsView, mediaGroups, mediaKey } from './media'
 import {
   DetailGroupSection,
@@ -247,8 +251,7 @@ export function OpenHouseDetailPage({
           </div>
         ) : (
           <p className="rounded-md border border-dashed border-[var(--line)] bg-white/60 p-3 text-sm text-[var(--sea-ink-soft)]">
-            No other open houses for this property subtype are in the current
-            sample.
+            No nearby or similar open houses are in the current sample.
           </p>
         )}
       </section>
@@ -364,6 +367,11 @@ export function ListingDetailPage({
                 </div>
               ))}
             </div>
+          </InfoSection>
+        ) : null}
+        {listing.relatedListings.length > 0 ? (
+          <InfoSection title="Similar listings">
+            <ListingsGrid listings={listing.relatedListings} />
           </InfoSection>
         ) : null}
         {groupedMedia.all.length > 0 ? (
