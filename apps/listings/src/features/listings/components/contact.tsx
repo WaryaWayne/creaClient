@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link } from '@tanstack/react-router'
 import { MessageSquare, Phone, Send, UserRound, Users } from 'lucide-react'
 
 import { Button } from '@workspace/ui/components/button'
@@ -13,8 +12,8 @@ import { personName } from './utils'
 
 function AgentCreditBox({ agent }: { readonly agent: PersonCard }) {
   return (
-    <div className="flex items-start gap-3 rounded-md border border-[var(--line)] bg-white/78 p-3">
-      <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--sand)] text-[var(--palm)]">
+    <div className="flex items-start gap-3 rounded-md border border-border bg-background p-3">
+      <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-background text-foreground">
         {agent.imageUrl ? (
           <img
             src={agent.imageUrl}
@@ -27,25 +26,21 @@ function AgentCreditBox({ agent }: { readonly agent: PersonCard }) {
         )}
       </div>
       <div className="min-w-0">
-        <Link
-          to="/agents/$agentKey"
-          params={{ agentKey: agent.memberKey }}
-          className="font-extrabold text-[var(--sea-ink)] no-underline hover:text-[var(--lagoon-deep)]"
-        >
+        <p className="font-extrabold text-foreground">
           {personName(agent)}
-        </Link>
+        </p>
         {agent.jobTitle ? (
-          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--kicker)]">
+          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
             {agent.jobTitle}
           </p>
         ) : null}
-        <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
+        <p className="mt-1 text-sm text-foreground">
           {agent.office?.officeName ??
             ([agent.city, agent.province].filter(Boolean).join(', ') ||
               agent.memberKey)}
         </p>
         {agent.phone ? (
-          <p className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--sea-ink-soft)]">
+          <p className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-foreground">
             <Phone className="size-3" />
             {agent.phone}
           </p>
@@ -77,7 +72,7 @@ export function AgentsDialogButton({
       >
         <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
           <div className="grid content-start gap-4">
-            <p className="text-sm leading-6 text-[var(--sea-ink-soft)]">
+            <p className="text-sm leading-6 text-foreground">
               {listing.address}
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -113,34 +108,34 @@ function AgentMessageForm({
   }
 
   return (
-    <div className="grid content-start gap-3 rounded-lg border border-[var(--line)] bg-[var(--foam)] p-4">
+    <div className="grid content-start gap-3 rounded-lg border border-border bg-background p-4">
       <div>
-        <p className="inline-flex items-center gap-2 text-sm font-extrabold text-[var(--sea-ink)]">
+        <p className="inline-flex items-center gap-2 text-sm font-extrabold text-foreground">
           <MessageSquare className="size-4" />
           Send message
         </p>
-        <p className="mt-1 text-xs leading-5 text-[var(--sea-ink-soft)]">
+        <p className="mt-1 text-xs leading-5 text-foreground">
           This logs the request in the browser console for now.
         </p>
       </div>
       <form className="grid gap-3" onSubmit={submitMessage}>
         <label className="grid gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
             Email
           </span>
-          <Input name="email" type="email" required className="bg-white/80" />
+          <Input name="email" type="email" required className="bg-background" />
         </label>
         <label className="grid gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
             Phone number
           </span>
-          <Input name="phone" type="tel" required className="bg-white/80" />
+          <Input name="phone" type="tel" required className="bg-background" />
         </label>
         <label className="grid gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
             Message
           </span>
-          <Textarea name="message" required className="min-h-28 bg-white/80" />
+          <Textarea name="message" required className="min-h-28 bg-background" />
         </label>
         <Button type="submit" className="justify-self-start">
           <Send />
@@ -202,11 +197,11 @@ function AgentLeadForm({
 
   return (
     <div className="grid gap-4">
-      <div className="rounded-md border border-[var(--line)] bg-[var(--foam)] p-3">
-        <p className="font-extrabold text-[var(--sea-ink)]">
+      <div className="rounded-md border border-border bg-background p-3">
+        <p className="font-extrabold text-foreground">
           {personName(agent)}
         </p>
-        <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
+        <p className="mt-1 text-sm text-foreground">
           {[agent.jobTitle, agent.office?.officeName]
             .filter(Boolean)
             .join(' · ')}
@@ -214,25 +209,25 @@ function AgentLeadForm({
       </div>
       <form className="grid gap-3" onSubmit={submitLead}>
         <label className="grid gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
             Email
           </span>
-          <Input name="email" type="email" required className="bg-white/80" />
+          <Input name="email" type="email" required className="bg-background" />
         </label>
         <label className="grid gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
             Phone number
           </span>
-          <Input name="phone" type="tel" required className="bg-white/80" />
+          <Input name="phone" type="tel" required className="bg-background" />
         </label>
         <label className="grid gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
             Message
           </span>
           <Textarea
             name="message"
             required
-            className="min-h-28 bg-white/80"
+            className="min-h-28 bg-background"
             defaultValue={`Hi ${personName(agent)}, I would like more information.`}
           />
         </label>

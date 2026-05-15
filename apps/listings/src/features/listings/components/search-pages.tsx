@@ -3,6 +3,14 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { ArrowRight, Search } from 'lucide-react'
 
 import { Button } from '@workspace/ui/components/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@workspace/ui/components/card'
 import { Input } from '@workspace/ui/components/input'
 import { cn } from '#/lib/utils'
 
@@ -17,7 +25,8 @@ import { ListingsGrid } from './listing-card'
 import { OpenHouseRow } from './directory-pages'
 import { ListingGroupDirectory, RelatedListingPages } from './search-links'
 import { groupOrderRank } from './search-order'
-import { DirectoryPanel, SectionHeader } from './shared'
+import { DirectoryPanel, EmptyState, SectionHeader } from './shared'
+import { countLabel, displaySearchGroupValue } from './utils'
 
 type SearchDestination =
   | {
@@ -25,13 +34,11 @@ type SearchDestination =
       readonly search: ListingSearch
     }
   | {
+      readonly type: 'rentals'
+      readonly search: ListingSearch
+    }
+  | {
       readonly type: 'open-houses'
-    }
-  | {
-      readonly type: 'offices'
-    }
-  | {
-      readonly type: 'agents'
     }
   | {
       readonly type: 'group'
@@ -112,25 +119,32 @@ const rankedSearchActions = (
 
 const groupValueAction = (
   value: SearchIndexData['topValues'][number],
-): SearchIndexAction => ({
-  id: `value-${value.groupSlug}-${value.valueSlug}`,
-  eyebrow: value.groupLabel,
-  label: value.value,
-  description: `View listings that match this ${value.groupLabel.toLowerCase()}.`,
-  count: value.count,
-  keywords: [
-    value.valueSlug,
-    value.groupSlug,
-    value.groupLabel,
-    value.pluralLabel,
-    `${value.value} listings`,
-  ],
-  destination: {
-    type: 'group-value',
-    groupSlug: value.groupSlug,
-    valueSlug: value.valueSlug,
-  },
-})
+): SearchIndexAction => {
+  const displayLabel = displaySearchGroupValue(value.groupSlug, value.value)
+
+  return {
+    id: `value-${value.groupSlug}-${value.valueSlug}`,
+    eyebrow: value.groupLabel,
+    label: displayLabel,
+    description: `View listings that match this ${value.groupLabel.toLowerCase()}.`,
+    count: value.count,
+    keywords: [
+      value.value,
+      displayLabel,
+      value.valueSlug,
+      value.groupSlug,
+      value.groupLabel,
+      value.pluralLabel,
+      `${value.value} listings`,
+      `${displayLabel} listings`,
+    ],
+    destination: {
+      type: 'group-value',
+      groupSlug: value.groupSlug,
+      valueSlug: value.valueSlug,
+    },
+  }
+}
 
 const buildSearchIndexActions = (
   data: SearchIndexData,
@@ -144,28 +158,20 @@ const buildSearchIndexActions = (
     destination: { type: 'listings', search: defaultListingSearch },
   },
   {
+    id: 'browse-rentals',
+    eyebrow: 'Browse',
+    label: 'Rentals',
+    description: 'Active rental listings with lease pricing.',
+    keywords: ['rentals', 'leases', 'for lease', 'rental listings'],
+    destination: { type: 'rentals', search: defaultListingSearch },
+  },
+  {
     id: 'browse-open-houses',
     eyebrow: 'Schedule',
     label: 'Open houses',
     description: 'Scheduled open house records.',
     keywords: ['open house', 'showing', 'schedule'],
     destination: { type: 'open-houses' },
-  },
-  {
-    id: 'browse-office',
-    eyebrow: 'Office',
-    label: 'Office',
-    description: 'EXIT EXCEL REALTY office page.',
-    keywords: ['brokerage', 'exit excel realty', 'office listings'],
-    destination: { type: 'offices' },
-  },
-  {
-    id: 'browse-agents',
-    eyebrow: 'Agents',
-    label: 'Agents',
-    description: 'Agents attached to active listings.',
-    keywords: ['members', 'realtors', 'salespeople', 'broker'],
-    destination: { type: 'agents' },
   },
   ...data.groups.map(({ group, summary }) => ({
     id: `group-${group.slug}`,
@@ -237,22 +243,13 @@ const runSearchDestination = (
     case 'listings':
       void navigate({ to: '/listings', search: destination.search })
       return
+    case 'rentals':
+      void navigate({ to: '/rentals', search: destination.search })
+      return
     case 'open-houses':
       void navigate({
         to: '/open-houses',
         search: defaultOpenHouseSearch,
-      })
-      return
-    case 'offices':
-      void navigate({
-        to: '/offices',
-        search: { city: '', province: '', page: 1 },
-      })
-      return
-    case 'agents':
-      void navigate({
-        to: '/agents',
-        search: { officeKey: '', page: 1 },
       })
       return
     case 'group':
@@ -285,36 +282,56 @@ function SearchActionList({
 }) {
   if (actions.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-[var(--line)] bg-white/70 p-6 text-sm font-semibold text-[var(--sea-ink-soft)]">
-        {emptyLabel}
-      </div>
+      <EmptyState
+        title={emptyLabel}
+        icon={Search}
+        align="start"
+        size="compact"
+        className="bg-background p-6"
+      />
     )
   }
 
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {actions.map((action) => (
-        <button
-          className="group grid gap-2 rounded-lg border border-[var(--line)] bg-white/74 p-4 text-left text-[var(--sea-ink)] transition hover:border-[var(--lagoon-deep)]"
-          type="button"
-          onClick={() => onSelect(action)}
+        <Card
+          size="sm"
+          className="group h-full min-h-40 rounded-lg border border-border bg-background py-0 text-foreground ring-0 shadow-none transition hover:border-border"
           key={action.id}
         >
-          <span className="flex items-start justify-between gap-3">
-            <span>
-              <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
-                {action.eyebrow}
-              </span>
-              <span className="mt-1 block text-lg font-extrabold group-hover:text-[var(--lagoon-deep)]">
+          <CardHeader className="min-w-0 gap-1 px-4 pt-4">
+            <div className="min-w-0">
+              <CardDescription className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
+                <span className="line-clamp-1">{action.eyebrow}</span>
+                {typeof action.count === 'number' ? (
+                  <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold normal-case tracking-normal text-foreground">
+                    {countLabel(action.count, 'listing', 'listings')}
+                  </span>
+                ) : null}
+              </CardDescription>
+              <CardTitle className="mt-1 line-clamp-2 break-words text-lg font-extrabold leading-tight text-foreground group-hover:text-foreground">
                 {action.label}
-              </span>
-            </span>
-            <ArrowRight className="mt-1 size-4 shrink-0 transition group-hover:translate-x-0.5" />
-          </span>
-          <span className="block text-sm leading-5 text-[var(--sea-ink-soft)]">
-            {action.description}
-          </span>
-        </button>
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="px-4">
+            <p className="line-clamp-2 text-sm leading-5 text-foreground">
+              {action.description}
+            </p>
+          </CardContent>
+          <CardFooter className="mt-auto px-4 pb-4 pt-4">
+            <Button
+              type="button"
+              className="w-full justify-between"
+              variant="outline"
+              onClick={() => onSelect(action)}
+            >
+              View
+              <ArrowRight />
+            </Button>
+          </CardFooter>
+        </Card>
       ))}
     </div>
   )
@@ -369,6 +386,59 @@ const useRotatingSearchPrompt = () => {
   return rotatingSearchPrompts[index] ?? rotatingSearchPrompts[0]
 }
 
+const groupMosaicClass = (label: string, index: number) =>
+  cn(
+    'group h-full min-h-44 rounded-lg border border-border bg-background py-0 text-foreground ring-0 shadow-none transition hover:border-border',
+    label.length > 18 ? 'sm:col-span-2' : null,
+    index === 0 ? 'md:col-span-2' : null,
+  )
+
+function SearchGroupMosaicCard({
+  group,
+  listingCount,
+  index,
+}: {
+  readonly group: SearchIndexData['groups'][number]['group']
+  readonly listingCount: number
+  readonly index: number
+}) {
+  return (
+    <Card size="sm" className={groupMosaicClass(group.pluralLabel, index)}>
+      <CardHeader className="min-w-0 gap-1 px-4 pt-4">
+        <div className="min-w-0">
+          <CardDescription className="line-clamp-1 text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
+            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <span>Browse</span>
+              <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold normal-case tracking-normal text-foreground">
+                {countLabel(listingCount, 'listing', 'listings')}
+              </span>
+            </span>
+          </CardDescription>
+          <CardTitle className="mt-2 line-clamp-2 break-words text-2xl font-extrabold leading-tight text-foreground group-hover:text-foreground">
+            {group.pluralLabel}
+          </CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="px-4">
+        <p className="line-clamp-2 text-sm leading-6 text-foreground">
+          {group.description}
+        </p>
+      </CardContent>
+      <CardFooter className="mt-auto px-4 pb-4 pt-4">
+        <Button
+          nativeButton={false}
+          render={<Link to="/search/$group" params={{ group: group.slug }} />}
+          className="w-full justify-between"
+          variant="outline"
+        >
+          See options
+          <ArrowRight />
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+}
+
 function SearchGroupMosaic({
   groups,
 }: {
@@ -379,33 +449,14 @@ function SearchGroupMosaic({
   return (
     <section className="grid gap-3">
       <SectionHeader title="Browse by category" />
-      <div className="grid items-start gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))]">
-        {groups.map(({ group }, index) => (
-          <Link
-            to="/search/$group"
-            params={{ group: group.slug }}
-            className={cn(
-              'group grid min-h-36 content-between rounded-lg border border-[var(--line)] bg-white/74 p-5 text-[var(--sea-ink)] no-underline transition hover:border-[var(--lagoon-deep)]',
-              index === 0 ? 'md:col-span-2' : null,
-            )}
+      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))]">
+        {groups.map(({ group, summary }, index) => (
+          <SearchGroupMosaicCard
+            group={group}
+            listingCount={summary.listingCount}
+            index={index}
             key={group.slug}
-          >
-            <span>
-              <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
-                Browse
-              </span>
-              <span className="mt-2 block text-2xl font-extrabold group-hover:text-[var(--lagoon-deep)]">
-                {group.pluralLabel}
-              </span>
-              <span className="mt-2 block text-sm leading-6 text-[var(--sea-ink-soft)]">
-                {group.description}
-              </span>
-            </span>
-            <span className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-[var(--lagoon-deep)]">
-              See options
-              <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
-            </span>
-          </Link>
+          />
         ))}
       </div>
     </section>
@@ -465,15 +516,15 @@ export function SearchIndexPage({ data }: { readonly data: SearchIndexData }) {
 
   return (
     <main className="search-page-wrap grid gap-6 py-8">
-      <section className="grid gap-6 rounded-lg border border-[var(--line)] bg-white/76 p-6 lg:grid-cols-[1fr_340px] lg:items-start">
+      <section className="grid gap-6 rounded-lg border border-border bg-background p-6 lg:grid-cols-[1fr_340px] lg:items-start">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
             Listing search
           </p>
-          <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+          <h1 className="display-title mt-2 text-4xl font-bold text-foreground">
             Search by property type, location, water, land, and features.
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-foreground">
             Start with a category like property type or water source, then pick
             the option that matches what you want.
           </p>
@@ -482,7 +533,7 @@ export function SearchIndexPage({ data }: { readonly data: SearchIndexData }) {
             onSubmit={(event) => {
               event.preventDefault()
               const firstMatch = matches.at(0)
-              if (firstMatch) selectAction(firstMatch)
+              if (firstMatch !== undefined) selectAction(firstMatch)
             }}
           >
             <Input
@@ -490,7 +541,7 @@ export function SearchIndexPage({ data }: { readonly data: SearchIndexData }) {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={prompt}
-              className="min-h-12 bg-white/86 text-base"
+              className="min-h-12 bg-background text-base"
             />
             <Button type="submit" size="lg">
               <Search />
@@ -498,27 +549,36 @@ export function SearchIndexPage({ data }: { readonly data: SearchIndexData }) {
             </Button>
           </form>
         </div>
-        <div className="grid gap-3 rounded-lg border border-[var(--line)] bg-[var(--foam)] p-4">
-          <p className="text-sm font-extrabold text-[var(--sea-ink)]">
-            Quick starts
-          </p>
+        <div className="grid gap-3 rounded-lg border border-border bg-background p-4">
+          <p className="text-sm font-extrabold text-foreground">Quick starts</p>
           <div className="flex flex-wrap gap-2">
-            {quickValues.slice(0, 6).map((value) => (
-              <Button
-                nativeButton={false}
-                render={
-                  <Link
-                    to="/search/$group/$value"
-                    params={{ group: value.groupSlug, value: value.valueSlug }}
-                    search={defaultListingSearch}
-                  />
-                }
-                variant="outline"
-                key={`${value.groupSlug}-${value.valueSlug}`}
-              >
-                {value.value}
-              </Button>
-            ))}
+            {quickValues.slice(0, 6).map((value) => {
+              const label = displaySearchGroupValue(
+                value.groupSlug,
+                value.value,
+              )
+
+              return (
+                <Button
+                  nativeButton={false}
+                  render={
+                    <Link
+                      to="/search/$group/$value"
+                      params={{
+                        group: value.groupSlug,
+                        value: value.valueSlug,
+                      }}
+                      search={defaultListingSearch}
+                    />
+                  }
+                  className="max-w-full justify-start"
+                  variant="outline"
+                  key={`${value.groupSlug}-${value.valueSlug}`}
+                >
+                  <span className="min-w-0 truncate">{label}</span>
+                </Button>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -555,29 +615,30 @@ export function SearchGroupPage({ data }: { readonly data: SearchGroupData }) {
   )
   const selectAction = (action: SearchIndexAction) =>
     runSearchDestination(navigate, action.destination)
+  const firstQuickValue = quickValues.at(0)
+  const firstQuickValueLabel =
+    firstQuickValue === undefined
+      ? (data.group?.pluralLabel ?? 'Search options')
+      : displaySearchGroupValue(
+          firstQuickValue.groupSlug,
+          firstQuickValue.value,
+        )
 
   if (data.group === null || data.summary === null) {
     return (
       <main className="search-page-wrap grid gap-6 py-8">
-        <section className="rounded-lg border border-[var(--line)] bg-white/76 p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
-            Listing search
-          </p>
-          <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
-            Category not found
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
-            Browse another category or use one of the quick searches below.
-          </p>
-          <Button
-            nativeButton={false}
-            render={<Link to="/search" />}
-            className="mt-5"
-          >
+        <EmptyState
+          title="Category not found"
+          description="Browse another category or use one of the quick searches below."
+          icon={Search}
+          align="start"
+          className="bg-background p-6"
+        >
+          <Button nativeButton={false} render={<Link to="/search" />}>
             <Search />
             Search listings
           </Button>
-        </section>
+        </EmptyState>
         <ListingGroupDirectory groups={data.relatedGroups} />
         <RelatedListingPages
           title="Quick searches"
@@ -591,15 +652,15 @@ export function SearchGroupPage({ data }: { readonly data: SearchGroupData }) {
 
   return (
     <main className="search-page-wrap grid gap-6 py-8">
-      <section className="grid gap-6 rounded-lg border border-[var(--line)] bg-white/76 p-6 lg:grid-cols-[1fr_340px] lg:items-start">
+      <section className="grid gap-6 rounded-lg border border-border bg-background p-6 lg:grid-cols-[1fr_340px] lg:items-start">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
             {data.group.label}
           </p>
-          <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+          <h1 className="display-title mt-2 text-4xl font-bold text-foreground">
             {data.group.pluralLabel}
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-foreground">
             Choose a {data.group.label.toLowerCase()} to see matching listings.
           </p>
           <form
@@ -607,15 +668,15 @@ export function SearchGroupPage({ data }: { readonly data: SearchGroupData }) {
             onSubmit={(event) => {
               event.preventDefault()
               const firstMatch = matches.at(0)
-              if (firstMatch) selectAction(firstMatch)
+              if (firstMatch !== undefined) selectAction(firstMatch)
             }}
           >
             <Input
               aria-label={`Search ${data.group.pluralLabel}`}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={quickValues.at(0)?.value ?? data.group.pluralLabel}
-              className="min-h-12 bg-white/86 text-base"
+              placeholder={firstQuickValueLabel}
+              className="min-h-12 bg-background text-base"
             />
             <Button type="submit" size="lg">
               <Search />
@@ -623,27 +684,38 @@ export function SearchGroupPage({ data }: { readonly data: SearchGroupData }) {
             </Button>
           </form>
         </div>
-        <div className="grid gap-3 rounded-lg border border-[var(--line)] bg-[var(--foam)] p-4">
-          <p className="text-sm font-extrabold text-[var(--sea-ink)]">
+        <div className="grid gap-3 rounded-lg border border-border bg-background p-4">
+          <p className="text-sm font-extrabold text-foreground">
             Popular options
           </p>
           <div className="flex flex-wrap gap-2">
-            {quickValues.slice(0, 6).map((value) => (
-              <Button
-                nativeButton={false}
-                render={
-                  <Link
-                    to="/search/$group/$value"
-                    params={{ group: value.groupSlug, value: value.valueSlug }}
-                    search={defaultListingSearch}
-                  />
-                }
-                variant="outline"
-                key={`${value.groupSlug}-${value.valueSlug}`}
-              >
-                {value.value}
-              </Button>
-            ))}
+            {quickValues.slice(0, 6).map((value) => {
+              const label = displaySearchGroupValue(
+                value.groupSlug,
+                value.value,
+              )
+
+              return (
+                <Button
+                  nativeButton={false}
+                  render={
+                    <Link
+                      to="/search/$group/$value"
+                      params={{
+                        group: value.groupSlug,
+                        value: value.valueSlug,
+                      }}
+                      search={defaultListingSearch}
+                    />
+                  }
+                  className="max-w-full justify-start"
+                  variant="outline"
+                  key={`${value.groupSlug}-${value.valueSlug}`}
+                >
+                  <span className="min-w-0 truncate">{label}</span>
+                </Button>
+              )
+            })}
           </div>
           <Button
             nativeButton={false}

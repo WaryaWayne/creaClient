@@ -4,6 +4,7 @@ import type {
   OpenHouseCard,
   PersonCard,
 } from '../data'
+import { usableTotalActualRent } from '../data'
 import {
   compactListingSearch,
   defaultListingSearch,
@@ -26,8 +27,10 @@ export const formatMoney = (value: number | null) =>
 
 export const formatListingPrice = (listing: ListingCardType) => {
   if (listing.price !== null) return formatMoney(listing.price)
-  if (listing.leaseAmount !== null) {
-    return `${formatMoney(listing.leaseAmount)}${listing.leaseFrequency ? ` / ${listing.leaseFrequency}` : ''}`
+  const rentAmount =
+    listing.leaseAmount ?? usableTotalActualRent(listing.totalActualRent)
+  if (rentAmount !== null) {
+    return `${formatMoney(rentAmount)}${listing.leaseFrequency ? ` / ${listing.leaseFrequency}` : ''}`
   }
   return 'Price on request'
 }
@@ -171,6 +174,16 @@ export const optionsWithSelectedValue = (
 
 export const countLabel = (value: number, singular: string, plural: string) =>
   value === 1 ? `1 ${singular}` : `${number.format(value)} ${plural}`
+
+export const displaySearchGroupValue = (groupSlug: string, value: string) => {
+  if (groupSlug !== 'neighborhood') return value
+
+  const separatorIndex = value.indexOf('-')
+  if (separatorIndex === -1) return value
+
+  const label = value.slice(separatorIndex + 1).trim()
+  return label || value
+}
 
 export const minCountLabel = (
   value: number,

@@ -37,7 +37,7 @@ const config = defineConfig({
       },
     }),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({ sitemap: { enabled: true, host: 'https://2to6x.com' } }), // TODO: fix host if needed
     viteReact(),
     babel({ presets: [reactCompilerPreset()] }),
   ],

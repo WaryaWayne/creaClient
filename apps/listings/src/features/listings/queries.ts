@@ -10,6 +10,9 @@ import {
   getOfficesData,
   getOpenHouseDetail,
   getOpenHousesData,
+  getRentalGroupedListingsData,
+  getRentalListingsData,
+  getRentalSearchGroupData,
   getSearchGroupData,
   getSearchIndexData,
 } from './data'
@@ -43,6 +46,12 @@ export const searchGroupQueryOptions = (groupSlug: string) =>
   queryOptions({
     queryKey: ['search-group', groupSlug],
     queryFn: () => getSearchGroupData({ data: { groupSlug } }),
+  })
+
+export const rentalSearchGroupQueryOptions = (groupSlug: string) =>
+  queryOptions({
+    queryKey: ['rentals', 'search-group', groupSlug],
+    queryFn: () => getRentalSearchGroupData({ data: { groupSlug } }),
   })
 
 export type ListingPageParam = {
@@ -82,6 +91,31 @@ export const listingsInfiniteQueryOptions = (search: ListingSearch) =>
     initialPageParam: firstListingPage,
     queryFn: ({ pageParam }) =>
       getListingsData({
+        data: {
+          ...search,
+          page: pageParam.page,
+        },
+      }),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasNextPage
+        ? {
+            page: lastPage.search.page + 1,
+          }
+        : undefined,
+    getPreviousPageParam: (firstPage) =>
+      firstPage.search.page <= 1
+        ? undefined
+        : {
+            page: Math.max(1, firstPage.search.page - 1),
+          },
+  })
+
+export const rentalListingsInfiniteQueryOptions = (search: ListingSearch) =>
+  infiniteQueryOptions({
+    queryKey: ['rentals', 'infinite', listingInfiniteQueryKey(search)],
+    initialPageParam: firstListingPage,
+    queryFn: ({ pageParam }) =>
+      getRentalListingsData({
         data: {
           ...search,
           page: pageParam.page,
@@ -142,6 +176,50 @@ export const groupedListingsInfiniteQueryOptions = ({
     initialPageParam: firstListingPage,
     queryFn: ({ pageParam }) =>
       getGroupedListingsData({
+        data: {
+          groupSlug,
+          valueSlug,
+          search: {
+            ...search,
+            page: pageParam.page,
+          },
+        },
+      }),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasNextPage
+        ? {
+            page: lastPage.search.page + 1,
+          }
+        : undefined,
+    getPreviousPageParam: (firstPage) =>
+      firstPage.search.page <= 1
+        ? undefined
+        : {
+            page: Math.max(1, firstPage.search.page - 1),
+          },
+  })
+
+export const rentalGroupedListingsInfiniteQueryOptions = ({
+  groupSlug,
+  valueSlug,
+  search,
+}: {
+  readonly groupSlug: string
+  readonly valueSlug: string
+  readonly search: ListingSearch
+}) =>
+  infiniteQueryOptions({
+    queryKey: [
+      'rentals',
+      'grouped-listings',
+      'infinite',
+      groupSlug,
+      valueSlug,
+      listingInfiniteQueryKey(search),
+    ],
+    initialPageParam: firstListingPage,
+    queryFn: ({ pageParam }) =>
+      getRentalGroupedListingsData({
         data: {
           groupSlug,
           valueSlug,

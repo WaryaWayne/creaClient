@@ -17,13 +17,13 @@ export function HomePage({ data }: { readonly data: HomeData }) {
       <section className="page-wrap grid gap-8 py-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <div className="grid gap-6">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--kicker)]">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-foreground">
               CREA DDF browser
             </p>
-            <h1 className="display-title mt-3 max-w-3xl text-5xl font-bold leading-[1.02] text-[var(--sea-ink)] md:text-6xl">
+            <h1 className="display-title mt-3 max-w-3xl text-5xl font-bold leading-[1.02] text-foreground md:text-6xl">
               Find the right listing from the local data already synced here.
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--sea-ink-soft)]">
+            <p className="mt-5 max-w-2xl text-base leading-7 text-foreground">
               Browse listings and open houses from the local database. Office
               and agent credits stay attached to the listings they represent.
             </p>
@@ -104,11 +104,11 @@ function SummaryStat({
   readonly value: number
 }) {
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-white/72 p-4">
-      <p className="text-2xl font-extrabold text-[var(--sea-ink)]">
+    <div className="rounded-lg border border-border bg-background p-4">
+      <p className="text-2xl font-extrabold text-foreground">
         {number.format(value)}
       </p>
-      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
         {label}
       </p>
     </div>

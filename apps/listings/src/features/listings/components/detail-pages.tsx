@@ -4,6 +4,7 @@ import {
   Bath,
   BedDouble,
   Building2,
+  CalendarDays,
   Clock,
   Home,
   MapPin,
@@ -24,6 +25,7 @@ import { MediaGroupsView, mediaGroups, mediaKey } from './media'
 import {
   DetailGroupSection,
   DetailItem,
+  EmptyState,
   InfoSection,
   MetricPill,
 } from './shared'
@@ -46,11 +48,11 @@ function ListingOpenHousesPanel({
     <section className="grid gap-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-[var(--sea-ink)]">
+          <h2 className="text-xl font-extrabold text-foreground">
             Open houses
           </h2>
           {listing.openHouses.length > 0 ? (
-            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--sea-ink-soft)]">
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-foreground">
               {listing.openHouses.length} scheduled
             </p>
           ) : null}
@@ -77,9 +79,13 @@ function ListingOpenHousesPanel({
       {firstOpenHouse ? (
         <OpenHouseRow openHouse={firstOpenHouse} />
       ) : (
-        <p className="rounded-md border border-dashed border-[var(--line)] bg-white/60 p-3 text-sm text-[var(--sea-ink-soft)]">
-          No open houses are attached to this listing.
-        </p>
+        <EmptyState
+          title="No open houses are attached to this listing."
+          icon={CalendarDays}
+          align="start"
+          size="compact"
+          className="rounded-md bg-background p-3"
+        />
       )}
     </section>
   )
@@ -93,16 +99,14 @@ export function OpenHouseDetailPage({
   if (!openHouse) {
     return (
       <main className="page-wrap py-14">
-        <div className="rounded-lg border border-[var(--line)] bg-white/80 p-8">
-          <h1 className="text-2xl font-extrabold">Open house not found</h1>
+        <EmptyState title="Open house not found" icon={CalendarDays}>
           <Button
             nativeButton={false}
             render={<Link to="/open-houses" search={defaultOpenHouseSearch} />}
-            className="mt-5"
           >
             Back to open houses
           </Button>
-        </div>
+        </EmptyState>
       </main>
     )
   }
@@ -112,11 +116,11 @@ export function OpenHouseDetailPage({
   return (
     <main className="page-wrap grid gap-6 py-8">
       <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <div className="rounded-lg border border-[var(--line)] bg-white/78 p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+        <div className="rounded-lg border border-border bg-background p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
             Open house
           </p>
-          <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+          <h1 className="display-title mt-2 text-4xl font-bold text-foreground">
             {formatDate(openHouse.date)}
           </h1>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -124,12 +128,12 @@ export function OpenHouseDetailPage({
               {openHouseTimeLabel(openHouse)}
             </MetricPill>
             {openHouse.status ? (
-              <span className="rounded-full border border-[var(--line)] bg-white/80 px-2.5 py-1 text-xs font-semibold text-[var(--sea-ink)]">
+              <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
                 {openHouse.status}
               </span>
             ) : null}
             {openHouse.type ? (
-              <span className="rounded-full border border-[var(--line)] bg-white/80 px-2.5 py-1 text-xs font-semibold text-[var(--sea-ink)]">
+              <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
                 {openHouse.type}
               </span>
             ) : null}
@@ -137,10 +141,10 @@ export function OpenHouseDetailPage({
         </div>
         {property ? (
           <div className="island-shell grid content-start gap-3 rounded-lg p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
               Property subtype
             </p>
-            <p className="text-xl font-extrabold text-[var(--sea-ink)]">
+            <p className="text-xl font-extrabold text-foreground">
               {property.propertySubType ?? 'Property'}
             </p>
             <Button
@@ -160,10 +164,18 @@ export function OpenHouseDetailPage({
       </section>
       <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <InfoSection title="Open house details">
-          <p className="leading-7 text-[var(--sea-ink-soft)]">
-            {openHouse.remarks ??
-              'No additional remarks were attached to this open house.'}
-          </p>
+          {openHouse.remarks ? (
+            <p className="leading-7 text-foreground">
+              {openHouse.remarks}
+            </p>
+          ) : (
+            <EmptyState
+              title="No additional remarks were attached to this open house."
+              align="start"
+              size="compact"
+              className="bg-background"
+            />
+          )}
         </InfoSection>
         {property ? (
           <InfoSection title="Property">
@@ -172,7 +184,7 @@ export function OpenHouseDetailPage({
               params={{ listingKey: property.listingKey }}
               className="group grid gap-4 no-underline md:grid-cols-[220px_1fr]"
             >
-              <div className="overflow-hidden rounded-md bg-[var(--sand)]">
+              <div className="overflow-hidden rounded-md bg-background">
                 {property.imageUrl ? (
                   <img
                     src={property.imageUrl}
@@ -181,21 +193,21 @@ export function OpenHouseDetailPage({
                     loading="lazy"
                   />
                 ) : (
-                  <div className="flex aspect-[4/3] items-center justify-center text-[var(--sea-ink-soft)]">
+                  <div className="flex aspect-[4/3] items-center justify-center text-foreground">
                     <Home className="size-10" />
                   </div>
                 )}
               </div>
               <div className="grid content-start gap-3">
                 <div>
-                  <p className="text-2xl font-extrabold text-[var(--sea-ink)] group-hover:text-[var(--lagoon-deep)]">
+                  <p className="text-2xl font-extrabold text-foreground group-hover:text-foreground">
                     {formatListingPrice(property)}
                   </p>
-                  <p className="mt-1 text-lg font-extrabold text-[var(--sea-ink)]">
+                  <p className="mt-1 text-lg font-extrabold text-foreground">
                     {property.address}
                   </p>
                 </div>
-                <p className="flex items-center gap-1.5 text-sm text-[var(--sea-ink-soft)]">
+                <p className="flex items-center gap-1.5 text-sm text-foreground">
                   <MapPin className="size-4" />
                   {[property.city, property.province]
                     .filter(Boolean)
@@ -212,7 +224,7 @@ export function OpenHouseDetailPage({
                     {property.propertySubType ?? 'Property'}
                   </MetricPill>
                 </div>
-                <span className="inline-flex items-center gap-1 text-sm font-bold text-[var(--lagoon-deep)]">
+                <span className="inline-flex items-center gap-1 text-sm font-bold text-foreground">
                   See property details
                   <ArrowRight className="size-4" />
                 </span>
@@ -221,13 +233,13 @@ export function OpenHouseDetailPage({
           </InfoSection>
         ) : null}
       </section>
-      <section className="grid gap-4 rounded-lg border border-[var(--line)] bg-white/72 p-5">
+      <section className="grid gap-4 rounded-lg border border-border bg-background p-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
               {property?.propertySubType ?? 'Related'}
             </p>
-            <h2 className="mt-1 text-2xl font-extrabold text-[var(--sea-ink)]">
+            <h2 className="mt-1 text-2xl font-extrabold text-foreground">
               Similar open houses
             </h2>
           </div>
@@ -250,9 +262,13 @@ export function OpenHouseDetailPage({
             ))}
           </div>
         ) : (
-          <p className="rounded-md border border-dashed border-[var(--line)] bg-white/60 p-3 text-sm text-[var(--sea-ink-soft)]">
-            No nearby or similar open houses are in the current sample.
-          </p>
+          <EmptyState
+            title="No nearby or similar open houses are in the current sample."
+            icon={CalendarDays}
+            align="start"
+            size="compact"
+            className="rounded-md bg-background p-3"
+          />
         )}
       </section>
     </main>
@@ -267,16 +283,14 @@ export function ListingDetailPage({
   if (!listing) {
     return (
       <main className="page-wrap py-14">
-        <div className="rounded-lg border border-[var(--line)] bg-white/80 p-8">
-          <h1 className="text-2xl font-extrabold">Listing not found</h1>
+        <EmptyState title="Listing not found" icon={Home}>
           <Button
             nativeButton={false}
             render={<Link to="/listings" search={defaultListingSearch} />}
-            className="mt-5"
           >
             Back to listings
           </Button>
-        </div>
+        </EmptyState>
       </main>
     )
   }
@@ -288,8 +302,8 @@ export function ListingDetailPage({
   return (
     <main className="page-wrap grid gap-6 py-8 lg:grid-cols-[1fr_360px] lg:items-start">
       <div className="grid gap-6">
-        <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-white/80">
-          <div className="relative aspect-[16/10] bg-[var(--sand)]">
+        <div className="overflow-hidden rounded-lg border border-border bg-background">
+          <div className="relative aspect-[16/10] bg-background">
             {heroImageUrl ? (
               <img
                 src={heroImageUrl}
@@ -298,7 +312,7 @@ export function ListingDetailPage({
               />
             ) : (
               <div className="flex h-full items-center justify-center">
-                <Home className="size-14 text-[var(--sea-ink-soft)]" />
+                <Home className="size-14 text-foreground" />
               </div>
             )}
             <div className="absolute left-4 top-4">
@@ -319,9 +333,18 @@ export function ListingDetailPage({
           ) : null}
         </div>
         <InfoSection title="Remarks">
-          <p className="leading-7 text-[var(--sea-ink-soft)]">
-            {listing.remarks ?? 'No remarks were included for this listing.'}
-          </p>
+          {listing.remarks ? (
+            <p className="leading-7 text-foreground">
+              {listing.remarks}
+            </p>
+          ) : (
+            <EmptyState
+              title="No remarks were included for this listing."
+              align="start"
+              size="compact"
+              className="bg-background"
+            />
+          )}
         </InfoSection>
         <InfoSection title="Property details">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -346,20 +369,20 @@ export function ListingDetailPage({
             <div className="grid gap-2">
               {listing.rooms.map((room) => (
                 <div
-                  className="grid gap-2 rounded-md border border-[var(--line)] bg-white/70 p-3 sm:grid-cols-[1fr_auto]"
+                  className="grid gap-2 rounded-md border border-border bg-background p-3 sm:grid-cols-[1fr_auto]"
                   key={room.roomKey ?? `${room.roomType}-${room.roomLevel}`}
                 >
                   <div>
-                    <p className="font-semibold text-[var(--sea-ink)]">
+                    <p className="font-semibold text-foreground">
                       {room.roomType ?? 'Room'}
                     </p>
                     {room.roomDescription ? (
-                      <p className="mt-1 text-sm leading-5 text-[var(--sea-ink-soft)]">
+                      <p className="mt-1 text-sm leading-5 text-foreground">
                         {room.roomDescription}
                       </p>
                     ) : null}
                   </div>
-                  <p className="text-sm text-[var(--sea-ink-soft)]">
+                  <p className="text-sm text-foreground">
                     {[room.roomLevel, roomLabel(room)]
                       .filter(Boolean)
                       .join(' · ')}
@@ -367,11 +390,6 @@ export function ListingDetailPage({
                 </div>
               ))}
             </div>
-          </InfoSection>
-        ) : null}
-        {listing.relatedListings.length > 0 ? (
-          <InfoSection title="Similar listings">
-            <ListingsGrid listings={listing.relatedListings} />
           </InfoSection>
         ) : null}
         {groupedMedia.all.length > 0 ? (
@@ -382,16 +400,21 @@ export function ListingDetailPage({
             />
           </InfoSection>
         ) : null}
+        {listing.relatedListings.length > 0 ? (
+          <InfoSection title="Similar listings">
+            <ListingsGrid listings={listing.relatedListings} />
+          </InfoSection>
+        ) : null}
       </div>
       <aside className="island-shell grid content-start gap-5 rounded-lg p-5 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
         <ListingOpenHousesPanel listing={listing} />
-        <div className="border-t border-[var(--line)] pt-5">
+        <div className="border-t border-border pt-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-3xl font-extrabold text-[var(--sea-ink)]">
+              <p className="text-3xl font-extrabold text-foreground">
                 {formatListingPrice(listing)}
               </p>
-              <p className="mt-2 text-sm font-semibold text-[var(--sea-ink-soft)]">
+              <p className="mt-2 text-sm font-semibold text-foreground">
                 {listing.status ?? 'Listing'} ·{' '}
                 {listing.propertySubType ?? 'Property'}
               </p>
@@ -399,10 +422,10 @@ export function ListingDetailPage({
             <ListingActions listingKey={listing.listingKey} />
           </div>
           <div className="mt-5">
-            <h1 className="display-title text-3xl font-bold text-[var(--sea-ink)]">
+            <h1 className="display-title text-3xl font-bold text-foreground">
               {listing.address}
             </h1>
-            <p className="mt-2 flex items-center gap-1.5 text-sm text-[var(--sea-ink-soft)]">
+            <p className="mt-2 flex items-center gap-1.5 text-sm text-foreground">
               <MapPin className="size-4" />
               {[listing.city, listing.province].filter(Boolean).join(', ')}
             </p>
@@ -439,8 +462,8 @@ function areaLabel(listing: ListingDetail) {
 function CreditsBlock({ listing }: { readonly listing: ListingDetail }) {
   if (listing.offices.length === 0 && listing.agents.length === 0) return null
   return (
-    <div className="grid gap-3 rounded-lg border border-[var(--line)] bg-white/70 p-4">
-      <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-[var(--kicker)]">
+    <div className="grid gap-3 rounded-lg border border-border bg-background p-4">
+      <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
         Listing credits
       </p>
       <ListingCredits listing={listing} />

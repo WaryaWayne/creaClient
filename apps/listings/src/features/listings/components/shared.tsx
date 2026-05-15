@@ -1,10 +1,18 @@
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { X } from 'lucide-react'
+import { CircleOff, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 import { Button } from '@workspace/ui/components/button'
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@workspace/ui/components/empty'
 import { cn } from '#/lib/utils'
 
 import type { DetailGroup } from '../data'
@@ -37,7 +45,7 @@ export function DetailsDialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-[rgba(23,58,64,0.28)] p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center bg-background p-4 backdrop-blur-sm"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onOpenChange(false)
@@ -48,7 +56,7 @@ export function DetailsDialog({
         role="dialog"
         aria-labelledby={`${title.replace(/\W+/g, '-').toLowerCase()}-dialog-title`}
         className={cn(
-          'relative grid max-h-[min(88vh,760px)] w-full max-w-3xl gap-5 overflow-y-auto rounded-lg border border-[var(--line)] bg-white p-5 text-[var(--sea-ink)] shadow-[0_30px_90px_rgba(23,58,64,0.28)]',
+          'relative grid max-h-[min(88vh,760px)] w-full max-w-3xl gap-5 overflow-y-auto rounded-lg border border-border bg-background p-5 text-foreground shadow-[0_30px_90px_rgba(23,58,64,0.28)]',
           className,
         )}
       >
@@ -64,7 +72,7 @@ export function DetailsDialog({
         </Button>
         <h2
           id={`${title.replace(/\W+/g, '-').toLowerCase()}-dialog-title`}
-          className="display-title pr-10 text-3xl font-bold text-[var(--sea-ink)]"
+          className="display-title pr-10 text-3xl font-bold text-foreground"
         >
           {title}
         </h2>
@@ -83,8 +91,8 @@ export function MetricPill({
   readonly children: ReactNode
 }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-[var(--line)] bg-white/70 px-2.5 py-1 text-xs font-semibold text-[var(--sea-ink)]">
-      <Icon className="size-3.5 text-[var(--lagoon-deep)]" />
+    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
+      <Icon className="size-3.5 text-foreground" />
       {children}
     </span>
   )
@@ -99,7 +107,7 @@ export function SectionHeader({
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <h2 className="display-title text-3xl font-bold text-[var(--sea-ink)]">
+      <h2 className="display-title text-3xl font-bold text-foreground">
         {title}
       </h2>
       {action}
@@ -115,10 +123,83 @@ export function DirectoryPanel({
   readonly children: ReactNode
 }) {
   return (
-    <section className="rounded-lg border border-[var(--line)] bg-white/72 p-5">
-      <h3 className="text-lg font-extrabold text-[var(--sea-ink)]">{title}</h3>
+    <section className="rounded-lg border border-border bg-background p-5">
+      <h3 className="text-lg font-extrabold text-foreground">{title}</h3>
       <div className="mt-4 grid gap-3 lg:grid-cols-2">{children}</div>
     </section>
+  )
+}
+
+const hasRenderableNode = (node: ReactNode) =>
+  node !== undefined &&
+  node !== null &&
+  node !== false &&
+  node !== true &&
+  node !== ''
+
+export function EmptyState({
+  title,
+  description,
+  icon: Icon = CircleOff,
+  align = 'center',
+  size = 'default',
+  children,
+  className,
+}: {
+  readonly title: ReactNode
+  readonly description?: ReactNode
+  readonly icon?: LucideIcon
+  readonly align?: 'center' | 'start'
+  readonly size?: 'default' | 'compact'
+  readonly children?: ReactNode
+  readonly className?: string
+}) {
+  const isStart = align === 'start'
+  const isCompact = size === 'compact'
+  const hasDescription = hasRenderableNode(description)
+  const hasChildren = hasRenderableNode(children)
+
+  return (
+    <Empty
+      className={cn(
+        'border border-dashed border-border bg-background p-8',
+        isStart && 'items-start text-left',
+        isCompact && 'gap-2 p-4',
+        className,
+      )}
+    >
+      <EmptyHeader className={cn(isStart && 'items-start text-left')}>
+        <EmptyMedia
+          variant="icon"
+          className="bg-background text-foreground"
+        >
+          <Icon className="size-5" />
+        </EmptyMedia>
+        <EmptyTitle
+          className={cn(
+            'font-extrabold text-foreground',
+            isCompact ? 'text-sm' : 'text-lg',
+          )}
+        >
+          {title}
+        </EmptyTitle>
+        {hasDescription ? (
+          <EmptyDescription
+            className={cn(
+              'text-sm text-foreground',
+              isStart && 'text-left',
+            )}
+          >
+            {description}
+          </EmptyDescription>
+        ) : null}
+      </EmptyHeader>
+      {hasChildren ? (
+        <EmptyContent className={cn(isStart && 'items-start')}>
+          {children}
+        </EmptyContent>
+      ) : null}
+    </Empty>
   )
 }
 
@@ -130,8 +211,8 @@ export function InfoSection({
   readonly children: ReactNode
 }) {
   return (
-    <section className="rounded-lg border border-[var(--line)] bg-white/78 p-5">
-      <h2 className="text-xl font-extrabold text-[var(--sea-ink)]">{title}</h2>
+    <section className="rounded-lg border border-border bg-background p-5">
+      <h2 className="text-xl font-extrabold text-foreground">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
   )
@@ -161,11 +242,11 @@ export function DetailItem({
   readonly value: string | number | null
 }) {
   return (
-    <div className="rounded-md border border-[var(--line)] bg-white/70 p-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+    <div className="rounded-md border border-border bg-background p-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
         {label}
       </p>
-      <p className="mt-1 text-base font-extrabold text-[var(--sea-ink)]">
+      <p className="mt-1 text-base font-extrabold text-foreground">
         {value ?? '-'}
       </p>
     </div>
@@ -184,7 +265,7 @@ export function Pagination({
   readonly onPage: (page: number) => void
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--line)] bg-white/70 p-3">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background p-3">
       <Button
         type="button"
         variant="outline"
@@ -193,7 +274,7 @@ export function Pagination({
       >
         Previous
       </Button>
-      <span className="text-sm font-semibold text-[var(--sea-ink-soft)]">
+      <span className="text-sm font-semibold text-foreground">
         Page {page}
       </span>
       <Button

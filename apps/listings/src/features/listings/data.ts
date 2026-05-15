@@ -65,6 +65,7 @@ export type ListingCard = {
   readonly price: number | null
   readonly leaseAmount: number | null
   readonly leaseFrequency: string | null
+  readonly totalActualRent: number | null
   readonly bedrooms: number | null
   readonly bathrooms: number | null
   readonly parking: number | null
@@ -869,6 +870,11 @@ const toListingCard = (row: DbRow): ListingCard => {
       'LeaseAmountFrequency',
       'leaseAmountFrequency',
     ),
+    totalActualRent: schemaNumber<DdfProperty>(
+      row,
+      'TotalActualRent',
+      'totalActualRent',
+    ),
     bedrooms: schemaNumber<DdfProperty>(row, 'BedroomsTotal', 'bedroomsTotal'),
     bathrooms: schemaNumber<DdfProperty>(
       row,
@@ -1307,8 +1313,25 @@ const isOntarioProvince = (value: string | null | undefined) => {
   return normalized === 'on' || normalized === 'ontario'
 }
 
+export const usableTotalActualRent = (value: number | null) => value
+
+const isPositiveAmount = (value: number | null) =>
+  value !== null && Number.isFinite(value) && value > 0
+
+const rowIsRentalListing = (row: DbRow) =>
+  isPositiveAmount(
+    schemaNumber<DdfProperty>(row, 'LeaseAmount', 'leaseAmount'),
+  ) ||
+  isPositiveAmount(
+    usableTotalActualRent(
+      schemaNumber<DdfProperty>(row, 'TotalActualRent', 'totalActualRent'),
+    ),
+  )
+
 const primaryListingPrice = (listing: ListingCard) =>
-  listing.price ?? listing.leaseAmount
+  listing.price ??
+  listing.leaseAmount ??
+  usableTotalActualRent(listing.totalActualRent)
 
 const listingAgentCardKeys = (listing: ListingCard) =>
   listing.agents.map((agent) => agent.memberKey)
@@ -1582,9 +1605,9 @@ const listingOrder = (
 }> => {
   switch (sort) {
     case 'price-asc':
-      return [{ field: 'listPrice', direction: 'asc' }]
+      return [{ field: 'effectivePrice', direction: 'asc' }]
     case 'price-desc':
-      return [{ field: 'listPrice', direction: 'desc' }]
+      return [{ field: 'effectivePrice', direction: 'desc' }]
     case 'beds-desc':
       return [{ field: 'bedroomsTotal', direction: 'desc' }]
     case 'newest':
@@ -1600,6 +1623,7 @@ const listingSelect = [
   'listPrice',
   'leaseAmount',
   'leaseAmountFrequency',
+  'totalActualRent',
   'city',
   'province',
   'postalCode',
@@ -2135,6 +2159,7 @@ const listingFacetSelect = uniquePropertyFields([
   'standardStatus',
   'listPrice',
   'leaseAmount',
+  'totalActualRent',
   'bedroomsTotal',
   'bathroomsTotalInteger',
   'parkingTotal',
@@ -2291,7 +2316,10 @@ const numericOptions = (values: ReadonlyArray<number | null>) =>
 
 const effectivePrice = (row: DbRow) =>
   schemaNumber<DdfProperty>(row, 'ListPrice', 'listPrice') ??
-  schemaNumber<DdfProperty>(row, 'LeaseAmount', 'leaseAmount')
+  schemaNumber<DdfProperty>(row, 'LeaseAmount', 'leaseAmount') ??
+  usableTotalActualRent(
+    schemaNumber<DdfProperty>(row, 'TotalActualRent', 'totalActualRent'),
+  )
 
 const nextPriceOption = (value: number) => {
   if (value < 5_000) return Math.ceil((value + 1) / 500) * 500
@@ -2357,7 +2385,9 @@ const runServerEffect = <TValue, TError>(
 ): Promise<TValue> =>
   Effect.runPromise(effect.pipe(Effect.provide(ddfClientLayer)))
 
-const buildFacets = Effect.fn('Listings.buildFacets')(function* () {
+const buildFacets = Effect.fn('Listings.buildFacets')(function* (
+  rentalsOnly = false,
+) {
   const client = yield* DdfDbClient
   const rows: DbRow[] = []
   const advancedValuesByKey = new Map<
@@ -2381,8 +2411,9 @@ const buildFacets = Effect.fn('Listings.buildFacets')(function* () {
       orderBy: [{ field: 'modificationTimestamp', direction: 'desc' }],
     })) as ReadonlyArray<DbRow>
 
-    rows.push(...page)
     for (const row of page) {
+      if (rentalsOnly && !rowIsRentalListing(row)) continue
+      rows.push(row)
       for (const definition of listingAdvancedFacetDefinitions) {
         addAdvancedFacetValues(advancedValuesByKey, row, definition)
       }
@@ -2440,7 +2471,7 @@ const buildFacets = Effect.fn('Listings.buildFacets')(function* () {
 })
 
 const buildListingGroupIndex = Effect.fn('Listings.buildListingGroupIndex')(
-  function* () {
+  function* (rentalsOnly = false) {
     const client = yield* DdfDbClient
     const valuesByGroup = new Map<
       string,
@@ -2466,6 +2497,7 @@ const buildListingGroupIndex = Effect.fn('Listings.buildListingGroupIndex')(
       })) as ReadonlyArray<DbRow>
 
       for (const row of rows) {
+        if (rentalsOnly && !rowIsRentalListing(row)) continue
         const listingKey = listingKeyFromRow(row)
         for (const group of listingGroupDefinitions) {
           const values = groupValuesFromRow(row, group)
@@ -2564,6 +2596,54 @@ const loadListings = Effect.fn('Listings.loadListings')(function* (
   } satisfies ListingsData
 })
 
+const loadRentalListingRows = Effect.fn('Listings.loadRentalListingRows')(
+  function* (search: ListingSearch) {
+    const client = yield* DdfDbClient
+    const rows: DbRow[] = []
+    const neededRows = search.page * LISTINGS_PAGE_SIZE + 1
+    let offset = 0
+    let hasMoreListings = true
+
+    while (hasMoreListings && rows.length < neededRows) {
+      const page = (yield* client.properties.list({
+        select: listingSelect,
+        includeRaw: true,
+        include: propertyInclude,
+        filters: listingFilters(search),
+        limit: 500,
+        offset,
+        orderBy: listingOrder(search.sort),
+      })) as ReadonlyArray<DbRow>
+
+      rows.push(...page.filter(rowIsRentalListing))
+      hasMoreListings = page.length === 500
+      offset += page.length
+    }
+
+    return rows
+  },
+)
+
+const loadRentalListings = Effect.fn('Listings.loadRentalListings')(function* (
+  search: ListingSearch,
+) {
+  const [rows, facets] = yield* Effect.all(
+    [loadRentalListingRows(search), buildFacets(true)],
+    { concurrency: 2 },
+  )
+  const pageOffset = (search.page - 1) * LISTINGS_PAGE_SIZE
+
+  return {
+    listings: rows
+      .slice(pageOffset, pageOffset + LISTINGS_PAGE_SIZE)
+      .map(toListingCard),
+    facets,
+    search,
+    pageSize: LISTINGS_PAGE_SIZE,
+    hasNextPage: rows.length > pageOffset + LISTINGS_PAGE_SIZE,
+  } satisfies ListingsData
+})
+
 const loadSearchIndex = Effect.fn('Listings.loadSearchIndex')(function* () {
   const [index, home] = yield* Effect.all(
     [buildListingGroupIndex(), loadHome()],
@@ -2581,9 +2661,10 @@ const loadSearchIndex = Effect.fn('Listings.loadSearchIndex')(function* () {
 
 const loadSearchGroup = Effect.fn('Listings.loadSearchGroup')(function* (
   requestedGroupSlug: string,
+  rentalsOnly = false,
 ) {
   const groupSlug = slugifyGroupValue(requestedGroupSlug)
-  const index = yield* buildListingGroupIndex()
+  const index = yield* buildListingGroupIndex(rentalsOnly)
   const groupOption = listingGroupDefinitionOption(groupSlug)
   const bucket = listingGroupBuckets(index).find(
     (item) => item.group.slug === groupSlug,
@@ -2612,6 +2693,7 @@ const loadGroupedListingCards = Effect.fn('Listings.loadGroupedListingCards')(
     group: ListingGroupDefinition,
     valueSlug: string,
     search: ListingSearch,
+    rentalsOnly = false,
   ) {
     const client = yield* DdfDbClient
     const matchedRows: DbRow[] = []
@@ -2628,7 +2710,11 @@ const loadGroupedListingCards = Effect.fn('Listings.loadGroupedListingCards')(
       })) as ReadonlyArray<DbRow>
 
       matchedRows.push(
-        ...rows.filter((row) => rowHasGroupValueSlug(row, group, valueSlug)),
+        ...rows.filter(
+          (row) =>
+            (!rentalsOnly || rowIsRentalListing(row)) &&
+            rowHasGroupValueSlug(row, group, valueSlug),
+        ),
       )
 
       hasMoreListings = rows.length === 500
@@ -2703,12 +2789,12 @@ const groupedFallbackData = ({
 }
 
 const loadGroupedListings = Effect.fn('Listings.loadGroupedListings')(
-  function* (request: ListingGroupRequest) {
+  function* (request: ListingGroupRequest, rentalsOnly = false) {
     const search = request.search
     const groupSlug = slugifyGroupValue(request.groupSlug)
     const valueSlug = slugifyGroupValue(request.valueSlug)
     const [index, facets] = yield* Effect.all(
-      [buildListingGroupIndex(), buildFacets()],
+      [buildListingGroupIndex(rentalsOnly), buildFacets(rentalsOnly)],
       { concurrency: 2 },
     )
     const groupOption = listingGroupDefinitionOption(groupSlug)
@@ -2745,6 +2831,7 @@ const loadGroupedListings = Effect.fn('Listings.loadGroupedListings')(
       group,
       matchedValue.valueSlug,
       search,
+      rentalsOnly,
     )
 
     return {
@@ -3217,8 +3304,9 @@ const loadOpenHouses = Effect.fn('Listings.loadOpenHouses')(function* (
     limit: DIRECTORY_PAGE_SIZE + 1,
     offset,
     orderBy: [
-      { field: 'openHouseDate', direction: 'desc' },
-      { field: 'openHouseKey', direction: 'desc' },
+      { field: 'openHouseDate', direction: 'asc' },
+      { field: 'openHouseStartTime', direction: 'asc' },
+      { field: 'openHouseKey', direction: 'asc' },
     ],
   })) as ReadonlyArray<DbRow>
   const hasNextPage = rows.length > DIRECTORY_PAGE_SIZE
@@ -3245,6 +3333,10 @@ export const getListingsData = createServerFn({ method: 'GET' })
   .inputValidator(parseListingSearch)
   .handler(({ data }) => runServerEffect(loadListings(data)))
 
+export const getRentalListingsData = createServerFn({ method: 'GET' })
+  .inputValidator(parseListingSearch)
+  .handler(({ data }) => runServerEffect(loadRentalListings(data)))
+
 export const getSearchIndexData = createServerFn({ method: 'GET' }).handler(
   () => runServerEffect(loadSearchIndex()),
 )
@@ -3253,9 +3345,17 @@ export const getSearchGroupData = createServerFn({ method: 'GET' })
   .inputValidator(parseSearchGroupRequest)
   .handler(({ data }) => runServerEffect(loadSearchGroup(data.groupSlug)))
 
+export const getRentalSearchGroupData = createServerFn({ method: 'GET' })
+  .inputValidator(parseSearchGroupRequest)
+  .handler(({ data }) => runServerEffect(loadSearchGroup(data.groupSlug, true)))
+
 export const getGroupedListingsData = createServerFn({ method: 'GET' })
   .inputValidator(parseListingGroupRequest)
   .handler(({ data }) => runServerEffect(loadGroupedListings(data)))
+
+export const getRentalGroupedListingsData = createServerFn({ method: 'GET' })
+  .inputValidator(parseListingGroupRequest)
+  .handler(({ data }) => runServerEffect(loadGroupedListings(data, true)))
 
 export const getListingDetail = createServerFn({ method: 'GET' })
   .inputValidator((input: unknown) => {

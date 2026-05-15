@@ -1,9 +1,8 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { useAtom } from '@effect/atom-react'
 import { Link } from '@tanstack/react-router'
 import {
-  ArrowRight,
   Building2,
   CalendarDays,
   Clock,
@@ -36,7 +35,7 @@ import { openHouseFiltersAtom } from '../state'
 import { ContactAgentButton } from './contact'
 import { ListingsGrid } from './listing-card'
 import { MediaGroupsView, mediaGroups, mediaKey } from './media'
-import { DetailItem, InfoSection, Pagination } from './shared'
+import { DetailItem, EmptyState, InfoSection, Pagination } from './shared'
 import {
   formatDate,
   looseSearchTokens,
@@ -45,6 +44,8 @@ import {
   openHouseTimeLabel,
   personName,
 } from './utils'
+
+const OPEN_HOUSE_SEARCH_DEBOUNCE_MS = 300
 
 export function OfficesPage({
   data,
@@ -57,19 +58,18 @@ export function OfficesPage({
   if (office === null) {
     return (
       <main className="page-wrap py-14">
-        <div className="rounded-lg border border-[var(--line)] bg-white/80 p-8">
-          <h1 className="text-2xl font-extrabold">Office not found</h1>
-          <p className="mt-2 text-sm text-[var(--sea-ink-soft)]">
-            EXIT EXCEL REALTY was not found in the local office table.
-          </p>
+        <EmptyState
+          title="Office not found"
+          description="EXIT EXCEL REALTY was not found in the local office table."
+          icon={Building2}
+        >
           <Button
             nativeButton={false}
             render={<Link to="/listings" search={defaultListingSearch} />}
-            className="mt-5"
           >
             Back to listings
           </Button>
-        </div>
+        </EmptyState>
       </main>
     )
   }
@@ -87,12 +87,12 @@ function OfficeMetric({
   readonly value: string
 }) {
   return (
-    <div className="rounded-md border border-[var(--line)] bg-white/72 p-3">
-      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--sea-ink-soft)]">
+    <div className="rounded-md border border-border bg-background p-3">
+      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-foreground">
         <Icon className="size-3.5" />
         {label}
       </p>
-      <p className="mt-1 text-2xl font-extrabold text-[var(--sea-ink)]">
+      <p className="mt-1 text-2xl font-extrabold text-foreground">
         {value}
       </p>
     </div>
@@ -142,24 +142,22 @@ export function AgentDetailPage({
   if (agent === null) {
     return (
       <main className="page-wrap py-14">
-        <div className="rounded-lg border border-[var(--line)] bg-white/80 p-8">
-          <h1 className="text-2xl font-extrabold">Agent not found</h1>
+        <EmptyState title="Agent not found" icon={UserRound}>
           <Button
             nativeButton={false}
-            render={<Link to="/agents" search={{ officeKey: '', page: 1 }} />}
-            className="mt-5"
+            render={<Link to="/listings" search={defaultListingSearch} />}
           >
-            Back to agents
+            Back to listings
           </Button>
-        </div>
+        </EmptyState>
       </main>
     )
   }
 
   return (
     <main className="page-wrap grid gap-6 py-8">
-      <section className="grid gap-6 rounded-lg border border-[var(--line)] bg-white/78 p-5 lg:grid-cols-[auto_1fr_auto] lg:items-start">
-        <div className="flex size-28 items-center justify-center overflow-hidden rounded-lg bg-[var(--sand)] text-[var(--palm)]">
+      <section className="grid gap-6 rounded-lg border border-border bg-background p-5 lg:grid-cols-[auto_1fr_auto] lg:items-start">
+        <div className="flex size-28 items-center justify-center overflow-hidden rounded-lg bg-background text-foreground">
           {agent.imageUrl ? (
             <img
               src={agent.imageUrl}
@@ -171,18 +169,18 @@ export function AgentDetailPage({
           )}
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
             Agent
           </p>
-          <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+          <h1 className="display-title mt-2 text-4xl font-bold text-foreground">
             {personName(agent)}
           </h1>
-          <p className="mt-2 text-sm leading-6 text-[var(--sea-ink-soft)]">
+          <p className="mt-2 text-sm leading-6 text-foreground">
             {[agent.jobTitle, agent.type, agent.status]
               .filter(Boolean)
               .join(' · ')}
           </p>
-          <p className="mt-1 text-sm leading-6 text-[var(--sea-ink-soft)]">
+          <p className="mt-1 text-sm leading-6 text-foreground">
             {[agent.office?.officeName, agent.city, agent.province]
               .filter(Boolean)
               .join(' · ')}
@@ -190,19 +188,6 @@ export function AgentDetailPage({
         </div>
         <div className="flex flex-wrap gap-2 lg:justify-end">
           <ContactAgentButton agent={agent} />
-          <Button
-            nativeButton={false}
-            render={
-              <Link
-                to="/offices"
-                search={{ city: '', province: '', page: 1 }}
-              />
-            }
-            variant="outline"
-          >
-            <Building2 />
-            Office
-          </Button>
         </div>
       </section>
       <section className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
@@ -274,23 +259,11 @@ export function AgentDetailPage({
         <aside className="island-shell grid content-start gap-5 rounded-lg p-5 lg:sticky lg:top-24">
           <AgentRow agent={agent} prominent />
           {agent.office ? (
-            <div className="grid gap-3 border-t border-[var(--line)] pt-5">
-              <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-[var(--kicker)]">
+            <div className="grid gap-3 border-t border-border pt-5">
+              <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
                 Office
               </p>
               <OfficeRow office={agent.office} prominent />
-              <Button
-                nativeButton={false}
-                render={
-                  <Link
-                    to="/offices"
-                    search={{ city: '', province: '', page: 1 }}
-                  />
-                }
-                variant="outline"
-              >
-                Office details
-              </Button>
             </div>
           ) : null}
           <SocialLinksList socialMedia={agent.socialMedia} />
@@ -315,7 +288,7 @@ function AgentTagsSection({
         <div className="flex flex-wrap gap-2">
           {values.map((value) => (
             <span
-              className="rounded-full border border-[var(--line)] bg-white/80 px-3 py-1 text-sm font-semibold text-[var(--sea-ink)]"
+              className="rounded-full border border-border bg-background px-3 py-1 text-sm font-semibold text-foreground"
               key={value}
             >
               {value}
@@ -323,7 +296,12 @@ function AgentTagsSection({
           ))}
         </div>
       ) : (
-        <p className="text-sm text-[var(--sea-ink-soft)]">{emptyLabel}</p>
+        <EmptyState
+          title={emptyLabel}
+          align="start"
+          size="compact"
+          className="bg-background"
+        />
       )}
     </InfoSection>
   )
@@ -340,16 +318,42 @@ export function OpenHousesPage({
 }) {
   const [filters, setFilters] = useAtom(openHouseFiltersAtom)
   const routeSearch = data.search as OpenHouseSearch
-  const searchKey = JSON.stringify(routeSearch)
+  const routeQuery = routeSearch.q
+  const routePage = routeSearch.page
+  const searchDebounce = useRef<number | null>(null)
+
+  const clearPendingSearch = useCallback(() => {
+    if (searchDebounce.current === null) return
+    window.clearTimeout(searchDebounce.current)
+    searchDebounce.current = null
+  }, [])
+
+  useEffect(() => clearPendingSearch, [clearPendingSearch])
 
   useEffect(() => {
-    setFilters(routeSearch)
-  }, [routeSearch, searchKey, setFilters])
+    clearPendingSearch()
+    setFilters({ q: routeQuery, page: routePage })
+  }, [clearPendingSearch, routeQuery, routePage, setFilters])
+
+  const emitSearchChange = (next: OpenHouseSearch) => {
+    onSearchChange(compactOpenHouseSearch(next) as OpenHouseSearch)
+  }
 
   const commit = (patch: Partial<OpenHouseSearch>) => {
+    clearPendingSearch()
     const next = { ...filters, ...patch, page: patch.page ?? 1 }
     setFilters(next)
-    onSearchChange(compactOpenHouseSearch(next) as OpenHouseSearch)
+    emitSearchChange(next)
+  }
+
+  const commitQuery = (q: string) => {
+    const next = { ...filters, q, page: 1 }
+    setFilters(next)
+    clearPendingSearch()
+    searchDebounce.current = window.setTimeout(() => {
+      searchDebounce.current = null
+      emitSearchChange(next)
+    }, OPEN_HOUSE_SEARCH_DEBOUNCE_MS)
   }
 
   return (
@@ -363,7 +367,7 @@ export function OpenHousesPage({
             label="Loose search"
             value={filters.q}
             placeholder="Date, address, city, time, or key"
-            onChange={(q) => commit({ q })}
+            onChange={commitQuery}
           />
           <Button
             type="button"
@@ -414,14 +418,14 @@ function DirectoryPageShell({
 }) {
   return (
     <main className="page-wrap grid gap-6 py-8">
-      <section className="rounded-lg border border-[var(--line)] bg-white/72 p-5">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+      <section className="rounded-lg border border-border bg-background p-5">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
           {eyebrow}
         </p>
-        <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+        <h1 className="display-title mt-2 text-4xl font-bold text-foreground">
           {title}
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-foreground">
           {description}
         </p>
         {filters ? <div className="mt-5">{filters}</div> : null}
@@ -432,21 +436,13 @@ function DirectoryPageShell({
 }
 
 function DirectoryEmpty({ message }: { readonly message: string }) {
-  return (
-    <div className="rounded-lg border border-dashed border-[var(--line)] bg-white/70 p-8 text-center">
-      <p className="text-lg font-bold text-[var(--sea-ink)]">{message}</p>
-    </div>
-  )
+  return <EmptyState title={message} className="p-8" />
 }
 
-function OfficeAgentLinkCard({ agent }: { readonly agent: PersonCard }) {
+function OfficeAgentCard({ agent }: { readonly agent: PersonCard }) {
   return (
-    <Link
-      to="/agents/$agentKey"
-      params={{ agentKey: agent.memberKey }}
-      className="group flex items-center gap-3 rounded-md border border-[var(--line)] bg-white/74 p-3 text-[var(--sea-ink)] no-underline hover:border-[var(--lagoon-deep)] hover:text-[var(--lagoon-deep)]"
-    >
-      <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--sand)] text-[var(--palm)]">
+    <div className="flex items-center gap-3 rounded-md border border-border bg-background p-3 text-foreground">
+      <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-background text-foreground">
         {agent.imageUrl ? (
           <img
             src={agent.imageUrl}
@@ -462,12 +458,11 @@ function OfficeAgentLinkCard({ agent }: { readonly agent: PersonCard }) {
         <span className="block truncate text-sm font-extrabold">
           {personName(agent)}
         </span>
-        <span className="mt-0.5 block truncate text-xs font-semibold text-[var(--sea-ink-soft)]">
+        <span className="mt-0.5 block truncate text-xs font-semibold text-foreground">
           {agent.jobTitle ?? agent.memberKey}
         </span>
       </span>
-      <ArrowRight className="size-4 shrink-0 transition group-hover:translate-x-0.5" />
-    </Link>
+    </div>
   )
 }
 
@@ -479,17 +474,17 @@ function OfficeDetailView({ office }: { readonly office: OfficeDetail }) {
   return (
     <main className="page-wrap grid gap-6 py-8">
       <section className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
-        <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-white/78">
+        <div className="overflow-hidden rounded-lg border border-border bg-background">
           <div className="grid gap-0 md:grid-cols-[minmax(0,1fr)_280px]">
             <div className="grid content-between gap-6 p-6">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
                   Office
                 </p>
-                <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+                <h1 className="display-title mt-2 text-4xl font-bold text-foreground">
                   {office.officeName ?? EXIT_EXCEL_OFFICE_NAME}
                 </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-foreground">
                   {[
                     office.address,
                     office.city,
@@ -501,15 +496,6 @@ function OfficeDetailView({ office }: { readonly office: OfficeDetail }) {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button
-                  nativeButton={false}
-                  render={
-                    <Link to="/agents" search={{ officeKey: '', page: 1 }} />
-                  }
-                >
-                  <Users />
-                  Agents
-                </Button>
                 {office.phone ? (
                   <Button
                     nativeButton={false}
@@ -522,7 +508,7 @@ function OfficeDetailView({ office }: { readonly office: OfficeDetail }) {
                 ) : null}
               </div>
             </div>
-            <div className="min-h-64 bg-[var(--sand)] text-[var(--palm)] md:min-h-full">
+            <div className="min-h-64 bg-background text-foreground md:min-h-full">
               {heroImageUrl ? (
                 <img
                   src={heroImageUrl}
@@ -537,12 +523,12 @@ function OfficeDetailView({ office }: { readonly office: OfficeDetail }) {
             </div>
           </div>
           {groupedMedia.photos.length > 1 ? (
-            <div className="grid grid-cols-2 gap-2 border-t border-[var(--line)] p-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 border-t border-border p-3 sm:grid-cols-4">
               {groupedMedia.photos.slice(0, 4).map((media) => (
                 <img
                   src={media.mediaUrl ?? ''}
                   alt={media.longDescription ?? office.officeName ?? 'Office'}
-                  className="aspect-[4/3] rounded-md bg-[var(--sand)] object-cover"
+                  className="aspect-[4/3] rounded-md bg-background object-cover"
                   loading="lazy"
                   key={mediaKey(media)}
                 />
@@ -607,7 +593,7 @@ function OfficeDetailView({ office }: { readonly office: OfficeDetail }) {
         {office.agents.length > 0 ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {office.agents.map((agent) => (
-              <OfficeAgentLinkCard agent={agent} key={agent.memberKey} />
+              <OfficeAgentCard agent={agent} key={agent.memberKey} />
             ))}
           </div>
         ) : (
@@ -640,20 +626,23 @@ function SocialLinksList({
 }) {
   if (socialMedia.length === 0) {
     return (
-      <div className="rounded-md border border-dashed border-[var(--line)] bg-white/60 p-3 text-sm text-[var(--sea-ink-soft)]">
-        No social media links are attached.
-      </div>
+      <EmptyState
+        title="No social media links are attached."
+        align="start"
+        size="compact"
+        className="rounded-md bg-background p-3"
+      />
     )
   }
 
   return (
     <div className="grid gap-3">
-      <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-[var(--kicker)]">
+      <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
         Social
       </p>
       {socialMedia.map((item) => (
         <a
-          className="flex items-center justify-between gap-3 rounded-md border border-[var(--line)] bg-white/70 p-3 text-sm font-semibold text-[var(--sea-ink)] no-underline hover:text-[var(--lagoon-deep)]"
+          className="flex items-center justify-between gap-3 rounded-md border border-border bg-background p-3 text-sm font-semibold text-foreground no-underline hover:text-foreground"
           href={item.socialMediaUrlOrId ?? '#'}
           target="_blank"
           rel="noreferrer"
@@ -680,7 +669,7 @@ function LabeledInput({
 }) {
   return (
     <div className="grid gap-1.5">
-      <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+      <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
         {label}
       </Label>
       <Input
@@ -694,7 +683,7 @@ function LabeledInput({
 
 function DirectoryCard({ children }: { readonly children: ReactNode }) {
   return (
-    <article className="rounded-lg border border-[var(--line)] bg-white/82 p-4 shadow-[0_10px_24px_rgba(23,58,64,0.07)]">
+    <article className="rounded-lg border border-border bg-background p-4 shadow-[0_10px_24px_rgba(23,58,64,0.07)]">
       {children}
     </article>
   )
@@ -717,7 +706,7 @@ export function OfficeRow({
 
   return (
     <div className="flex items-start gap-3">
-      <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--sand)] text-[var(--palm)]">
+      <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-background text-foreground">
         {office.imageUrl ? (
           <img
             src={office.imageUrl}
@@ -732,21 +721,21 @@ export function OfficeRow({
       <div className="min-w-0">
         <p
           className={cn(
-            'font-extrabold text-[var(--sea-ink)]',
+            'font-extrabold text-foreground',
             prominent ? 'text-lg' : 'text-sm',
           )}
         >
           {office.officeName ?? 'Office'}
         </p>
-        <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
+        <p className="mt-1 text-sm text-foreground">
           {[office.city, office.province].filter(Boolean).join(', ') ||
             office.officeKey}
         </p>
-        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--sea-ink-soft)]">
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
           {identifiers.join(' · ')}
         </p>
         {office.phone ? (
-          <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[var(--sea-ink-soft)]">
+          <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-foreground">
             <Phone className="size-3" />
             {office.phone}
           </p>
@@ -766,7 +755,7 @@ export function AgentRow({
   return (
     <div className="grid gap-4">
       <div className="flex items-start gap-3">
-        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--sand)] text-[var(--palm)]">
+        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-background text-foreground">
           {agent.imageUrl ? (
             <img
               src={agent.imageUrl}
@@ -779,31 +768,29 @@ export function AgentRow({
           )}
         </div>
         <div className="min-w-0">
-          <Link
-            to="/agents/$agentKey"
-            params={{ agentKey: agent.memberKey }}
+          <p
             className={cn(
-              'font-extrabold text-[var(--sea-ink)] no-underline hover:text-[var(--lagoon-deep)]',
+              'font-extrabold text-foreground',
               prominent ? 'text-lg' : 'text-sm',
             )}
           >
             {personName(agent)}
-          </Link>
+          </p>
           {agent.jobTitle ? (
-            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--kicker)]">
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
               {agent.jobTitle}
             </p>
           ) : null}
-          <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
+          <p className="mt-1 text-sm text-foreground">
             {agent.office?.officeName ||
               [agent.city, agent.province].filter(Boolean).join(', ') ||
               agent.memberKey}
           </p>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--sea-ink-soft)]">
+          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
             Agent key {agent.memberKey}
             {agent.officeKey ? ` · Office key ${agent.officeKey}` : ''}
           </p>
-          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-[var(--sea-ink-soft)]">
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-foreground">
             {agent.phone ? (
               <span className="inline-flex items-center gap-1">
                 <Phone className="size-3" />
@@ -816,19 +803,6 @@ export function AgentRow({
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button
-          nativeButton={false}
-          render={
-            <Link
-              to="/agents/$agentKey"
-              params={{ agentKey: agent.memberKey }}
-            />
-          }
-          size="sm"
-        >
-          <UserRound />
-          Details
-        </Button>
         <ContactAgentButton agent={agent} buttonLabel="Contact" />
       </div>
     </div>
@@ -856,11 +830,11 @@ export function OpenHouseRow({
   return (
     <div
       className={cn(
-        'grid gap-3 rounded-lg border border-[var(--line)] bg-white/76 p-3 md:grid-cols-[auto_1fr]',
+        'grid gap-3 rounded-lg border border-border bg-background p-3 md:grid-cols-[auto_1fr]',
         prominent && 'p-4 shadow-[0_10px_24px_rgba(23,58,64,0.07)]',
       )}
     >
-      <div className="flex size-12 items-center justify-center rounded-md bg-[var(--sand)] text-[var(--palm)]">
+      <div className="flex size-12 items-center justify-center rounded-md bg-background text-foreground">
         <CalendarDays className="size-6" />
       </div>
       <div className="grid min-w-0 gap-3">
@@ -868,13 +842,13 @@ export function OpenHouseRow({
           <div className="min-w-0">
             <p
               className={cn(
-                'font-extrabold text-[var(--sea-ink)]',
+                'font-extrabold text-foreground',
                 prominent ? 'text-xl' : 'text-base',
               )}
             >
               <HighlightedValue value={dateLabel} query={searchQuery} />
             </p>
-            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--sea-ink-soft)]">
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground">
               <span className="inline-flex items-center gap-1">
                 <Clock className="size-3.5" />
                 <HighlightedValue value={timeLabel} query={searchQuery} />
@@ -882,16 +856,13 @@ export function OpenHouseRow({
               {listingLabel ? (
                 <span className="inline-flex items-center gap-1">
                   <Home className="size-3.5" />
-                  <HighlightedValue
-                    value={listingLabel}
-                    query={searchQuery}
-                  />
+                  <HighlightedValue value={listingLabel} query={searchQuery} />
                 </span>
               ) : null}
               {openHouse.status ? <span>{openHouse.status}</span> : null}
             </p>
             {openHouse.type ? (
-              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
                 {openHouse.type}
               </p>
             ) : null}
@@ -931,22 +902,22 @@ export function OpenHouseRow({
           <Link
             to="/listings/$listingKey"
             params={{ listingKey: openHouse.property.listingKey }}
-            className="group grid gap-1 rounded-md border border-[var(--line)] bg-[var(--foam)] p-3 no-underline hover:border-[var(--lagoon-deep)]"
+            className="group grid gap-1 rounded-md border border-border bg-background p-3 no-underline hover:border-border"
           >
-            <span className="text-sm font-extrabold text-[var(--sea-ink)] group-hover:text-[var(--lagoon-deep)]">
+            <span className="text-sm font-extrabold text-foreground group-hover:text-foreground">
               <HighlightedValue
                 value={openHouse.property.address}
                 query={searchQuery}
               />
             </span>
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--sea-ink-soft)]">
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
               <MapPin className="size-3.5" />
               <HighlightedValue value={propertyLocation} query={searchQuery} />
             </span>
           </Link>
         ) : null}
         {openHouse.remarks ? (
-          <p className="line-clamp-2 text-sm leading-6 text-[var(--sea-ink-soft)]">
+          <p className="line-clamp-2 text-sm leading-6 text-foreground">
             {openHouse.remarks}
           </p>
         ) : null}
@@ -979,7 +950,7 @@ function HighlightedValue({
 
   if (parts.length <= 1) {
     return (
-      <mark className="rounded bg-yellow-200/80 px-0.5 text-inherit">
+      <mark className="rounded bg-background px-0.5 text-inherit">
         {value}
       </mark>
     )
@@ -990,7 +961,7 @@ function HighlightedValue({
       {parts.map((part, index) =>
         tokenSet.has(part.toLowerCase()) ? (
           <mark
-            className="rounded bg-yellow-200/80 px-0.5 text-inherit"
+            className="rounded bg-background px-0.5 text-inherit"
             key={`${part}-${index}`}
           >
             {part}

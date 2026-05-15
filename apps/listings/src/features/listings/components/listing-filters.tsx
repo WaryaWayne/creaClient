@@ -48,6 +48,7 @@ import type {
 import { defaultListingSearch, listingSortOptions } from '../search'
 import type { ListingAdvancedFilterKey, ListingSearch } from '../search'
 import { listingFiltersAtom } from '../state'
+import { EmptyState } from './shared'
 import {
   activeListingFilterCount,
   allValue,
@@ -75,7 +76,7 @@ function SelectFilter({
 }) {
   return (
     <label className="grid gap-1.5">
-      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
         {label}
       </span>
       <Select
@@ -84,7 +85,7 @@ function SelectFilter({
           onChange(next === allValue || next === null ? '' : next)
         }
       >
-        <SelectTrigger className="w-full bg-white/70">
+        <SelectTrigger className="w-full bg-background">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
@@ -118,7 +119,7 @@ function NativeSelectFilter({
 }) {
   return (
     <label className="grid min-w-0 gap-1.5">
-      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
         {label}
       </span>
       <NativeSelect
@@ -165,7 +166,7 @@ function AdvancedCommandSelect({
 
   return (
     <div className="grid gap-1.5">
-      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
         {label}
       </span>
       <Popover>
@@ -174,7 +175,7 @@ function AdvancedCommandSelect({
             <Button
               type="button"
               variant="outline"
-              className="min-h-10 w-full justify-between rounded-lg bg-white/70 px-3 py-2 text-left font-semibold text-[var(--sea-ink)] hover:bg-white"
+              className="min-h-10 w-full justify-between rounded-lg bg-background px-3 py-2 text-left font-semibold text-foreground hover:bg-background"
             />
           }
         >
@@ -189,7 +190,7 @@ function AdvancedCommandSelect({
           align="start"
           className="w-[min(23rem,calc(100vw-3rem))] p-0"
         >
-          <Command className="rounded-2xl bg-white">
+          <Command className="rounded-2xl bg-background">
             <CommandInput placeholder={`Search ${label.toLowerCase()}`} />
             <CommandList>
               <CommandEmpty>No options found.</CommandEmpty>
@@ -211,7 +212,7 @@ function AdvancedCommandSelect({
                     <span className="min-w-0 flex-1 truncate">
                       {option.value}
                     </span>
-                    <span className="text-xs text-[var(--sea-ink-soft)]">
+                    <span className="text-xs text-foreground">
                       {number.format(option.count)}
                     </span>
                   </CommandItem>
@@ -324,14 +325,14 @@ export function ListingFilters({
             <Button
               type="button"
               variant="outline"
-              className="island-shell pointer-events-auto h-11 rounded-full bg-white/90 px-4 font-extrabold text-[var(--sea-ink)] shadow-[0_12px_30px_rgba(23,58,64,0.12)] hover:bg-white"
+              className="island-shell pointer-events-auto h-11 rounded-full bg-background px-4 font-extrabold text-foreground shadow-[0_12px_30px_rgba(23,58,64,0.12)] hover:bg-background"
             />
           }
         >
           <SlidersHorizontal />
           Filters
           {activeFilters > 0 ? (
-            <span className="ml-1 inline-flex size-5 items-center justify-center rounded-full bg-[var(--sea-ink)] text-xs font-extrabold text-white">
+            <span className="ml-1 inline-flex size-5 items-center justify-center rounded-full bg-background text-xs font-extrabold text-foreground">
               {activeFilters}
             </span>
           ) : null}
@@ -340,7 +341,7 @@ export function ListingFilters({
       <SheetContent
         side="right"
         showCloseButton={false}
-        className="h-dvh overflow-hidden border-l-0 bg-[var(--foam)] p-0 data-[side=right]:w-full sm:border-l sm:data-[side=right]:max-w-md"
+        className="h-dvh overflow-hidden border-l-0 bg-background p-0 data-[side=right]:w-full sm:border-l sm:data-[side=right]:max-w-md"
       >
         <div className="flex h-dvh min-h-0 flex-col">
           <SheetHeader className="flex-row items-center justify-between gap-4 px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
@@ -354,7 +355,7 @@ export function ListingFilters({
                   variant="ghost"
                   size="icon-sm"
                   aria-label="Close filters"
-                  className="shrink-0 text-[var(--sea-ink)] hover:bg-white/70"
+                  className="shrink-0 text-foreground hover:bg-background"
                 />
               }
             >
@@ -452,7 +453,7 @@ export function ListingFilters({
                 onChange={(minParking) => commit({ minParking })}
               />
               <label className="grid gap-1.5">
-                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
                   Sort
                 </span>
                 <Select
@@ -463,7 +464,7 @@ export function ListingFilters({
                     }
                   }}
                 >
-                  <SelectTrigger className="w-full bg-white/70">
+                  <SelectTrigger className="w-full bg-background">
                     <SelectValue placeholder="Sort" />
                   </SelectTrigger>
                   <SelectContent>
@@ -479,7 +480,7 @@ export function ListingFilters({
               <Button
                 type="button"
                 variant="outline"
-                className="mt-2 w-full justify-between rounded-lg bg-white/70 font-extrabold text-[var(--sea-ink)] hover:bg-white"
+                className="mt-2 w-full justify-between rounded-lg bg-background font-extrabold text-foreground hover:bg-background"
                 aria-expanded={advancedOpen}
                 onClick={() => setAdvancedOpen((open) => !open)}
               >
@@ -492,7 +493,7 @@ export function ListingFilters({
                 />
               </Button>
               {advancedOpen ? (
-                <div className="grid gap-4 border-t border-[var(--line)] pt-4">
+                <div className="grid gap-4 border-t border-border pt-4">
                   {advancedGroups.length > 0 ? (
                     advancedGroups.map((group) => (
                       <AdvancedCommandSelect
@@ -504,9 +505,13 @@ export function ListingFilters({
                       />
                     ))
                   ) : (
-                    <p className="rounded-lg border border-dashed border-[var(--line)] bg-white/70 p-4 text-sm text-[var(--sea-ink-soft)]">
-                      No advanced filters are available for the current data.
-                    </p>
+                    <EmptyState
+                      title="No advanced filters are available for the current data."
+                      icon={SlidersHorizontal}
+                      align="start"
+                      size="compact"
+                      className="bg-background p-4"
+                    />
                   )}
                   <ListingFilterActions onClear={clearFilters} />
                 </div>

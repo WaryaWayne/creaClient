@@ -1,6 +1,6 @@
 import { defaultStringifySearch } from '@tanstack/react-router'
 
-import { EXIT_EXCEL_OFFICE_NAME } from './data'
+import { EXIT_EXCEL_OFFICE_NAME, usableTotalActualRent } from './data'
 import {
   compactAgentSearch,
   compactDirectorySearch,
@@ -108,8 +108,10 @@ const formatMoney = (value: number | null) =>
 
 const formatListingPrice = (listing: ListingCard) => {
   if (listing.price !== null) return formatMoney(listing.price)
-  if (listing.leaseAmount !== null) {
-    const amount = formatMoney(listing.leaseAmount)
+  const rentAmount =
+    listing.leaseAmount ?? usableTotalActualRent(listing.totalActualRent)
+  if (rentAmount !== null) {
+    const amount = formatMoney(rentAmount)
     return `${amount}${listing.leaseFrequency ? ` / ${listing.leaseFrequency}` : ''}`
   }
   return null
@@ -211,6 +213,34 @@ const listingSearchDescription = (
     filters.length > 0
       ? `Browse CREA DDF listings ${filters.join(', ')}.`
       : 'Browse active CREA DDF property listings.'
+  return truncateText(
+    `${base} Showing ${number.format(visibleCount)} results on page ${number.format(search.page)}, sorted by ${sortLabel.toLowerCase()}.`,
+  )
+}
+
+const rentalSearchTitle = (search: ListingSearch) => {
+  const place = search.city || search.province
+  if (search.type && place)
+    return `${search.type} Rentals in ${place} | ${appName}`
+  if (search.type) return `${search.type} Rentals | ${appName}`
+  if (place) return `Rentals in ${place} | ${appName}`
+  if (search.status) return `${search.status} Rentals | ${appName}`
+  return `Rentals | ${appName}`
+}
+
+const rentalSearchDescription = (
+  search: ListingSearch,
+  listings: ReadonlyArray<ListingCard>,
+) => {
+  const filters = listingFilterParts(search)
+  const sortLabel =
+    listingSortOptions.find((option) => option.value === search.sort)?.label ??
+    'Newest'
+  const visibleCount = listings.length
+  const base =
+    filters.length > 0
+      ? `Browse CREA DDF rental listings ${filters.join(', ')}.`
+      : 'Browse active CREA DDF rental listings with lease pricing.'
   return truncateText(
     `${base} Showing ${number.format(visibleCount)} results on page ${number.format(search.page)}, sorted by ${sortLabel.toLowerCase()}.`,
   )
@@ -321,6 +351,17 @@ export const listingsSeoHead = (data: ListingsData | undefined) => {
     title: listingSearchTitle(search),
     description: listingSearchDescription(search, data?.listings ?? []),
     path: '/listings/',
+    search: compactListingSearch(search),
+    image: pageImage(data?.listings ?? []),
+  })
+}
+
+export const rentalListingsSeoHead = (data: ListingsData | undefined) => {
+  const search = data?.search ?? defaultListingSearch
+  return createSeoHead({
+    title: rentalSearchTitle(search),
+    description: rentalSearchDescription(search, data?.listings ?? []),
+    path: '/rentals/',
     search: compactListingSearch(search),
     image: pageImage(data?.listings ?? []),
   })
@@ -478,6 +519,26 @@ export const searchGroupSeoHead = (
   })
 }
 
+export const rentalSearchGroupSeoHead = (
+  data: SearchGroupData | undefined,
+  groupSlug: string,
+) => {
+  const group = data?.group
+  const summary = data?.summary
+  const title = group
+    ? `${group.pluralLabel} Rentals | ${appName}`
+    : `Rental search group ${groupSlug} | ${appName}`
+  const description = group
+    ? `${group.description} ${summary ? `${number.format(summary.valueCount)} values cover ${number.format(summary.listingCount)} rental listings.` : 'Browse available rental values for this group.'}`
+    : `Browse CREA DDF rental search group ${groupSlug}.`
+
+  return createSeoHead({
+    title,
+    description,
+    path: `/rentals/${pathSegment(group?.slug || groupSlug)}/`,
+  })
+}
+
 export const groupedListingsSeoHead = (
   data: GroupedListingsData | undefined,
   groupSlug: string,
@@ -489,14 +550,50 @@ export const groupedListingsSeoHead = (
   const label = value
     ? `${value.value} ${group?.pluralLabel.toLowerCase() ?? 'listings'}`
     : 'Grouped listings'
+  const descriptionLead =
+    group === null || group === undefined
+      ? 'Browse grouped CREA DDF listings'
+      : group.description
+  const visibleCount = data === undefined ? 0 : data.listings.length
   const description = value
-    ? `${group?.description ?? 'Browse grouped CREA DDF listings'} Showing ${number.format(data?.listings.length ?? 0)} of ${number.format(value.count)} active listings for ${value.value} on page ${number.format(search.page)}.`
+    ? `${descriptionLead} Showing ${number.format(visibleCount)} of ${number.format(value.count)} active listings for ${value.value} on page ${number.format(search.page)}.`
     : `Browse CREA DDF listings for group ${groupSlug} and value ${valueSlug}.`
 
   return createSeoHead({
     title: `${label} | ${appName}`,
     description,
     path: `/search/${pathSegment(data?.requested.groupSlug || groupSlug)}/${pathSegment(
+      data?.requested.valueSlug || valueSlug,
+    )}`,
+    search: compactListingSearch(search),
+    image: pageImage(data?.listings ?? []),
+  })
+}
+
+export const rentalGroupedListingsSeoHead = (
+  data: GroupedListingsData | undefined,
+  groupSlug: string,
+  valueSlug: string,
+) => {
+  const search = data?.search ?? defaultListingSearch
+  const group = data?.group
+  const value = data?.matchedValue
+  const label = value
+    ? `${value.value} rental ${group?.pluralLabel.toLowerCase() ?? 'listings'}`
+    : 'Grouped rentals'
+  const descriptionLead =
+    group === null || group === undefined
+      ? 'Browse grouped CREA DDF rentals'
+      : group.description
+  const visibleCount = data === undefined ? 0 : data.listings.length
+  const description = value
+    ? `${descriptionLead} Showing ${number.format(visibleCount)} of ${number.format(value.count)} rental listings for ${value.value} on page ${number.format(search.page)}.`
+    : `Browse CREA DDF rental listings for group ${groupSlug} and value ${valueSlug}.`
+
+  return createSeoHead({
+    title: `${label} | ${appName}`,
+    description,
+    path: `/rentals/${pathSegment(data?.requested.groupSlug || groupSlug)}/${pathSegment(
       data?.requested.valueSlug || valueSlug,
     )}`,
     search: compactListingSearch(search),

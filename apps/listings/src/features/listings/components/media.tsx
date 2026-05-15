@@ -197,7 +197,7 @@ function MediaGrid({
 }) {
   return (
     <div className="grid gap-3">
-      <h3 className="text-base font-extrabold text-[var(--sea-ink)]">
+      <h3 className="text-base font-extrabold text-foreground">
         {title}
       </h3>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{children}</div>
@@ -213,7 +213,7 @@ function ImageMediaTile({
   readonly altFallback: string
 }) {
   return (
-    <figure className="overflow-hidden rounded-md border border-[var(--line)] bg-white/70">
+    <figure className="overflow-hidden rounded-md border border-border bg-background">
       <img
         src={media.mediaUrl ?? ''}
         alt={media.longDescription ?? altFallback}
@@ -221,7 +221,7 @@ function ImageMediaTile({
         loading="lazy"
       />
       {(media.longDescription ?? media.mediaCategory) ? (
-        <figcaption className="p-3 text-sm text-[var(--sea-ink-soft)]">
+        <figcaption className="p-3 text-sm text-foreground">
           {media.longDescription ?? media.mediaCategory}
         </figcaption>
       ) : null}
@@ -240,16 +240,16 @@ function LinkedMediaTile({
 }) {
   const isImage = hasImageExtension(media)
   return (
-    <div className="overflow-hidden rounded-md border border-[var(--line)] bg-white/70">
+    <div className="overflow-hidden rounded-md border border-border bg-background">
       {isImage ? (
         <img
           src={media.mediaUrl ?? ''}
           alt={media.longDescription ?? altFallback}
-          className="aspect-[4/3] w-full object-contain bg-[var(--sand)]"
+          className="aspect-[4/3] w-full object-contain bg-background"
           loading="lazy"
         />
       ) : (
-        <div className="flex aspect-[4/3] items-center justify-center bg-[var(--sand)] text-[var(--palm)]">
+        <div className="flex aspect-[4/3] items-center justify-center bg-background text-foreground">
           <Icon className="size-10" />
         </div>
       )}
@@ -261,16 +261,16 @@ function LinkedMediaTile({
 function VideoMediaTile({ media }: { readonly media: MediaCard }) {
   const directVideo = hasVideoExtension(media)
   return (
-    <div className="overflow-hidden rounded-md border border-[var(--line)] bg-white/70">
+    <div className="overflow-hidden rounded-md border border-border bg-background">
       {directVideo ? (
         <video
           src={media.mediaUrl ?? ''}
-          className="aspect-video w-full bg-black"
+          className="aspect-video w-full bg-background"
           controls
           preload="metadata"
         />
       ) : (
-        <div className="flex aspect-video items-center justify-center bg-[var(--sand)] text-[var(--palm)]">
+        <div className="flex aspect-video items-center justify-center bg-background text-foreground">
           <PlayCircle className="size-12" />
         </div>
       )}
@@ -291,7 +291,7 @@ function MediaLink({
 }) {
   return (
     <a
-      className="flex items-start justify-between gap-3 p-3 text-sm font-semibold text-[var(--sea-ink)] no-underline hover:text-[var(--lagoon-deep)]"
+      className="flex items-start justify-between gap-3 p-3 text-sm font-semibold text-foreground no-underline hover:text-foreground"
       href={media.mediaUrl ?? '#'}
       target="_blank"
       rel="noreferrer"
@@ -299,7 +299,7 @@ function MediaLink({
       <span>
         {label}
         {media.mediaCategory ? (
-          <span className="mt-1 block text-xs font-semibold text-[var(--sea-ink-soft)]">
+          <span className="mt-1 block text-xs font-semibold text-foreground">
             {media.mediaCategory}
           </span>
         ) : null}

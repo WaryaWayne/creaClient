@@ -10,17 +10,25 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as IndexOlderRouteImport } from './routes/index-older'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SellersIndexRouteImport } from './routes/sellers/index'
 import { Route as SearchIndexRouteImport } from './routes/search/index'
+import { Route as RentalsIndexRouteImport } from './routes/rentals/index'
 import { Route as OpenHousesIndexRouteImport } from './routes/open-houses/index'
 import { Route as OfficesIndexRouteImport } from './routes/offices/index'
 import { Route as ListingsIndexRouteImport } from './routes/listings/index'
+import { Route as InvestmentsIndexRouteImport } from './routes/investments/index'
+import { Route as EstatesIndexRouteImport } from './routes/estates/index'
+import { Route as BuyersIndexRouteImport } from './routes/buyers/index'
 import { Route as AgentsIndexRouteImport } from './routes/agents/index'
 import { Route as OpenHousesOpenHouseKeyRouteImport } from './routes/open-houses/$openHouseKey'
 import { Route as ListingsListingKeyRouteImport } from './routes/listings/$listingKey'
 import { Route as AgentsAgentKeyRouteImport } from './routes/agents/$agentKey'
 import { Route as SearchGroupIndexRouteImport } from './routes/search/$group/index'
+import { Route as RentalsGroupIndexRouteImport } from './routes/rentals/$group/index'
 import { Route as SearchGroupValueRouteImport } from './routes/search/$group/$value'
+import { Route as RentalsGroupValueRouteImport } from './routes/rentals/$group/$value'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const McpRoute = McpRouteImport.update({
@@ -28,14 +36,29 @@ const McpRoute = McpRouteImport.update({
   path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IndexOlderRoute = IndexOlderRouteImport.update({
+  id: '/index-older',
+  path: '/index-older',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SellersIndexRoute = SellersIndexRouteImport.update({
+  id: '/sellers/',
+  path: '/sellers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchIndexRoute = SearchIndexRouteImport.update({
   id: '/search/',
   path: '/search/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RentalsIndexRoute = RentalsIndexRouteImport.update({
+  id: '/rentals/',
+  path: '/rentals/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OpenHousesIndexRoute = OpenHousesIndexRouteImport.update({
@@ -51,6 +74,21 @@ const OfficesIndexRoute = OfficesIndexRouteImport.update({
 const ListingsIndexRoute = ListingsIndexRouteImport.update({
   id: '/listings/',
   path: '/listings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvestmentsIndexRoute = InvestmentsIndexRouteImport.update({
+  id: '/investments/',
+  path: '/investments/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstatesIndexRoute = EstatesIndexRouteImport.update({
+  id: '/estates/',
+  path: '/estates/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuyersIndexRoute = BuyersIndexRouteImport.update({
+  id: '/buyers/',
+  path: '/buyers/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentsIndexRoute = AgentsIndexRouteImport.update({
@@ -78,9 +116,19 @@ const SearchGroupIndexRoute = SearchGroupIndexRouteImport.update({
   path: '/search/$group/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RentalsGroupIndexRoute = RentalsGroupIndexRouteImport.update({
+  id: '/rentals/$group/',
+  path: '/rentals/$group/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchGroupValueRoute = SearchGroupValueRouteImport.update({
   id: '/search/$group/$value',
   path: '/search/$group/$value',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RentalsGroupValueRoute = RentalsGroupValueRouteImport.update({
+  id: '/rentals/$group/$value',
+  path: '/rentals/$group/$value',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -91,111 +139,167 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/index-older': typeof IndexOlderRoute
   '/mcp': typeof McpRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
   '/listings/$listingKey': typeof ListingsListingKeyRoute
   '/open-houses/$openHouseKey': typeof OpenHousesOpenHouseKeyRoute
   '/agents/': typeof AgentsIndexRoute
+  '/buyers/': typeof BuyersIndexRoute
+  '/estates/': typeof EstatesIndexRoute
+  '/investments/': typeof InvestmentsIndexRoute
   '/listings/': typeof ListingsIndexRoute
   '/offices/': typeof OfficesIndexRoute
   '/open-houses/': typeof OpenHousesIndexRoute
+  '/rentals/': typeof RentalsIndexRoute
   '/search/': typeof SearchIndexRoute
+  '/sellers/': typeof SellersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/rentals/$group/$value': typeof RentalsGroupValueRoute
   '/search/$group/$value': typeof SearchGroupValueRoute
+  '/rentals/$group/': typeof RentalsGroupIndexRoute
   '/search/$group/': typeof SearchGroupIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/index-older': typeof IndexOlderRoute
   '/mcp': typeof McpRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
   '/listings/$listingKey': typeof ListingsListingKeyRoute
   '/open-houses/$openHouseKey': typeof OpenHousesOpenHouseKeyRoute
   '/agents': typeof AgentsIndexRoute
+  '/buyers': typeof BuyersIndexRoute
+  '/estates': typeof EstatesIndexRoute
+  '/investments': typeof InvestmentsIndexRoute
   '/listings': typeof ListingsIndexRoute
   '/offices': typeof OfficesIndexRoute
   '/open-houses': typeof OpenHousesIndexRoute
+  '/rentals': typeof RentalsIndexRoute
   '/search': typeof SearchIndexRoute
+  '/sellers': typeof SellersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/rentals/$group/$value': typeof RentalsGroupValueRoute
   '/search/$group/$value': typeof SearchGroupValueRoute
+  '/rentals/$group': typeof RentalsGroupIndexRoute
   '/search/$group': typeof SearchGroupIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/index-older': typeof IndexOlderRoute
   '/mcp': typeof McpRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
   '/listings/$listingKey': typeof ListingsListingKeyRoute
   '/open-houses/$openHouseKey': typeof OpenHousesOpenHouseKeyRoute
   '/agents/': typeof AgentsIndexRoute
+  '/buyers/': typeof BuyersIndexRoute
+  '/estates/': typeof EstatesIndexRoute
+  '/investments/': typeof InvestmentsIndexRoute
   '/listings/': typeof ListingsIndexRoute
   '/offices/': typeof OfficesIndexRoute
   '/open-houses/': typeof OpenHousesIndexRoute
+  '/rentals/': typeof RentalsIndexRoute
   '/search/': typeof SearchIndexRoute
+  '/sellers/': typeof SellersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/rentals/$group/$value': typeof RentalsGroupValueRoute
   '/search/$group/$value': typeof SearchGroupValueRoute
+  '/rentals/$group/': typeof RentalsGroupIndexRoute
   '/search/$group/': typeof SearchGroupIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/index-older'
     | '/mcp'
     | '/agents/$agentKey'
     | '/listings/$listingKey'
     | '/open-houses/$openHouseKey'
     | '/agents/'
+    | '/buyers/'
+    | '/estates/'
+    | '/investments/'
     | '/listings/'
     | '/offices/'
     | '/open-houses/'
+    | '/rentals/'
     | '/search/'
+    | '/sellers/'
     | '/api/auth/$'
+    | '/rentals/$group/$value'
     | '/search/$group/$value'
+    | '/rentals/$group/'
     | '/search/$group/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/index-older'
     | '/mcp'
     | '/agents/$agentKey'
     | '/listings/$listingKey'
     | '/open-houses/$openHouseKey'
     | '/agents'
+    | '/buyers'
+    | '/estates'
+    | '/investments'
     | '/listings'
     | '/offices'
     | '/open-houses'
+    | '/rentals'
     | '/search'
+    | '/sellers'
     | '/api/auth/$'
+    | '/rentals/$group/$value'
     | '/search/$group/$value'
+    | '/rentals/$group'
     | '/search/$group'
   id:
     | '__root__'
     | '/'
+    | '/index-older'
     | '/mcp'
     | '/agents/$agentKey'
     | '/listings/$listingKey'
     | '/open-houses/$openHouseKey'
     | '/agents/'
+    | '/buyers/'
+    | '/estates/'
+    | '/investments/'
     | '/listings/'
     | '/offices/'
     | '/open-houses/'
+    | '/rentals/'
     | '/search/'
+    | '/sellers/'
     | '/api/auth/$'
+    | '/rentals/$group/$value'
     | '/search/$group/$value'
+    | '/rentals/$group/'
     | '/search/$group/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  IndexOlderRoute: typeof IndexOlderRoute
   McpRoute: typeof McpRoute
   AgentsAgentKeyRoute: typeof AgentsAgentKeyRoute
   ListingsListingKeyRoute: typeof ListingsListingKeyRoute
   OpenHousesOpenHouseKeyRoute: typeof OpenHousesOpenHouseKeyRoute
   AgentsIndexRoute: typeof AgentsIndexRoute
+  BuyersIndexRoute: typeof BuyersIndexRoute
+  EstatesIndexRoute: typeof EstatesIndexRoute
+  InvestmentsIndexRoute: typeof InvestmentsIndexRoute
   ListingsIndexRoute: typeof ListingsIndexRoute
   OfficesIndexRoute: typeof OfficesIndexRoute
   OpenHousesIndexRoute: typeof OpenHousesIndexRoute
+  RentalsIndexRoute: typeof RentalsIndexRoute
   SearchIndexRoute: typeof SearchIndexRoute
+  SellersIndexRoute: typeof SellersIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  RentalsGroupValueRoute: typeof RentalsGroupValueRoute
   SearchGroupValueRoute: typeof SearchGroupValueRoute
+  RentalsGroupIndexRoute: typeof RentalsGroupIndexRoute
   SearchGroupIndexRoute: typeof SearchGroupIndexRoute
 }
 
@@ -208,6 +312,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/index-older': {
+      id: '/index-older'
+      path: '/index-older'
+      fullPath: '/index-older'
+      preLoaderRoute: typeof IndexOlderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -215,11 +326,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sellers/': {
+      id: '/sellers/'
+      path: '/sellers'
+      fullPath: '/sellers/'
+      preLoaderRoute: typeof SellersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/search/': {
       id: '/search/'
       path: '/search'
       fullPath: '/search/'
       preLoaderRoute: typeof SearchIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rentals/': {
+      id: '/rentals/'
+      path: '/rentals'
+      fullPath: '/rentals/'
+      preLoaderRoute: typeof RentalsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/open-houses/': {
@@ -241,6 +366,27 @@ declare module '@tanstack/react-router' {
       path: '/listings'
       fullPath: '/listings/'
       preLoaderRoute: typeof ListingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investments/': {
+      id: '/investments/'
+      path: '/investments'
+      fullPath: '/investments/'
+      preLoaderRoute: typeof InvestmentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estates/': {
+      id: '/estates/'
+      path: '/estates'
+      fullPath: '/estates/'
+      preLoaderRoute: typeof EstatesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buyers/': {
+      id: '/buyers/'
+      path: '/buyers'
+      fullPath: '/buyers/'
+      preLoaderRoute: typeof BuyersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agents/': {
@@ -278,11 +424,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchGroupIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rentals/$group/': {
+      id: '/rentals/$group/'
+      path: '/rentals/$group'
+      fullPath: '/rentals/$group/'
+      preLoaderRoute: typeof RentalsGroupIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/search/$group/$value': {
       id: '/search/$group/$value'
       path: '/search/$group/$value'
       fullPath: '/search/$group/$value'
       preLoaderRoute: typeof SearchGroupValueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rentals/$group/$value': {
+      id: '/rentals/$group/$value'
+      path: '/rentals/$group/$value'
+      fullPath: '/rentals/$group/$value'
+      preLoaderRoute: typeof RentalsGroupValueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -297,17 +457,25 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  IndexOlderRoute: IndexOlderRoute,
   McpRoute: McpRoute,
   AgentsAgentKeyRoute: AgentsAgentKeyRoute,
   ListingsListingKeyRoute: ListingsListingKeyRoute,
   OpenHousesOpenHouseKeyRoute: OpenHousesOpenHouseKeyRoute,
   AgentsIndexRoute: AgentsIndexRoute,
+  BuyersIndexRoute: BuyersIndexRoute,
+  EstatesIndexRoute: EstatesIndexRoute,
+  InvestmentsIndexRoute: InvestmentsIndexRoute,
   ListingsIndexRoute: ListingsIndexRoute,
   OfficesIndexRoute: OfficesIndexRoute,
   OpenHousesIndexRoute: OpenHousesIndexRoute,
+  RentalsIndexRoute: RentalsIndexRoute,
   SearchIndexRoute: SearchIndexRoute,
+  SellersIndexRoute: SellersIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  RentalsGroupValueRoute: RentalsGroupValueRoute,
   SearchGroupValueRoute: SearchGroupValueRoute,
+  RentalsGroupIndexRoute: RentalsGroupIndexRoute,
   SearchGroupIndexRoute: SearchGroupIndexRoute,
 }
 export const routeTree = rootRouteImport
