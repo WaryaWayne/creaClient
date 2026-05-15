@@ -8,6 +8,7 @@ import {
 
 import { ListingsPage } from '#/features/listings/components'
 import { listingsInfiniteQueryOptions } from '#/features/listings/queries'
+import { infiniteDataPage, listingsSeoHead } from '#/features/listings/seo'
 import {
   compactListingSearch,
   defaultListingSearch,
@@ -27,9 +28,8 @@ export const Route = createFileRoute('/listings/')({
       ...listingsInfiniteQueryOptions(deps),
       pages: deps.page,
     }),
-  head: () => ({
-    meta: [{ title: 'Listings | CREA Listings Browser' }],
-  }),
+  head: ({ loaderData, match }) =>
+    listingsSeoHead(infiniteDataPage(loaderData, match.search.page)),
   component: ListingsRoute,
 })
 

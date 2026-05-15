@@ -8,6 +8,7 @@ import {
 
 import { OpenHousesPage } from '#/features/listings/components'
 import { openHousesInfiniteQueryOptions } from '#/features/listings/queries'
+import { infiniteDataPage, openHousesSeoHead } from '#/features/listings/seo'
 import {
   compactOpenHouseSearch,
   defaultOpenHouseSearch,
@@ -27,9 +28,8 @@ export const Route = createFileRoute('/open-houses/')({
       ...openHousesInfiniteQueryOptions(deps),
       pages: deps.page,
     }),
-  head: () => ({
-    meta: [{ title: 'Open Houses | CREA Listings Browser' }],
-  }),
+  head: ({ loaderData, match }) =>
+    openHousesSeoHead(infiniteDataPage(loaderData, match.search.page)),
   component: OpenHousesRoute,
 })
 

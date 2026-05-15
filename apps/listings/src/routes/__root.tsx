@@ -19,6 +19,7 @@ import {
   defaultListingSearch,
   defaultOpenHouseSearch,
 } from '#/features/listings/search'
+import { appIconLinks, appSeoDefaults } from '#/features/listings/seo'
 
 import appCss from '../styles.css?url'
 
@@ -38,28 +39,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   },
 
   head: () => ({
-    meta: [
-      {
-        charSet: 'utf-8',
-      },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: 'CREA Listings Browser',
-      },
-      {
-        name: 'description',
-        content:
-          'Browse local CREA DDF listings and open houses with office and agent credits attached to each listing.',
-      },
-    ],
+    meta: appSeoDefaults(),
     links: [
       {
         rel: 'stylesheet',
         href: appCss,
       },
+      ...appIconLinks(),
     ],
   }),
   component: Outlet,

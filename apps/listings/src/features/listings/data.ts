@@ -1170,6 +1170,32 @@ const sortGroupValueLinks = (values: ReadonlyArray<ListingGroupValueLink>) =>
       right.count - left.count || left.value.localeCompare(right.value),
   )
 
+const neighborhoodSortLabel = (value: string) =>
+  value.replace(/^\s*\d+\s*-\s*/, '').trim()
+
+const compareNeighborhoodValueLinks = (
+  left: ListingGroupValueLink,
+  right: ListingGroupValueLink,
+) =>
+  neighborhoodSortLabel(left.value).localeCompare(
+    neighborhoodSortLabel(right.value),
+    undefined,
+    { numeric: true, sensitivity: 'base' },
+  ) ||
+  left.value.localeCompare(right.value, undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  }) ||
+  right.count - left.count
+
+const sortGroupValueLinksForGroup = (
+  groupSlug: string,
+  values: ReadonlyArray<ListingGroupValueLink>,
+) =>
+  groupSlug === 'neighborhood'
+    ? [...values].sort(compareNeighborhoodValueLinks)
+    : sortGroupValueLinks(values)
+
 const makeGroupValueLink = (
   group: ListingGroupDefinition,
   valueSlug: string,
@@ -2142,7 +2168,8 @@ const buildListingGroupIndex = Effect.fn('Listings.buildListingGroupIndex')(
 
     for (const group of listingGroupDefinitions) {
       const groupValues = valuesByGroup.get(group.slug) ?? new Map()
-      const links = sortGroupValueLinks(
+      const links = sortGroupValueLinksForGroup(
+        group.slug,
         Array.from(groupValues.entries()).map(([valueSlug, value]) =>
           makeGroupValueLink(group, valueSlug, value.value, value.count),
         ),

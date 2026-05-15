@@ -9,6 +9,10 @@ import {
 import { GroupedListingsPage } from '#/features/listings/components'
 import { groupedListingsInfiniteQueryOptions } from '#/features/listings/queries'
 import {
+  groupedListingsSeoHead,
+  infiniteDataPage,
+} from '#/features/listings/seo'
+import {
   compactListingSearch,
   defaultListingSearch,
   parseListingSearch,
@@ -31,13 +35,12 @@ export const Route = createFileRoute('/search/$group/$value')({
       }),
       pages: deps.page,
     }),
-  head: () => ({
-    meta: [
-      {
-        title: 'Grouped listings | CREA Listings Browser',
-      },
-    ],
-  }),
+  head: ({ loaderData, match, params }) =>
+    groupedListingsSeoHead(
+      infiniteDataPage(loaderData, match.search.page),
+      params.group,
+      params.value,
+    ),
   component: GroupedListingsRoute,
 })
 

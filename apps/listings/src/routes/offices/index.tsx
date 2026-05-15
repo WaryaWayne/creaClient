@@ -6,6 +6,7 @@ import {
 
 import { OfficesPage } from '#/features/listings/components'
 import { officesQueryOptions } from '#/features/listings/queries'
+import { officesSeoHead } from '#/features/listings/seo'
 import {
   defaultDirectorySearch,
   parseDirectorySearch,
@@ -21,9 +22,7 @@ export const Route = createFileRoute('/offices/')({
   loaderDeps: ({ search }) => search,
   loader: ({ context, deps }) =>
     context.queryClient.ensureQueryData(officesQueryOptions(deps)),
-  head: () => ({
-    meta: [{ title: 'EXIT EXCEL REALTY | CREA Listings Browser' }],
-  }),
+  head: ({ loaderData }) => officesSeoHead(loaderData),
   component: OfficesRoute,
 })
 

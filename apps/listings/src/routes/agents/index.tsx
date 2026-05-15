@@ -6,6 +6,7 @@ import {
 
 import { AgentsPage } from '#/features/listings/components'
 import { agentsQueryOptions } from '#/features/listings/queries'
+import { agentsSeoHead } from '#/features/listings/seo'
 import {
   defaultAgentSearch,
   parseAgentSearch,
@@ -21,9 +22,7 @@ export const Route = createFileRoute('/agents/')({
   loaderDeps: ({ search }) => search,
   loader: ({ context, deps }) =>
     context.queryClient.ensureQueryData(agentsQueryOptions(deps)),
-  head: () => ({
-    meta: [{ title: 'EXIT EXCEL REALTY Agents | CREA Listings Browser' }],
-  }),
+  head: ({ loaderData }) => agentsSeoHead(loaderData),
   component: AgentsRoute,
 })
 
