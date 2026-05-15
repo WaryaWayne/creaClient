@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { Effect, Layer, Option } from 'effect'
 import { DdfDatabase, DdfDbClient } from '@warya/crea-ddf/db'
-import type { PropertyField } from '@warya/crea-ddf/db'
+import type { PropertyField, PropertyFilters } from '@warya/crea-ddf/db'
 import type {
   MediaSchema,
   MemberSchema,
@@ -52,6 +52,14 @@ export type ListingCard = {
   readonly address: string
   readonly city: string
   readonly province: string
+  readonly postalCode: string | null
+  readonly cityRegion: string | null
+  readonly subdivisionName: string | null
+  readonly streetNumber: string | null
+  readonly streetName: string | null
+  readonly unitNumber: string | null
+  readonly latitude: number | null
+  readonly longitude: number | null
   readonly status: string | null
   readonly propertySubType: string | null
   readonly price: number | null
@@ -82,6 +90,7 @@ export type ListingDetail = ListingCard & {
   readonly rooms: ReadonlyArray<RoomCard>
   readonly media: ReadonlyArray<MediaCard>
   readonly detailGroups: ReadonlyArray<DetailGroup>
+  readonly relatedListings: ReadonlyArray<ListingCard>
 }
 
 export type PersonCard = {
@@ -831,6 +840,22 @@ const toListingCard = (row: DbRow): ListingCard => {
     city: schemaString<DdfProperty>(row, 'City', 'city') ?? '',
     province:
       schemaString<DdfProperty>(row, 'StateOrProvince', 'province') ?? '',
+    postalCode: schemaString<DdfProperty>(row, 'PostalCode', 'postalCode'),
+    cityRegion: schemaString<DdfProperty>(row, 'CityRegion', 'cityRegion'),
+    subdivisionName: schemaString<DdfProperty>(
+      row,
+      'SubdivisionName',
+      'subdivisionName',
+    ),
+    streetNumber: schemaString<DdfProperty>(
+      row,
+      'StreetNumber',
+      'streetNumber',
+    ),
+    streetName: schemaString<DdfProperty>(row, 'StreetName', 'streetName'),
+    unitNumber: schemaString<DdfProperty>(row, 'UnitNumber', 'unitNumber'),
+    latitude: schemaNumber<DdfProperty>(row, 'Latitude', 'latitude'),
+    longitude: schemaNumber<DdfProperty>(row, 'Longitude', 'longitude'),
     status: schemaString<DdfProperty>(row, 'StandardStatus', 'standardStatus'),
     propertySubType: schemaString<DdfProperty>(
       row,
@@ -1067,6 +1092,7 @@ const toListingDetail = (
     ),
     media: mediaRowsFrom(row).map(toMedia),
     detailGroups: detailGroupsFromRow(row),
+    relatedListings: [],
   }
 }
 
@@ -1164,11 +1190,36 @@ type ListingGroupValueAccumulator = {
 
 const GROUPED_RELATED_VALUE_LIMIT = 36
 
+const relatedSearchGroupPriority = new Map(
+  [
+    'neighborhood',
+    'subdivision-name',
+    'property-sub-type',
+    'waterfront-features',
+    'parking-features',
+    'building-features',
+  ].map((slug, index) => [slug, index] as const),
+)
+
+const searchGroupPriority = (slug: string) =>
+  relatedSearchGroupPriority.get(slug) ?? relatedSearchGroupPriority.size
+
 const sortGroupValueLinks = (values: ReadonlyArray<ListingGroupValueLink>) =>
   [...values].sort(
     (left, right) =>
-      right.count - left.count || left.value.localeCompare(right.value),
+      searchGroupPriority(left.groupSlug) -
+        searchGroupPriority(right.groupSlug) ||
+      right.count - left.count ||
+      left.value.localeCompare(right.value),
   )
+
+const compareGroupSummaries = (
+  left: ListingGroupSummary,
+  right: ListingGroupSummary,
+) =>
+  searchGroupPriority(left.groupSlug) - searchGroupPriority(right.groupSlug) ||
+  right.listingCount - left.listingCount ||
+  left.pluralLabel.localeCompare(right.pluralLabel)
 
 const neighborhoodSortLabel = (value: string) =>
   value.replace(/^\s*\d+\s*-\s*/, '').trim()
@@ -1248,6 +1299,281 @@ const listingHasAgent = (row: DbRow, agentKey: string) =>
 const listingHasOffice = (row: DbRow, officeKey: string) =>
   listingOfficeKeys(row).includes(officeKey)
 
+const normalizedText = (value: string | null | undefined) =>
+  value?.trim().toLowerCase() ?? ''
+
+const isOntarioProvince = (value: string | null | undefined) => {
+  const normalized = normalizedText(value)
+  return normalized === 'on' || normalized === 'ontario'
+}
+
+const primaryListingPrice = (listing: ListingCard) =>
+  listing.price ?? listing.leaseAmount
+
+const listingAgentCardKeys = (listing: ListingCard) =>
+  listing.agents.map((agent) => agent.memberKey)
+
+const listingOfficeCardKeys = (listing: ListingCard) =>
+  listing.offices.map((office) => office.officeKey)
+
+const listingHasOfficeCard = (listing: ListingCard, officeKey: string) =>
+  listingOfficeCardKeys(listing).includes(officeKey)
+
+const commonStringCount = (
+  left: ReadonlyArray<string>,
+  right: ReadonlyArray<string>,
+) => {
+  const rightValues = new Set(right)
+  return left.filter((value) => rightValues.has(value)).length
+}
+
+const addressBuildingKey = (listing: ListingCard) =>
+  [
+    listing.streetNumber,
+    listing.streetName,
+    listing.city,
+    listing.province,
+    listing.postalCode,
+  ]
+    .map(normalizedText)
+    .filter(Boolean)
+    .join('|')
+
+const hasSameBuilding = (left: ListingCard, right: ListingCard) => {
+  const leftKey = addressBuildingKey(left)
+  return leftKey.length > 0 && leftKey === addressBuildingKey(right)
+}
+
+const degreesToRadians = (degrees: number) => (degrees * Math.PI) / 180
+
+const distanceKilometers = (
+  left: ListingCard,
+  right: ListingCard,
+): number | null => {
+  if (
+    left.latitude === null ||
+    left.longitude === null ||
+    right.latitude === null ||
+    right.longitude === null
+  ) {
+    return null
+  }
+
+  const earthRadiusKm = 6371
+  const latitudeDelta = degreesToRadians(right.latitude - left.latitude)
+  const longitudeDelta = degreesToRadians(right.longitude - left.longitude)
+  const leftLatitude = degreesToRadians(left.latitude)
+  const rightLatitude = degreesToRadians(right.latitude)
+  const a =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(leftLatitude) *
+      Math.cos(rightLatitude) *
+      Math.sin(longitudeDelta / 2) ** 2
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+const numericSimilarityScore = (
+  left: number | null,
+  right: number | null,
+  exactScore: number,
+  nearScore: number,
+  nearDistance = 1,
+) => {
+  if (left === null || right === null) return 0
+  const delta = Math.abs(left - right)
+  if (delta === 0) return exactScore
+  return delta <= nearDistance ? nearScore : 0
+}
+
+const priceSimilarityScore = (left: ListingCard, right: ListingCard) => {
+  const leftPrice = primaryListingPrice(left)
+  const rightPrice = primaryListingPrice(right)
+  if (leftPrice === null || rightPrice === null || leftPrice <= 0) return 0
+  const ratio = Math.abs(leftPrice - rightPrice) / leftPrice
+  if (ratio <= 0.08) return 45
+  if (ratio <= 0.15) return 32
+  if (ratio <= 0.25) return 18
+  return 0
+}
+
+const localListingScore = (listing: ListingCard) => {
+  let score = 0
+  if (listingHasOfficeCard(listing, EXIT_EXCEL_OFFICE_KEY)) score += 80
+  if (normalizedText(listing.city) === 'ottawa') score += 60
+  if (isOntarioProvince(listing.province)) score += 30
+  if (listing.cityRegion !== null) score += 8
+  if (listing.subdivisionName !== null) score += 6
+  if (listing.imageUrl !== null) score += 4
+  if (listing.openHouses.length > 0) score += 8
+  return score
+}
+
+const listingRecommendationScore = (
+  target: ListingCard,
+  candidate: ListingCard,
+) => {
+  let score = 0
+  if (candidate.listingKey === target.listingKey) score += 220
+  if (
+    target.listingId !== null &&
+    candidate.listingId !== null &&
+    candidate.listingId === target.listingId
+  ) {
+    score += 180
+  }
+  if (hasSameBuilding(target, candidate)) score += 150
+  if (
+    normalizedText(candidate.city) === normalizedText(target.city) &&
+    normalizedText(candidate.province) === normalizedText(target.province)
+  ) {
+    score += 95
+  } else if (
+    normalizedText(candidate.province) === normalizedText(target.province)
+  ) {
+    score += 25
+  }
+  if (
+    target.cityRegion !== null &&
+    normalizedText(candidate.cityRegion) === normalizedText(target.cityRegion)
+  ) {
+    score += 45
+  }
+  if (
+    target.subdivisionName !== null &&
+    normalizedText(candidate.subdivisionName) ===
+      normalizedText(target.subdivisionName)
+  ) {
+    score += 35
+  }
+  if (
+    target.postalCode !== null &&
+    candidate.postalCode !== null &&
+    normalizedText(candidate.postalCode).slice(0, 3) ===
+      normalizedText(target.postalCode).slice(0, 3)
+  ) {
+    score += 24
+  }
+
+  const distance = distanceKilometers(target, candidate)
+  if (distance !== null) {
+    if (distance <= 0.5) score += 95
+    else if (distance <= 2) score += 80
+    else if (distance <= 5) score += 58
+    else if (distance <= 15) score += 35
+    else if (distance <= 35) score += 18
+  }
+
+  if (
+    target.propertySubType !== null &&
+    normalizedText(candidate.propertySubType) ===
+      normalizedText(target.propertySubType)
+  ) {
+    score += 42
+  }
+
+  score += priceSimilarityScore(target, candidate)
+  score += numericSimilarityScore(target.bedrooms, candidate.bedrooms, 28, 14)
+  score += numericSimilarityScore(target.bathrooms, candidate.bathrooms, 24, 12)
+  score += numericSimilarityScore(target.parking, candidate.parking, 16, 8)
+  score +=
+    commonStringCount(
+      listingAgentCardKeys(target),
+      listingAgentCardKeys(candidate),
+    ) * 14
+  score +=
+    commonStringCount(
+      listingOfficeCardKeys(target),
+      listingOfficeCardKeys(candidate),
+    ) * 18
+
+  return score
+}
+
+const openHouseDateRank = (openHouse: OpenHouseCard) => {
+  if (openHouse.date === null) return Number.MAX_SAFE_INTEGER
+  const date = Date.parse(openHouse.date)
+  if (!Number.isFinite(date)) return Number.MAX_SAFE_INTEGER
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return date >= today.getTime()
+    ? date - today.getTime()
+    : Number.MAX_SAFE_INTEGER + (today.getTime() - date)
+}
+
+const compareOpenHouseTime = (left: OpenHouseCard, right: OpenHouseCard) =>
+  openHouseDateRank(left) - openHouseDateRank(right) ||
+  (left.startTime ?? '').localeCompare(right.startTime ?? '') ||
+  left.openHouseKey.localeCompare(right.openHouseKey)
+
+const rankOpenHousesForTarget = (
+  target: OpenHouseCard,
+  candidates: ReadonlyArray<OpenHouseCard>,
+) =>
+  [...candidates]
+    .filter((candidate) => candidate.openHouseKey !== target.openHouseKey)
+    .sort((left, right) => {
+      const leftScore =
+        target.property !== null && left.property !== null
+          ? listingRecommendationScore(target.property, left.property)
+          : 0
+      const rightScore =
+        target.property !== null && right.property !== null
+          ? listingRecommendationScore(target.property, right.property)
+          : 0
+      return rightScore - leftScore || compareOpenHouseTime(left, right)
+    })
+
+const rankListingsForLocal = (listings: ReadonlyArray<ListingCard>) =>
+  [...listings].sort(
+    (left, right) =>
+      localListingScore(right) - localListingScore(left) ||
+      (right.modifiedAt ?? '').localeCompare(left.modifiedAt ?? '') ||
+      left.listingKey.localeCompare(right.listingKey),
+  )
+
+const rankOpenHousesForLocal = (openHouses: ReadonlyArray<OpenHouseCard>) =>
+  [...openHouses].sort((left, right) => {
+    const leftScore =
+      left.property === null ? 0 : localListingScore(left.property)
+    const rightScore =
+      right.property === null ? 0 : localListingScore(right.property)
+    return rightScore - leftScore || compareOpenHouseTime(left, right)
+  })
+
+const recommendationPriceBand = (
+  listing: ListingCard,
+): Pick<PropertyFilters, 'minPrice' | 'maxPrice'> => {
+  const price = primaryListingPrice(listing)
+  if (price === null || price <= 0) return {}
+  return {
+    minPrice: Math.max(0, Math.floor(price * 0.65)),
+    maxPrice: Math.ceil(price * 1.35),
+  }
+}
+
+const propertyCandidateFilters = (
+  listing: ListingCard | null,
+): PropertyFilters =>
+  listing === null
+    ? { active: true }
+    : {
+        active: true,
+        city: listing.city || undefined,
+        province: listing.province || undefined,
+        ...recommendationPriceBand(listing),
+      }
+
+const localPropertyCandidateFilters = (
+  listing: ListingCard | null,
+): PropertyFilters =>
+  listing === null
+    ? { active: true }
+    : {
+        active: true,
+        city: listing.city || undefined,
+        province: listing.province || undefined,
+      }
+
 const listingOrder = (
   sort: ListingSort,
 ): ReadonlyArray<{
@@ -1276,6 +1602,14 @@ const listingSelect = [
   'leaseAmountFrequency',
   'city',
   'province',
+  'postalCode',
+  'cityRegion',
+  'subdivisionName',
+  'streetNumber',
+  'streetName',
+  'unitNumber',
+  'latitude',
+  'longitude',
   'standardStatus',
   'propertySubType',
   'bedroomsTotal',
@@ -2189,11 +2523,7 @@ const buildListingGroupIndex = Effect.fn('Listings.buildListingGroupIndex')(
         } satisfies ListingGroupSummary
       })
       .filter((summary) => summary.valueCount > 0 && summary.listingCount > 0)
-      .sort(
-        (left, right) =>
-          right.listingCount - left.listingCount ||
-          left.pluralLabel.localeCompare(right.pluralLabel),
-      )
+      .sort(compareGroupSummaries)
 
     return {
       summaries,
@@ -2443,7 +2773,7 @@ const loadHome = Effect.fn('Listings.loadHome')(function* () {
         includeRaw: true,
         include: propertyInclude,
         filters: { active: true },
-        limit: 6,
+        limit: 200,
         orderBy: [{ field: 'modificationTimestamp', direction: 'desc' }],
       }) as Effect.Effect<ReadonlyArray<DbRow>, unknown>,
       client.openHouses.list({
@@ -2463,8 +2793,17 @@ const loadHome = Effect.fn('Listings.loadHome')(function* () {
             includeRaw: true,
           },
         },
-        limit: 6,
-        orderBy: [{ field: 'openHouseDate', direction: 'desc' }],
+        filters: {
+          property: {
+            active: true,
+            province: 'Ontario',
+          },
+        },
+        limit: 200,
+        orderBy: [
+          { field: 'openHouseDate', direction: 'asc' },
+          { field: 'openHouseStartTime', direction: 'asc' },
+        ],
       }) as Effect.Effect<ReadonlyArray<DbRow>, unknown>,
       buildFacets(),
     ],
@@ -2472,11 +2811,15 @@ const loadHome = Effect.fn('Listings.loadHome')(function* () {
   )
 
   return {
-    featuredListings: featuredListings.map(toListingCard),
-    openHouses: openHouses.flatMap((row) => {
-      const openHouse = toOpenHouse(row)
-      return openHouse === null ? [] : [openHouse]
-    }),
+    featuredListings: rankListingsForLocal(
+      featuredListings.map(toListingCard),
+    ).slice(0, 6),
+    openHouses: rankOpenHousesForLocal(
+      openHouses.flatMap((row) => {
+        const openHouse = toOpenHouse(row)
+        return openHouse === null ? [] : [openHouse]
+      }),
+    ).slice(0, 6),
     facets,
   } satisfies HomeData
 })
@@ -2490,7 +2833,46 @@ const loadListingDetail = Effect.fn('Listings.loadListingDetail')(function* (
     includeRaw: true,
     include: detailInclude,
   })) as DbRow | null
-  return toListingDetail(row)
+  const listing = toListingDetail(row)
+  if (listing === null) return null
+
+  const relatedRows = (yield* client.properties.list({
+    select: listingSelect,
+    includeRaw: true,
+    include: propertyInclude,
+    filters: propertyCandidateFilters(listing),
+    limit: 300,
+    orderBy: [{ field: 'modificationTimestamp', direction: 'desc' }],
+  })) as ReadonlyArray<DbRow>
+  const relaxedRows =
+    relatedRows.length >= 12
+      ? []
+      : ((yield* client.properties.list({
+          select: listingSelect,
+          includeRaw: true,
+          include: propertyInclude,
+          filters: localPropertyCandidateFilters(listing),
+          limit: 300,
+          orderBy: [{ field: 'modificationTimestamp', direction: 'desc' }],
+        })) as ReadonlyArray<DbRow>)
+  const relatedListings = uniqueBy(
+    [...relatedRows, ...relaxedRows].map(toListingCard),
+    (candidate) => candidate.listingKey,
+  )
+    .filter((candidate) => candidate.listingKey !== listing.listingKey)
+    .sort(
+      (left, right) =>
+        listingRecommendationScore(listing, right) -
+          listingRecommendationScore(listing, left) ||
+        (right.modifiedAt ?? '').localeCompare(left.modifiedAt ?? '') ||
+        left.listingKey.localeCompare(right.listingKey),
+    )
+    .slice(0, 6)
+
+  return {
+    ...listing,
+    relatedListings,
+  } satisfies ListingDetail
 })
 
 const loadOpenHouseDetail = Effect.fn('Listings.loadOpenHouseDetail')(
@@ -2519,7 +2901,6 @@ const loadOpenHouseDetail = Effect.fn('Listings.loadOpenHouseDetail')(
     )
     if (openHouse === null) return null
 
-    const propertySubType = openHouse.property?.propertySubType ?? null
     const relatedRows = (yield* client.openHouses.list({
       select: [
         'openHouseKey',
@@ -2538,22 +2919,56 @@ const loadOpenHouseDetail = Effect.fn('Listings.loadOpenHouseDetail')(
           includeRaw: true,
         },
       },
-      limit: 200,
-      orderBy: [{ field: 'openHouseDate', direction: 'desc' }],
+      filters: {
+        property: propertyCandidateFilters(openHouse.property),
+      },
+      limit: 300,
+      orderBy: [
+        { field: 'openHouseDate', direction: 'asc' },
+        { field: 'openHouseStartTime', direction: 'asc' },
+      ],
     })) as ReadonlyArray<DbRow>
+    const relaxedRows =
+      relatedRows.length >= 12
+        ? []
+        : ((yield* client.openHouses.list({
+            select: [
+              'openHouseKey',
+              'listingKey',
+              'listingId',
+              'openHouseDate',
+              'openHouseStartTime',
+              'openHouseEndTime',
+              'openHouseType',
+              'openHouseStatus',
+              'openHouseRemarks',
+            ],
+            include: {
+              property: {
+                select: listingSelect,
+                includeRaw: true,
+              },
+            },
+            filters: {
+              property: localPropertyCandidateFilters(openHouse.property),
+            },
+            limit: 300,
+            orderBy: [
+              { field: 'openHouseDate', direction: 'asc' },
+              { field: 'openHouseStartTime', direction: 'asc' },
+            ],
+          })) as ReadonlyArray<DbRow>)
 
-    const relatedOpenHouses = relatedRows
-      .flatMap((row) => {
-        const relatedOpenHouse = toOpenHouse(row)
-        return relatedOpenHouse === null ? [] : [relatedOpenHouse]
-      })
-      .filter(
-        (relatedOpenHouse) =>
-          relatedOpenHouse.openHouseKey !== openHouse.openHouseKey &&
-          propertySubType !== null &&
-          relatedOpenHouse.property?.propertySubType === propertySubType,
-      )
-      .slice(0, 6)
+    const relatedOpenHouses = rankOpenHousesForTarget(
+      openHouse,
+      uniqueBy(
+        [...relatedRows, ...relaxedRows].flatMap((row) => {
+          const relatedOpenHouse = toOpenHouse(row)
+          return relatedOpenHouse === null ? [] : [relatedOpenHouse]
+        }),
+        (relatedOpenHouse) => relatedOpenHouse.openHouseKey,
+      ),
+    ).slice(0, 6)
 
     return {
       ...openHouse,
@@ -2604,7 +3019,7 @@ const loadOffices = Effect.fn('Listings.loadOffices')(function* (
     offset += page.length
   }
 
-  const listings = listingRows.map(toListingCard)
+  const listings = rankListingsForLocal(listingRows.map(toListingCard))
   const agents = sortAgents(
     uniqueBy(
       listings.flatMap((listing) => listing.agents),
@@ -2759,9 +3174,9 @@ const loadAgentDetail = Effect.fn('Listings.loadAgentDetail')(function* (
     offset += page.length
   }
 
-  const listings = rows.map(toListingCard)
+  const listings = rankListingsForLocal(rows.map(toListingCard))
   const openHouses = uniqueBy(
-    listings.flatMap((listing) => listing.openHouses),
+    rankOpenHousesForLocal(listings.flatMap((listing) => listing.openHouses)),
     (openHouse) => openHouse.openHouseKey,
   )
 
