@@ -15,6 +15,7 @@ import { Route as OpenHousesIndexRouteImport } from './routes/open-houses/index'
 import { Route as OfficesIndexRouteImport } from './routes/offices/index'
 import { Route as ListingsIndexRouteImport } from './routes/listings/index'
 import { Route as AgentsIndexRouteImport } from './routes/agents/index'
+import { Route as OpenHousesOpenHouseKeyRouteImport } from './routes/open-houses/$openHouseKey'
 import { Route as ListingsListingKeyRouteImport } from './routes/listings/$listingKey'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -48,6 +49,11 @@ const AgentsIndexRoute = AgentsIndexRouteImport.update({
   path: '/agents/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OpenHousesOpenHouseKeyRoute = OpenHousesOpenHouseKeyRouteImport.update({
+  id: '/open-houses/$openHouseKey',
+  path: '/open-houses/$openHouseKey',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ListingsListingKeyRoute = ListingsListingKeyRouteImport.update({
   id: '/listings/$listingKey',
   path: '/listings/$listingKey',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/mcp': typeof McpRoute
   '/listings/$listingKey': typeof ListingsListingKeyRoute
+  '/open-houses/$openHouseKey': typeof OpenHousesOpenHouseKeyRoute
   '/agents/': typeof AgentsIndexRoute
   '/listings/': typeof ListingsIndexRoute
   '/offices/': typeof OfficesIndexRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/mcp': typeof McpRoute
   '/listings/$listingKey': typeof ListingsListingKeyRoute
+  '/open-houses/$openHouseKey': typeof OpenHousesOpenHouseKeyRoute
   '/agents': typeof AgentsIndexRoute
   '/listings': typeof ListingsIndexRoute
   '/offices': typeof OfficesIndexRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/mcp': typeof McpRoute
   '/listings/$listingKey': typeof ListingsListingKeyRoute
+  '/open-houses/$openHouseKey': typeof OpenHousesOpenHouseKeyRoute
   '/agents/': typeof AgentsIndexRoute
   '/listings/': typeof ListingsIndexRoute
   '/offices/': typeof OfficesIndexRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/mcp'
     | '/listings/$listingKey'
+    | '/open-houses/$openHouseKey'
     | '/agents/'
     | '/listings/'
     | '/offices/'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/mcp'
     | '/listings/$listingKey'
+    | '/open-houses/$openHouseKey'
     | '/agents'
     | '/listings'
     | '/offices'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/mcp'
     | '/listings/$listingKey'
+    | '/open-houses/$openHouseKey'
     | '/agents/'
     | '/listings/'
     | '/offices/'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   McpRoute: typeof McpRoute
   ListingsListingKeyRoute: typeof ListingsListingKeyRoute
+  OpenHousesOpenHouseKeyRoute: typeof OpenHousesOpenHouseKeyRoute
   AgentsIndexRoute: typeof AgentsIndexRoute
   ListingsIndexRoute: typeof ListingsIndexRoute
   OfficesIndexRoute: typeof OfficesIndexRoute
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/open-houses/$openHouseKey': {
+      id: '/open-houses/$openHouseKey'
+      path: '/open-houses/$openHouseKey'
+      fullPath: '/open-houses/$openHouseKey'
+      preLoaderRoute: typeof OpenHousesOpenHouseKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/listings/$listingKey': {
       id: '/listings/$listingKey'
       path: '/listings/$listingKey'
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   McpRoute: McpRoute,
   ListingsListingKeyRoute: ListingsListingKeyRoute,
+  OpenHousesOpenHouseKeyRoute: OpenHousesOpenHouseKeyRoute,
   AgentsIndexRoute: AgentsIndexRoute,
   ListingsIndexRoute: ListingsIndexRoute,
   OfficesIndexRoute: OfficesIndexRoute,

@@ -1,29 +1,41 @@
-import { useEffect } from 'react'
-import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
+import type {
+  FormEvent,
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+  ReactNode,
+} from 'react'
 import {
+  ArrowRight,
   Bath,
   BedDouble,
   Building2,
   CalendarDays,
+  Clock,
   ExternalLink,
   FileImage,
   FileText,
   Heart,
   Home,
   MapPin,
+  MessageSquare,
   NotebookPen,
   Phone,
   PlayCircle,
   Search,
+  Send,
   Trash2,
   UserRound,
+  Users,
+  X,
 } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useAtom } from '@effect/atom-react'
 
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { Textarea } from '#/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -59,6 +71,7 @@ import type {
   ListingsData,
   MediaCard,
   OfficeCard,
+  OpenHouseDetail,
   OpenHouseCard,
   PersonCard,
 } from './data'
@@ -107,6 +120,10 @@ const personName = (person: PersonCard) =>
 const cleanSearchObject = (search: ListingSearch) =>
   compactListingSearch(search) as ListingSearch
 
+const openHouseTimeLabel = (openHouse: OpenHouseCard) =>
+  [openHouse.startTime, openHouse.endTime].filter(Boolean).join(' - ') ||
+  'Time available'
+
 function SelectFilter({
   label,
   value,
@@ -142,6 +159,69 @@ function SelectFilter({
         </SelectContent>
       </Select>
     </label>
+  )
+}
+
+function DetailsDialog({
+  title,
+  open,
+  onOpenChange,
+  children,
+  className,
+}: {
+  readonly title: string
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
+  readonly children: ReactNode
+  readonly className?: string
+}) {
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onOpenChange(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onOpenChange, open])
+
+  if (!open) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-[rgba(23,58,64,0.28)] p-4 backdrop-blur-sm"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onOpenChange(false)
+      }}
+    >
+      <section
+        aria-modal="true"
+        role="dialog"
+        aria-labelledby={`${title.replace(/\W+/g, '-').toLowerCase()}-dialog-title`}
+        className={cn(
+          'relative grid max-h-[min(88vh,760px)] w-full max-w-3xl gap-5 overflow-y-auto rounded-lg border border-[var(--line)] bg-white p-5 text-[var(--sea-ink)] shadow-[0_30px_90px_rgba(23,58,64,0.28)]',
+          className,
+        )}
+      >
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Close dialog"
+          className="absolute right-3 top-3"
+          onClick={() => onOpenChange(false)}
+        >
+          <X />
+        </Button>
+        <h2
+          id={`${title.replace(/\W+/g, '-').toLowerCase()}-dialog-title`}
+          className="display-title pr-10 text-3xl font-bold text-[var(--sea-ink)]"
+        >
+          {title}
+        </h2>
+        {children}
+      </section>
+    </div>
   )
 }
 
@@ -215,13 +295,17 @@ function OpenHouseImageBadge({
 }) {
   if (openHouses.length === 0) return null
   const nextOpenHouse = openHouses[0]
+  if (!nextOpenHouse) return null
+
   return (
-    <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--sea-ink)] px-3 py-1 text-xs font-extrabold text-white shadow-sm">
+    <Link
+      to="/open-houses/$openHouseKey"
+      params={{ openHouseKey: nextOpenHouse.openHouseKey }}
+      className="inline-flex items-center gap-1.5 rounded-full bg-[var(--sea-ink)] px-3 py-1 text-xs font-extrabold text-white no-underline shadow-sm hover:text-white"
+    >
       <CalendarDays className="size-3.5" />
-      {nextOpenHouse
-        ? `${formatDate(nextOpenHouse.date)}${openHouses.length > 1 ? ` +${openHouses.length - 1}` : ''}`
-        : 'Open house'}
-    </div>
+      {`${formatDate(nextOpenHouse.date)}${openHouses.length > 1 ? ` +${openHouses.length - 1}` : ''}`}
+    </Link>
   )
 }
 
@@ -305,6 +389,102 @@ function AgentCreditBox({ agent }: { readonly agent: PersonCard }) {
   )
 }
 
+function AgentsDialogButton({
+  listing,
+}: {
+  readonly listing: Pick<ListingCardType, 'listingKey' | 'address' | 'agents'>
+}) {
+  const [open, setOpen] = useState(false)
+  if (listing.agents.length === 0) return null
+
+  return (
+    <>
+      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
+        <Users />
+        See agents
+      </Button>
+      <DetailsDialog
+        title="Listing agents"
+        open={open}
+        onOpenChange={setOpen}
+        className="max-w-5xl"
+      >
+        <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
+          <div className="grid content-start gap-4">
+            <p className="text-sm leading-6 text-[var(--sea-ink-soft)]">
+              {listing.address}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {listing.agents.map((agent) => (
+                <AgentCreditBox agent={agent} key={agent.memberKey} />
+              ))}
+            </div>
+          </div>
+          <AgentMessageForm listing={listing} />
+        </div>
+      </DetailsDialog>
+    </>
+  )
+}
+
+function AgentMessageForm({
+  listing,
+}: {
+  readonly listing: Pick<ListingCardType, 'listingKey' | 'address' | 'agents'>
+}) {
+  const submitMessage = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    console.log('agent-message', {
+      listingKey: listing.listingKey,
+      listingAddress: listing.address,
+      agentKeys: listing.agents.map((agent) => agent.memberKey),
+      email: form.get('email'),
+      phone: form.get('phone'),
+      message: form.get('message'),
+    })
+    event.currentTarget.reset()
+  }
+
+  return (
+    <div className="grid content-start gap-3 rounded-lg border border-[var(--line)] bg-[var(--foam)] p-4">
+      <div>
+        <p className="inline-flex items-center gap-2 text-sm font-extrabold text-[var(--sea-ink)]">
+          <MessageSquare className="size-4" />
+          Send message
+        </p>
+        <p className="mt-1 text-xs leading-5 text-[var(--sea-ink-soft)]">
+          This logs the request in the browser console for now.
+        </p>
+      </div>
+      <form className="grid gap-3" onSubmit={submitMessage}>
+        <label className="grid gap-1.5">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+            Email
+          </span>
+          <Input name="email" type="email" required className="bg-white/80" />
+        </label>
+        <label className="grid gap-1.5">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+            Phone number
+          </span>
+          <Input name="phone" type="tel" required className="bg-white/80" />
+        </label>
+        <label className="grid gap-1.5">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+            Message
+          </span>
+          <Textarea name="message" required className="min-h-28 bg-white/80" />
+        </label>
+        <Button type="submit" className="justify-self-start">
+          <Send />
+          Submit
+        </Button>
+      </form>
+    </div>
+  )
+}
+
 function ListingCredits({ listing }: { readonly listing: ListingCardType }) {
   if (listing.offices.length === 0 && listing.agents.length === 0) return null
   return (
@@ -313,10 +493,22 @@ function ListingCredits({ listing }: { readonly listing: ListingCardType }) {
         <OfficeCreditBlock office={office} key={office.officeKey} />
       ))}
       {listing.agents.length > 0 ? (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {listing.agents.map((agent) => (
-            <AgentCreditBox agent={agent} key={agent.memberKey} />
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--line)] bg-white/78 p-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[var(--sand)] text-[var(--palm)]">
+              <Users className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-extrabold text-[var(--sea-ink)]">
+                {listing.agents.length}{' '}
+                {listing.agents.length === 1 ? 'agent' : 'agents'}
+              </p>
+              <p className="truncate text-sm text-[var(--sea-ink-soft)]">
+                {listing.agents.map(personName).join(', ')}
+              </p>
+            </div>
+          </div>
+          <AgentsDialogButton listing={listing} />
         </div>
       ) : null}
     </div>
@@ -445,8 +637,36 @@ export function ListingCard({
 }: {
   readonly listing: ListingCardType
 }) {
+  const navigate = useNavigate()
+  const openListing = () => {
+    void navigate({
+      to: '/listings/$listingKey',
+      params: { listingKey: listing.listingKey },
+    })
+  }
+  const isInteractiveTarget = (target: EventTarget | null) =>
+    target instanceof HTMLElement &&
+    target.closest('a,button,input,select,textarea,[role="button"]') !== null
+  const onCardClick = (event: ReactMouseEvent<HTMLElement>) => {
+    if (event.defaultPrevented || isInteractiveTarget(event.target)) return
+    openListing()
+  }
+  const onCardKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
+    if (event.defaultPrevented || isInteractiveTarget(event.target)) return
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      openListing()
+    }
+  }
+
   return (
-    <article className="overflow-hidden rounded-lg border border-[var(--line)] bg-white/82 shadow-[0_12px_30px_rgba(23,58,64,0.08)]">
+    <article
+      className="group cursor-pointer overflow-hidden rounded-lg border border-[var(--line)] bg-white/82 shadow-[0_12px_30px_rgba(23,58,64,0.08)] hover:border-[var(--lagoon-deep)] hover:shadow-[0_18px_38px_rgba(23,58,64,0.12)]"
+      tabIndex={0}
+      aria-label={`View listing details for ${listing.address}`}
+      onClick={onCardClick}
+      onKeyDown={onCardKeyDown}
+    >
       <div className="relative aspect-[4/3] bg-[var(--sand)]">
         {listing.imageUrl ? (
           <img
@@ -477,13 +697,9 @@ export function ListingCard({
               <p className="text-xl font-extrabold tracking-normal text-[var(--sea-ink)]">
                 {formatListingPrice(listing)}
               </p>
-              <Link
-                to="/listings/$listingKey"
-                params={{ listingKey: listing.listingKey }}
-                className="mt-1 line-clamp-2 text-sm font-semibold text-[var(--sea-ink)] no-underline hover:text-[var(--lagoon-deep)]"
-              >
+              <p className="mt-1 line-clamp-2 text-sm font-semibold text-[var(--sea-ink)] group-hover:text-[var(--lagoon-deep)]">
                 {listing.address}
-              </Link>
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 text-sm text-[var(--sea-ink-soft)]">
@@ -542,7 +758,7 @@ export function ListingsGrid({
   }
 
   return (
-    <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-5 md:grid-cols-2">
       {listings.map((listing) => (
         <ListingCard listing={listing} key={listing.listingKey} />
       ))}
@@ -857,8 +1073,222 @@ function DirectoryPanel({
   return (
     <section className="rounded-lg border border-[var(--line)] bg-white/72 p-5">
       <h3 className="text-lg font-extrabold text-[var(--sea-ink)]">{title}</h3>
-      <div className="mt-4 grid gap-3">{children}</div>
+      <div className="mt-4 grid gap-3 lg:grid-cols-2">{children}</div>
     </section>
+  )
+}
+
+function ListingOpenHousesPanel({
+  listing,
+}: {
+  readonly listing: ListingDetail
+}) {
+  const firstOpenHouse = listing.openHouses[0]
+  const hasMultipleOpenHouses = listing.openHouses.length > 1
+
+  return (
+    <section className="grid gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-extrabold text-[var(--sea-ink)]">
+            Open houses
+          </h2>
+          {listing.openHouses.length > 0 ? (
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--sea-ink-soft)]">
+              {listing.openHouses.length} scheduled
+            </p>
+          ) : null}
+        </div>
+        {hasMultipleOpenHouses ? (
+          <Button asChild size="sm" variant="outline">
+            <Link
+              to="/open-houses"
+              search={{
+                ...defaultOpenHouseSearch,
+                listingKey: listing.listingKey,
+              }}
+            >
+              See all
+            </Link>
+          </Button>
+        ) : null}
+      </div>
+      {firstOpenHouse ? (
+        <OpenHouseRow openHouse={firstOpenHouse} />
+      ) : (
+        <p className="rounded-md border border-dashed border-[var(--line)] bg-white/60 p-3 text-sm text-[var(--sea-ink-soft)]">
+          No open houses are attached to this listing.
+        </p>
+      )}
+    </section>
+  )
+}
+
+export function OpenHouseDetailPage({
+  openHouse,
+}: {
+  readonly openHouse: OpenHouseDetail | null
+}) {
+  if (!openHouse) {
+    return (
+      <main className="page-wrap py-14">
+        <div className="rounded-lg border border-[var(--line)] bg-white/80 p-8">
+          <h1 className="text-2xl font-extrabold">Open house not found</h1>
+          <Button asChild className="mt-5">
+            <Link to="/open-houses" search={defaultOpenHouseSearch}>
+              Back to open houses
+            </Link>
+          </Button>
+        </div>
+      </main>
+    )
+  }
+
+  const property = openHouse.property
+
+  return (
+    <main className="page-wrap grid gap-6 py-8">
+      <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <div className="rounded-lg border border-[var(--line)] bg-white/78 p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+            Open house
+          </p>
+          <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+            {formatDate(openHouse.date)}
+          </h1>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <MetricPill icon={Clock}>
+              {openHouseTimeLabel(openHouse)}
+            </MetricPill>
+            {openHouse.status ? (
+              <span className="rounded-full border border-[var(--line)] bg-white/80 px-2.5 py-1 text-xs font-semibold text-[var(--sea-ink)]">
+                {openHouse.status}
+              </span>
+            ) : null}
+            {openHouse.type ? (
+              <span className="rounded-full border border-[var(--line)] bg-white/80 px-2.5 py-1 text-xs font-semibold text-[var(--sea-ink)]">
+                {openHouse.type}
+              </span>
+            ) : null}
+          </div>
+        </div>
+        {property ? (
+          <div className="island-shell grid content-start gap-3 rounded-lg p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
+              Property subtype
+            </p>
+            <p className="text-xl font-extrabold text-[var(--sea-ink)]">
+              {property.propertySubType ?? 'Property'}
+            </p>
+            <Button asChild>
+              <Link
+                to="/listings/$listingKey"
+                params={{ listingKey: property.listingKey }}
+              >
+                <Home />
+                Property details
+              </Link>
+            </Button>
+          </div>
+        ) : null}
+      </section>
+      <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <InfoSection title="Open house details">
+          <p className="leading-7 text-[var(--sea-ink-soft)]">
+            {openHouse.remarks ??
+              'No additional remarks were attached to this open house.'}
+          </p>
+        </InfoSection>
+        {property ? (
+          <InfoSection title="Property">
+            <Link
+              to="/listings/$listingKey"
+              params={{ listingKey: property.listingKey }}
+              className="group grid gap-4 no-underline md:grid-cols-[220px_1fr]"
+            >
+              <div className="overflow-hidden rounded-md bg-[var(--sand)]">
+                {property.imageUrl ? (
+                  <img
+                    src={property.imageUrl}
+                    alt={property.address}
+                    className="aspect-[4/3] h-full w-full object-cover transition group-hover:scale-[1.02]"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex aspect-[4/3] items-center justify-center text-[var(--sea-ink-soft)]">
+                    <Home className="size-10" />
+                  </div>
+                )}
+              </div>
+              <div className="grid content-start gap-3">
+                <div>
+                  <p className="text-2xl font-extrabold text-[var(--sea-ink)] group-hover:text-[var(--lagoon-deep)]">
+                    {formatListingPrice(property)}
+                  </p>
+                  <p className="mt-1 text-lg font-extrabold text-[var(--sea-ink)]">
+                    {property.address}
+                  </p>
+                </div>
+                <p className="flex items-center gap-1.5 text-sm text-[var(--sea-ink-soft)]">
+                  <MapPin className="size-4" />
+                  {[property.city, property.province]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <MetricPill icon={BedDouble}>
+                    {property.bedrooms ?? '-'} beds
+                  </MetricPill>
+                  <MetricPill icon={Bath}>
+                    {property.bathrooms ?? '-'} baths
+                  </MetricPill>
+                  <MetricPill icon={Building2}>
+                    {property.propertySubType ?? 'Property'}
+                  </MetricPill>
+                </div>
+                <span className="inline-flex items-center gap-1 text-sm font-bold text-[var(--lagoon-deep)]">
+                  See property details
+                  <ArrowRight className="size-4" />
+                </span>
+              </div>
+            </Link>
+          </InfoSection>
+        ) : null}
+      </section>
+      <section className="grid gap-4 rounded-lg border border-[var(--line)] bg-white/72 p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
+              {property?.propertySubType ?? 'Related'}
+            </p>
+            <h2 className="mt-1 text-2xl font-extrabold text-[var(--sea-ink)]">
+              Similar open houses
+            </h2>
+          </div>
+          <Button asChild variant="outline">
+            <Link to="/open-houses" search={defaultOpenHouseSearch}>
+              All open houses
+            </Link>
+          </Button>
+        </div>
+        {openHouse.relatedOpenHouses.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {openHouse.relatedOpenHouses.map((relatedOpenHouse) => (
+              <OpenHouseRow
+                openHouse={relatedOpenHouse}
+                prominent
+                key={relatedOpenHouse.openHouseKey}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-md border border-dashed border-[var(--line)] bg-white/60 p-3 text-sm text-[var(--sea-ink-soft)]">
+            No other open houses for this property subtype are in the current
+            sample.
+          </p>
+        )}
+      </section>
+    </main>
   )
 }
 
@@ -887,8 +1317,8 @@ export function ListingDetailPage({
     listing.imageUrl ?? groupedMedia.photos[0]?.mediaUrl ?? null
 
   return (
-    <main className="page-wrap grid gap-8 py-8">
-      <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
+    <main className="page-wrap grid gap-6 py-8 lg:grid-cols-[1fr_360px] lg:items-start">
+      <div className="grid gap-6">
         <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-white/80">
           <div className="relative aspect-[16/10] bg-[var(--sand)]">
             {heroImageUrl ? (
@@ -919,7 +1349,69 @@ export function ListingDetailPage({
             </div>
           ) : null}
         </div>
-        <aside className="island-shell grid content-start gap-5 rounded-lg p-5">
+        <InfoSection title="Remarks">
+          <p className="leading-7 text-[var(--sea-ink-soft)]">
+            {listing.remarks ?? 'No remarks were included for this listing.'}
+          </p>
+        </InfoSection>
+        <InfoSection title="Property details">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DetailItem label="Living area" value={areaLabel(listing)} />
+            <DetailItem
+              label="Lot"
+              value={
+                listing.lotSize
+                  ? `${number.format(listing.lotSize)} ${listing.lotSizeUnits ?? ''}`
+                  : null
+              }
+            />
+            <DetailItem label="Year built" value={listing.yearBuilt} />
+            <DetailItem label="Photos" value={listing.photosCount} />
+          </div>
+        </InfoSection>
+        {listing.detailGroups.map((group) => (
+          <DetailGroupSection group={group} key={group.title} />
+        ))}
+        {listing.rooms.length > 0 ? (
+          <InfoSection title="Rooms">
+            <div className="grid gap-2">
+              {listing.rooms.map((room) => (
+                <div
+                  className="grid gap-2 rounded-md border border-[var(--line)] bg-white/70 p-3 sm:grid-cols-[1fr_auto]"
+                  key={room.roomKey ?? `${room.roomType}-${room.roomLevel}`}
+                >
+                  <div>
+                    <p className="font-semibold text-[var(--sea-ink)]">
+                      {room.roomType ?? 'Room'}
+                    </p>
+                    {room.roomDescription ? (
+                      <p className="mt-1 text-sm leading-5 text-[var(--sea-ink-soft)]">
+                        {room.roomDescription}
+                      </p>
+                    ) : null}
+                  </div>
+                  <p className="text-sm text-[var(--sea-ink-soft)]">
+                    {[room.roomLevel, roomLabel(room)]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </InfoSection>
+        ) : null}
+        {groupedMedia.all.length > 0 ? (
+          <InfoSection title="Media">
+            <MediaGroupsView
+              listingAddress={listing.address}
+              media={groupedMedia}
+            />
+          </InfoSection>
+        ) : null}
+      </div>
+      <aside className="island-shell grid content-start gap-5 rounded-lg p-5 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+        <ListingOpenHousesPanel listing={listing} />
+        <div className="border-t border-[var(--line)] pt-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-3xl font-extrabold text-[var(--sea-ink)]">
@@ -932,7 +1424,7 @@ export function ListingDetailPage({
             </div>
             <ListingActions listingKey={listing.listingKey} />
           </div>
-          <div>
+          <div className="mt-5">
             <h1 className="display-title text-3xl font-bold text-[var(--sea-ink)]">
               {listing.address}
             </h1>
@@ -941,7 +1433,7 @@ export function ListingDetailPage({
               {[listing.city, listing.province].filter(Boolean).join(', ')}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="mt-5 flex flex-wrap gap-2">
             <MetricPill icon={BedDouble}>
               {listing.bedrooms ?? '-'} beds
             </MetricPill>
@@ -952,90 +1444,9 @@ export function ListingDetailPage({
               {listing.parking ?? '-'} parking
             </MetricPill>
           </div>
-          <CreditsBlock listing={listing} />
-        </aside>
-      </section>
-      <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <div className="grid gap-6">
-          <InfoSection title="Remarks">
-            <p className="leading-7 text-[var(--sea-ink-soft)]">
-              {listing.remarks ?? 'No remarks were included for this listing.'}
-            </p>
-          </InfoSection>
-          <InfoSection title="Property details">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <DetailItem label="Living area" value={areaLabel(listing)} />
-              <DetailItem
-                label="Lot"
-                value={
-                  listing.lotSize
-                    ? `${number.format(listing.lotSize)} ${listing.lotSizeUnits ?? ''}`
-                    : null
-                }
-              />
-              <DetailItem label="Year built" value={listing.yearBuilt} />
-              <DetailItem label="Photos" value={listing.photosCount} />
-            </div>
-          </InfoSection>
-          {listing.detailGroups.map((group) => (
-            <DetailGroupSection group={group} key={group.title} />
-          ))}
-          {listing.rooms.length > 0 ? (
-            <InfoSection title="Rooms">
-              <div className="grid gap-2">
-                {listing.rooms.map((room) => (
-                  <div
-                    className="grid gap-2 rounded-md border border-[var(--line)] bg-white/70 p-3 sm:grid-cols-[1fr_auto]"
-                    key={room.roomKey ?? `${room.roomType}-${room.roomLevel}`}
-                  >
-                    <div>
-                      <p className="font-semibold text-[var(--sea-ink)]">
-                        {room.roomType ?? 'Room'}
-                      </p>
-                      {room.roomDescription ? (
-                        <p className="mt-1 text-sm leading-5 text-[var(--sea-ink-soft)]">
-                          {room.roomDescription}
-                        </p>
-                      ) : null}
-                    </div>
-                    <p className="text-sm text-[var(--sea-ink-soft)]">
-                      {[room.roomLevel, roomLabel(room)]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </InfoSection>
-          ) : null}
-          {groupedMedia.all.length > 0 ? (
-            <InfoSection title="Media">
-              <MediaGroupsView
-                listingAddress={listing.address}
-                media={groupedMedia}
-              />
-            </InfoSection>
-          ) : null}
         </div>
-        <div className="grid content-start gap-6">
-          <InfoSection title="Open houses">
-            {listing.openHouses.length > 0 ? (
-              <div className="grid gap-3">
-                {listing.openHouses.map((openHouse) => (
-                  <OpenHouseRow
-                    openHouse={openHouse}
-                    key={openHouse.openHouseKey}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-[var(--sea-ink-soft)]">
-                No open houses are attached to this listing.
-              </p>
-            )}
-          </InfoSection>
-        </div>
-      </section>
+        <CreditsBlock listing={listing} />
+      </aside>
     </main>
   )
 }
@@ -1467,11 +1878,13 @@ export function OpenHousesPage({
         </div>
       }
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 lg:grid-cols-2">
         {data.items.map((openHouse) => (
-          <DirectoryCard key={openHouse.openHouseKey}>
-            <OpenHouseRow openHouse={openHouse} prominent />
-          </DirectoryCard>
+          <OpenHouseRow
+            openHouse={openHouse}
+            prominent
+            key={openHouse.openHouseKey}
+          />
         ))}
       </div>
       <Pagination
@@ -1623,31 +2036,82 @@ export function OpenHouseRow({
   readonly prominent?: boolean
 }) {
   return (
-    <div className="grid gap-3 md:grid-cols-[auto_1fr]">
-      <div className="flex size-10 items-center justify-center rounded-md bg-[var(--sand)] text-[var(--palm)]">
-        <CalendarDays className="size-5" />
+    <div
+      className={cn(
+        'grid gap-3 rounded-lg border border-[var(--line)] bg-white/76 p-3 md:grid-cols-[auto_1fr]',
+        prominent && 'p-4 shadow-[0_10px_24px_rgba(23,58,64,0.07)]',
+      )}
+    >
+      <div className="flex size-12 items-center justify-center rounded-md bg-[var(--sand)] text-[var(--palm)]">
+        <CalendarDays className="size-6" />
       </div>
-      <div className="min-w-0">
-        <p
-          className={cn(
-            'font-extrabold text-[var(--sea-ink)]',
-            prominent ? 'text-lg' : 'text-sm',
-          )}
-        >
-          {formatDate(openHouse.date)}
-        </p>
-        <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
-          {[openHouse.startTime, openHouse.endTime].filter(Boolean).join(' - ')}
-          {openHouse.status ? ` · ${openHouse.status}` : ''}
-        </p>
+      <div className="grid min-w-0 gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p
+              className={cn(
+                'font-extrabold text-[var(--sea-ink)]',
+                prominent ? 'text-xl' : 'text-base',
+              )}
+            >
+              {formatDate(openHouse.date)}
+            </p>
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--sea-ink-soft)]">
+              <span className="inline-flex items-center gap-1">
+                <Clock className="size-3.5" />
+                {openHouseTimeLabel(openHouse)}
+              </span>
+              {openHouse.status ? <span>{openHouse.status}</span> : null}
+            </p>
+            {openHouse.type ? (
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
+                {openHouse.type}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button asChild size="sm">
+              <Link
+                to="/open-houses/$openHouseKey"
+                params={{ openHouseKey: openHouse.openHouseKey }}
+              >
+                <CalendarDays />
+                Details
+              </Link>
+            </Button>
+            {openHouse.property ? (
+              <Button asChild size="sm" variant="outline">
+                <Link
+                  to="/listings/$listingKey"
+                  params={{ listingKey: openHouse.property.listingKey }}
+                >
+                  Property
+                </Link>
+              </Button>
+            ) : null}
+          </div>
+        </div>
         {openHouse.property ? (
           <Link
             to="/listings/$listingKey"
             params={{ listingKey: openHouse.property.listingKey }}
-            className="mt-2 block text-sm font-semibold text-[var(--lagoon-deep)] no-underline"
+            className="group grid gap-1 rounded-md border border-[var(--line)] bg-[var(--foam)] p-3 no-underline hover:border-[var(--lagoon-deep)]"
           >
-            {openHouse.property.address}
+            <span className="text-sm font-extrabold text-[var(--sea-ink)] group-hover:text-[var(--lagoon-deep)]">
+              {openHouse.property.address}
+            </span>
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--sea-ink-soft)]">
+              <MapPin className="size-3.5" />
+              {[openHouse.property.city, openHouse.property.province]
+                .filter(Boolean)
+                .join(', ')}
+            </span>
           </Link>
+        ) : null}
+        {openHouse.remarks ? (
+          <p className="line-clamp-2 text-sm leading-6 text-[var(--sea-ink-soft)]">
+            {openHouse.remarks}
+          </p>
         ) : null}
       </div>
     </div>

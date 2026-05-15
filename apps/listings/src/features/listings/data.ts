@@ -120,6 +120,10 @@ export type OpenHouseCard = {
   readonly property: ListingCard | null
 }
 
+export type OpenHouseDetail = OpenHouseCard & {
+  readonly relatedOpenHouses: ReadonlyArray<OpenHouseCard>
+}
+
 export type MediaCard = {
   readonly mediaKey: string | null
   readonly mediaUrl: string | null
@@ -1098,6 +1102,75 @@ const loadListingDetail = Effect.fn('Listings.loadListingDetail')(function* (
   return toListingDetail(row)
 })
 
+const loadOpenHouseDetail = Effect.fn('Listings.loadOpenHouseDetail')(
+  function* (openHouseKey: string) {
+    const client = yield* DdfDbClient
+    const openHouse = toOpenHouse(
+      (yield* client.openHouses.get(openHouseKey, {
+        select: [
+          'openHouseKey',
+          'listingKey',
+          'listingId',
+          'openHouseDate',
+          'openHouseStartTime',
+          'openHouseEndTime',
+          'openHouseType',
+          'openHouseStatus',
+          'openHouseRemarks',
+        ],
+        include: {
+          property: {
+            select: listingSelect,
+            includeRaw: true,
+          },
+        },
+      })) as DbRow | null,
+    )
+    if (openHouse === null) return null
+
+    const propertySubType = openHouse.property?.propertySubType ?? null
+    const relatedRows = (yield* client.openHouses.list({
+      select: [
+        'openHouseKey',
+        'listingKey',
+        'listingId',
+        'openHouseDate',
+        'openHouseStartTime',
+        'openHouseEndTime',
+        'openHouseType',
+        'openHouseStatus',
+        'openHouseRemarks',
+      ],
+      include: {
+        property: {
+          select: listingSelect,
+          includeRaw: true,
+        },
+      },
+      limit: 200,
+      orderBy: [{ field: 'openHouseDate', direction: 'desc' }],
+    })) as ReadonlyArray<DbRow>
+
+    const relatedOpenHouses = relatedRows
+      .flatMap((row) => {
+        const relatedOpenHouse = toOpenHouse(row)
+        return relatedOpenHouse === null ? [] : [relatedOpenHouse]
+      })
+      .filter(
+        (relatedOpenHouse) =>
+          relatedOpenHouse.openHouseKey !== openHouse.openHouseKey &&
+          propertySubType !== null &&
+          relatedOpenHouse.property?.propertySubType === propertySubType,
+      )
+      .slice(0, 6)
+
+    return {
+      ...openHouse,
+      relatedOpenHouses,
+    } satisfies OpenHouseDetail
+  },
+)
+
 const loadOffices = Effect.fn('Listings.loadOffices')(function* (
   search: DirectorySearch,
 ) {
@@ -1249,6 +1322,21 @@ export const getListingDetail = createServerFn({ method: 'GET' })
     return { listingKey }
   })
   .handler(({ data }) => runServerEffect(loadListingDetail(data.listingKey)))
+
+export const getOpenHouseDetail = createServerFn({ method: 'GET' })
+  .inputValidator((input: unknown) => {
+    const value =
+      input !== null && typeof input === 'object'
+        ? (input as Record<string, unknown>)
+        : {}
+    const openHouseKey =
+      typeof value.openHouseKey === 'string' ? value.openHouseKey.trim() : ''
+    if (!openHouseKey) throw new Error('openHouseKey is required')
+    return { openHouseKey }
+  })
+  .handler(({ data }) =>
+    runServerEffect(loadOpenHouseDetail(data.openHouseKey)),
+  )
 
 export const getOfficesData = createServerFn({ method: 'GET' })
   .inputValidator(parseDirectorySearch)

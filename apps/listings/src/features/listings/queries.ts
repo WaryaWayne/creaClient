@@ -6,6 +6,7 @@ import {
   getListingDetail,
   getListingsData,
   getOfficesData,
+  getOpenHouseDetail,
   getOpenHousesData,
 } from './data'
 
@@ -32,6 +33,12 @@ export const listingDetailQueryOptions = (listingKey: string) =>
   queryOptions({
     queryKey: ['listing-detail', listingKey],
     queryFn: () => getListingDetail({ data: { listingKey } }),
+  })
+
+export const openHouseDetailQueryOptions = (openHouseKey: string) =>
+  queryOptions({
+    queryKey: ['open-house-detail', openHouseKey],
+    queryFn: () => getOpenHouseDetail({ data: { openHouseKey } }),
   })
 
 export const officesQueryOptions = (search: DirectorySearch) =>
