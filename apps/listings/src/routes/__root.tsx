@@ -12,6 +12,7 @@ import { TooltipProvider } from '@workspace/ui/components/tooltip'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
+import { AppLogo } from '#/components/AppLogo'
 import { getLocale } from '#/paraglide/runtime'
 import {
   defaultAgentSearch,
@@ -92,9 +93,10 @@ function SiteHeader() {
       <div className="page-wrap flex min-h-16 items-center justify-between gap-4">
         <Link
           to="/"
-          className="display-title text-xl font-bold text-[var(--sea-ink)] no-underline"
+          className="inline-flex min-w-0 items-center no-underline"
+          aria-label="CreaClient home"
         >
-          CreaClient
+          <AppLogo imageClassName="h-9 max-w-[152px]" />
         </Link>
         <nav className="flex flex-wrap items-center justify-end gap-1">
           <Link
@@ -133,8 +135,11 @@ function SiteHeader() {
 function SiteFooter() {
   return (
     <footer className="border-t border-[var(--line)] bg-white/45">
-      <div className="page-wrap flex flex-col gap-2 py-6 text-sm text-[var(--sea-ink-soft)] md:flex-row md:items-center md:justify-between">
-        <span>CREA DDF local listings browser</span>
+      <div className="page-wrap flex flex-col gap-3 py-6 text-sm text-[var(--sea-ink-soft)] md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+          <AppLogo imageClassName="h-8 max-w-[142px]" />
+          <span>CREA DDF local listings browser</span>
+        </div>
         <span>Filters, pages, and detail views are shareable by URL.</span>
       </div>
     </footer>

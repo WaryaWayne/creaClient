@@ -291,7 +291,7 @@ export function ListingDetailPage({
               <img
                 src={heroImageUrl}
                 alt={listing.address}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-fill"
               />
             ) : (
               <div className="flex h-full items-center justify-center">

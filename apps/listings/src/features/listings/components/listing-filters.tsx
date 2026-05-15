@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAtom } from '@effect/atom-react'
-import { ChevronDown, SlidersHorizontal } from 'lucide-react'
+import { ChevronDown, SlidersHorizontal, X } from 'lucide-react'
 
 import { Button } from '@workspace/ui/components/button'
 import {
@@ -37,6 +37,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@workspace/ui/components/sheet'
+import { AppLogo } from '#/components/AppLogo'
 import { cn } from '#/lib/utils'
 
 import type {
@@ -338,13 +339,28 @@ export function ListingFilters({
       </div>
       <SheetContent
         side="right"
+        showCloseButton={false}
         className="h-dvh overflow-hidden border-l-0 bg-[var(--foam)] p-0 data-[side=right]:w-full sm:border-l sm:data-[side=right]:max-w-md"
       >
         <div className="flex h-dvh min-h-0 flex-col">
-          <SheetHeader className="px-5 pb-4 pr-12 pt-5 sm:px-6 sm:pt-6">
-            <SheetTitle className="display-title text-3xl font-bold text-[var(--sea-ink)]">
-              Filter listings
+          <SheetHeader className="flex-row items-center justify-between gap-4 px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
+            <SheetTitle className="min-w-0">
+              <AppLogo imageClassName="h-9 max-w-[156px]" />
             </SheetTitle>
+            <SheetClose
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Close filters"
+                  className="shrink-0 text-[var(--sea-ink)] hover:bg-white/70"
+                />
+              }
+            >
+              <X />
+              <span className="sr-only">Close filters</span>
+            </SheetClose>
             <SheetDescription className="sr-only">
               Listing filter controls
             </SheetDescription>
