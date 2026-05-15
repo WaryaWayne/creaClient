@@ -5,6 +5,7 @@ import type {
   MouseEvent as ReactMouseEvent,
   ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
 import {
   ArrowRight,
   Bath,
@@ -24,6 +25,7 @@ import {
   PlayCircle,
   Search,
   Send,
+  SlidersHorizontal,
   Trash2,
   UserRound,
   Users,
@@ -32,17 +34,25 @@ import {
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useAtom } from '@effect/atom-react'
 
-import { Button } from '#/components/ui/button'
-import { Input } from '#/components/ui/input'
-import { Label } from '#/components/ui/label'
-import { Textarea } from '#/components/ui/textarea'
+import { Button } from '@workspace/ui/components/button'
+import { Input } from '@workspace/ui/components/input'
+import { Label } from '@workspace/ui/components/label'
+import { Textarea } from '@workspace/ui/components/textarea'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '#/components/ui/select'
+} from '@workspace/ui/components/select'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@workspace/ui/components/sheet'
 import { cn } from '#/lib/utils'
 
 import { listingFiltersAtom, openHouseFiltersAtom } from './state'
@@ -119,6 +129,22 @@ const personName = (person: PersonCard) =>
 const cleanSearchObject = (search: ListingSearch) =>
   compactListingSearch(search) as ListingSearch
 
+const activeListingFilterCount = (
+  filters: ListingSearch,
+  hiddenFields: ReadonlySet<ListingGroupSearchKey>,
+) =>
+  [
+    !hiddenFields.has('city') && filters.city,
+    !hiddenFields.has('province') && filters.province,
+    !hiddenFields.has('status') && filters.status,
+    !hiddenFields.has('type') && filters.type,
+    filters.minPrice,
+    filters.maxPrice,
+    filters.minBeds,
+    filters.minBaths,
+    filters.sort !== defaultListingSearch.sort && filters.sort,
+  ].filter(Boolean).length
+
 const openHouseTimeLabel = (openHouse: OpenHouseCard) =>
   [openHouse.startTime, openHouse.endTime].filter(Boolean).join(' - ') ||
   'Time available'
@@ -143,7 +169,9 @@ function SelectFilter({
       </span>
       <Select
         value={value || allValue}
-        onValueChange={(next) => onChange(next === allValue ? '' : next)}
+        onValueChange={(next) =>
+          onChange(next === allValue || next === null ? '' : next)
+        }
       >
         <SelectTrigger className="w-full bg-white/70">
           <SelectValue placeholder={placeholder} />
@@ -185,7 +213,9 @@ function DetailsDialog({
 
   if (!open) return null
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-[rgba(23,58,64,0.28)] p-4 backdrop-blur-sm"
       role="presentation"
@@ -220,7 +250,8 @@ function DetailsDialog({
         </h2>
         {children}
       </section>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -826,13 +857,18 @@ export function ListingCard({
         <ListingCredits listing={listing} />
         <div className="flex items-center justify-between border-t border-[var(--line)] pt-3 text-xs text-[var(--sea-ink-soft)]">
           <span>{listing.listingId ?? 'CREA DDF listing'}</span>
-          <Button asChild size="sm" variant="outline">
-            <Link
-              to="/listings/$listingKey"
-              params={{ listingKey: listing.listingKey }}
-            >
-              View
-            </Link>
+          <Button
+            nativeButton={false}
+            render={
+              <Link
+                to="/listings/$listingKey"
+                params={{ listingKey: listing.listingKey }}
+              />
+            }
+            size="sm"
+            variant="outline"
+          >
+            View
           </Button>
         </div>
       </div>
@@ -882,6 +918,7 @@ export function ListingFilters({
   const [filters, setFilters] = useAtom(listingFiltersAtom)
   const searchKey = JSON.stringify(search)
   const hiddenFieldSet = new Set(hiddenFields)
+  const activeFilters = activeListingFilterCount(filters, hiddenFieldSet)
 
   useEffect(() => {
     setFilters(search)
@@ -894,129 +931,159 @@ export function ListingFilters({
   }
 
   return (
-    <aside className="island-shell sticky top-24 grid gap-4 rounded-lg p-4">
-      <div>
-        <p className="text-sm font-extrabold text-[var(--sea-ink)]">
-          Filter listings
-        </p>
-        <p className="mt-1 text-xs leading-5 text-[var(--sea-ink-soft)]">
-          Every change is reflected in the URL.
-        </p>
-      </div>
-      {hiddenFieldSet.has('city') ? null : (
-        <SelectFilter
-          label="City"
-          value={filters.city}
-          placeholder="All cities"
-          options={facets.cities}
-          onChange={(city) => commit({ city })}
-        />
-      )}
-      {hiddenFieldSet.has('province') ? null : (
-        <SelectFilter
-          label="Province"
-          value={filters.province}
-          placeholder="All provinces"
-          options={facets.provinces}
-          onChange={(province) => commit({ province })}
-        />
-      )}
-      {hiddenFieldSet.has('status') ? null : (
-        <SelectFilter
-          label="Status"
-          value={filters.status}
-          placeholder="All statuses"
-          options={facets.statuses}
-          onChange={(status) => commit({ status })}
-        />
-      )}
-      {hiddenFieldSet.has('type') ? null : (
-        <SelectFilter
-          label="Type"
-          value={filters.type}
-          placeholder="All property types"
-          options={facets.types}
-          onChange={(type) => commit({ type })}
-        />
-      )}
-      <div className="grid grid-cols-2 gap-3">
-        <label className="grid gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
-            Min price
-          </span>
-          <Input
-            value={filters.minPrice}
-            inputMode="numeric"
-            placeholder="0"
-            onChange={(event) => commit({ minPrice: event.target.value })}
-          />
-        </label>
-        <label className="grid gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
-            Max price
-          </span>
-          <Input
-            value={filters.maxPrice}
-            inputMode="numeric"
-            placeholder="Any"
-            onChange={(event) => commit({ maxPrice: event.target.value })}
-          />
-        </label>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <label className="grid gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
-            Beds
-          </span>
-          <Input
-            value={filters.minBeds}
-            inputMode="numeric"
-            placeholder="Any"
-            onChange={(event) => commit({ minBeds: event.target.value })}
-          />
-        </label>
-        <label className="grid gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
-            Baths
-          </span>
-          <Input
-            value={filters.minBaths}
-            inputMode="numeric"
-            placeholder="Any"
-            onChange={(event) => commit({ minBaths: event.target.value })}
-          />
-        </label>
-      </div>
-      <label className="grid gap-1.5">
-        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
-          Sort
-        </span>
-        <Select
-          value={filters.sort}
-          onValueChange={(sort) =>
-            commit({ sort: sort as ListingSearch['sort'] })
+    <Sheet>
+      <div className="pointer-events-none sticky top-20 z-30 -mb-2 flex justify-end">
+        <SheetTrigger
+          render={
+            <Button
+              type="button"
+              variant="outline"
+              className="island-shell pointer-events-auto h-11 rounded-full bg-white/90 px-4 font-extrabold text-[var(--sea-ink)] shadow-[0_12px_30px_rgba(23,58,64,0.12)] hover:bg-white"
+            />
           }
         >
-          <SelectTrigger className="w-full bg-white/70">
-            <SelectValue placeholder="Sort" />
-          </SelectTrigger>
-          <SelectContent>
-            {listingSortOptions.map((option) => (
-              <SelectItem value={option.value} key={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </label>
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => commit(defaultListingSearch)}
+          <SlidersHorizontal />
+          Filters
+          {activeFilters > 0 ? (
+            <span className="ml-1 inline-flex size-5 items-center justify-center rounded-full bg-[var(--sea-ink)] text-xs font-extrabold text-white">
+              {activeFilters}
+            </span>
+          ) : null}
+        </SheetTrigger>
+      </div>
+      <SheetContent
+        side="right"
+        className="h-dvh overflow-y-auto border-l-0 bg-[var(--foam)] p-0 data-[side=right]:w-full sm:border-l sm:data-[side=right]:max-w-md"
       >
-        Clear filters
-      </Button>
-    </aside>
+        <div className="grid min-h-dvh content-start gap-5 p-5 sm:p-6">
+          <SheetHeader className="pr-8">
+            <SheetTitle className="display-title text-3xl font-bold text-[var(--sea-ink)]">
+              Filter listings
+            </SheetTitle>
+            <SheetDescription className="text-sm leading-6 text-[var(--sea-ink-soft)]">
+              Every change is reflected in the URL.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="grid gap-4">
+            {hiddenFieldSet.has('city') ? null : (
+              <SelectFilter
+                label="City"
+                value={filters.city}
+                placeholder="All cities"
+                options={facets.cities}
+                onChange={(city) => commit({ city })}
+              />
+            )}
+            {hiddenFieldSet.has('province') ? null : (
+              <SelectFilter
+                label="Province"
+                value={filters.province}
+                placeholder="All provinces"
+                options={facets.provinces}
+                onChange={(province) => commit({ province })}
+              />
+            )}
+            {hiddenFieldSet.has('status') ? null : (
+              <SelectFilter
+                label="Status"
+                value={filters.status}
+                placeholder="All statuses"
+                options={facets.statuses}
+                onChange={(status) => commit({ status })}
+              />
+            )}
+            {hiddenFieldSet.has('type') ? null : (
+              <SelectFilter
+                label="Type"
+                value={filters.type}
+                placeholder="All property types"
+                options={facets.types}
+                onChange={(type) => commit({ type })}
+              />
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <label className="grid min-w-0 gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+                  Min price
+                </span>
+                <Input
+                  value={filters.minPrice}
+                  inputMode="numeric"
+                  placeholder="0"
+                  onChange={(event) => commit({ minPrice: event.target.value })}
+                />
+              </label>
+              <label className="grid min-w-0 gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+                  Max price
+                </span>
+                <Input
+                  value={filters.maxPrice}
+                  inputMode="numeric"
+                  placeholder="Any"
+                  onChange={(event) => commit({ maxPrice: event.target.value })}
+                />
+              </label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="grid min-w-0 gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+                  Beds
+                </span>
+                <Input
+                  value={filters.minBeds}
+                  inputMode="numeric"
+                  placeholder="Any"
+                  onChange={(event) => commit({ minBeds: event.target.value })}
+                />
+              </label>
+              <label className="grid min-w-0 gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+                  Baths
+                </span>
+                <Input
+                  value={filters.minBaths}
+                  inputMode="numeric"
+                  placeholder="Any"
+                  onChange={(event) => commit({ minBaths: event.target.value })}
+                />
+              </label>
+            </div>
+            <label className="grid gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+                Sort
+              </span>
+              <Select
+                value={filters.sort}
+                onValueChange={(sort) => {
+                  if (sort !== null) {
+                    commit({ sort: sort as ListingSearch['sort'] })
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full bg-white/70">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  {listingSortOptions.map((option) => (
+                    <SelectItem value={option.value} key={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => commit(defaultListingSearch)}
+            >
+              Clear filters
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -1028,7 +1095,7 @@ export function ListingsPage({
   readonly onSearchChange: (search: ListingSearch) => void
 }) {
   return (
-    <main className="page-wrap grid gap-8 py-8 lg:grid-cols-[290px_1fr]">
+    <main className="page-wrap grid gap-5 py-8">
       <ListingFilters
         search={data.search}
         facets={data.facets}
@@ -1075,7 +1142,7 @@ export function GroupedListingsPage({
   }
 
   return (
-    <main className="page-wrap grid gap-8 py-8 lg:grid-cols-[290px_1fr]">
+    <main className="page-wrap grid gap-5 py-8">
       <ListingFilters
         search={data.search}
         facets={data.facets}
@@ -1142,10 +1209,12 @@ function ListingGroupFallback({
           The route did not match a current active listing value. Pick one of
           the related grouped pages below.
         </p>
-        <Button asChild className="mt-5">
-          <Link to="/listings" search={defaultListingSearch}>
-            View all listings
-          </Link>
+        <Button
+          nativeButton={false}
+          render={<Link to="/listings" search={defaultListingSearch} />}
+          className="mt-5"
+        >
+          View all listings
         </Button>
       </section>
       <RelatedListingPages
@@ -1251,17 +1320,24 @@ export function HomePage({ data }: { readonly data: HomeData }) {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button asChild size="lg">
-              <Link to="/listings" search={defaultListingSearch}>
-                <Search />
-                Browse listings
-              </Link>
+            <Button
+              nativeButton={false}
+              render={<Link to="/listings" search={defaultListingSearch} />}
+              size="lg"
+            >
+              <Search />
+              Browse listings
             </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link to="/open-houses" search={defaultOpenHouseSearch}>
-                <CalendarDays />
-                Open houses
-              </Link>
+            <Button
+              nativeButton={false}
+              render={
+                <Link to="/open-houses" search={defaultOpenHouseSearch} />
+              }
+              size="lg"
+              variant="outline"
+            >
+              <CalendarDays />
+              Open houses
             </Button>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -1286,10 +1362,12 @@ export function HomePage({ data }: { readonly data: HomeData }) {
         <SectionHeader
           title="Latest listings"
           action={
-            <Button asChild variant="outline">
-              <Link to="/listings" search={defaultListingSearch}>
-                View all
-              </Link>
+            <Button
+              nativeButton={false}
+              render={<Link to="/listings" search={defaultListingSearch} />}
+              variant="outline"
+            >
+              View all
             </Button>
           }
         />
@@ -1382,16 +1460,21 @@ function ListingOpenHousesPanel({
           ) : null}
         </div>
         {hasMultipleOpenHouses ? (
-          <Button asChild size="sm" variant="outline">
-            <Link
-              to="/open-houses"
-              search={{
-                ...defaultOpenHouseSearch,
-                listingKey: listing.listingKey,
-              }}
-            >
-              See all
-            </Link>
+          <Button
+            nativeButton={false}
+            render={
+              <Link
+                to="/open-houses"
+                search={{
+                  ...defaultOpenHouseSearch,
+                  listingKey: listing.listingKey,
+                }}
+              />
+            }
+            size="sm"
+            variant="outline"
+          >
+            See all
           </Button>
         ) : null}
       </div>
@@ -1416,10 +1499,12 @@ export function OpenHouseDetailPage({
       <main className="page-wrap py-14">
         <div className="rounded-lg border border-[var(--line)] bg-white/80 p-8">
           <h1 className="text-2xl font-extrabold">Open house not found</h1>
-          <Button asChild className="mt-5">
-            <Link to="/open-houses" search={defaultOpenHouseSearch}>
-              Back to open houses
-            </Link>
+          <Button
+            nativeButton={false}
+            render={<Link to="/open-houses" search={defaultOpenHouseSearch} />}
+            className="mt-5"
+          >
+            Back to open houses
           </Button>
         </div>
       </main>
@@ -1462,14 +1547,17 @@ export function OpenHouseDetailPage({
             <p className="text-xl font-extrabold text-[var(--sea-ink)]">
               {property.propertySubType ?? 'Property'}
             </p>
-            <Button asChild>
-              <Link
-                to="/listings/$listingKey"
-                params={{ listingKey: property.listingKey }}
-              >
-                <Home />
-                Property details
-              </Link>
+            <Button
+              nativeButton={false}
+              render={
+                <Link
+                  to="/listings/$listingKey"
+                  params={{ listingKey: property.listingKey }}
+                />
+              }
+            >
+              <Home />
+              Property details
             </Button>
           </div>
         ) : null}
@@ -1547,10 +1635,12 @@ export function OpenHouseDetailPage({
               Similar open houses
             </h2>
           </div>
-          <Button asChild variant="outline">
-            <Link to="/open-houses" search={defaultOpenHouseSearch}>
-              All open houses
-            </Link>
+          <Button
+            nativeButton={false}
+            render={<Link to="/open-houses" search={defaultOpenHouseSearch} />}
+            variant="outline"
+          >
+            All open houses
           </Button>
         </div>
         {openHouse.relatedOpenHouses.length > 0 ? (
@@ -1584,10 +1674,12 @@ export function ListingDetailPage({
       <main className="page-wrap py-14">
         <div className="rounded-lg border border-[var(--line)] bg-white/80 p-8">
           <h1 className="text-2xl font-extrabold">Listing not found</h1>
-          <Button asChild className="mt-5">
-            <Link to="/listings" search={defaultListingSearch}>
-              Back to listings
-            </Link>
+          <Button
+            nativeButton={false}
+            render={<Link to="/listings" search={defaultListingSearch} />}
+            className="mt-5"
+          >
+            Back to listings
           </Button>
         </div>
       </main>
@@ -2010,10 +2102,12 @@ export function OfficesPage({
           <p className="mt-2 text-sm text-[var(--sea-ink-soft)]">
             EXIT EXCEL REALTY was not found in the local office table.
           </p>
-          <Button asChild className="mt-5">
-            <Link to="/listings" search={defaultListingSearch}>
-              Back to listings
-            </Link>
+          <Button
+            nativeButton={false}
+            render={<Link to="/listings" search={defaultListingSearch} />}
+            className="mt-5"
+          >
+            Back to listings
           </Button>
         </div>
       </main>
@@ -2090,10 +2184,12 @@ export function AgentDetailPage({
       <main className="page-wrap py-14">
         <div className="rounded-lg border border-[var(--line)] bg-white/80 p-8">
           <h1 className="text-2xl font-extrabold">Agent not found</h1>
-          <Button asChild className="mt-5">
-            <Link to="/agents" search={{ officeKey: '', page: 1 }}>
-              Back to agents
-            </Link>
+          <Button
+            nativeButton={false}
+            render={<Link to="/agents" search={{ officeKey: '', page: 1 }} />}
+            className="mt-5"
+          >
+            Back to agents
           </Button>
         </div>
       </main>
@@ -2134,11 +2230,18 @@ export function AgentDetailPage({
         </div>
         <div className="flex flex-wrap gap-2 lg:justify-end">
           <ContactAgentButton agent={agent} />
-          <Button asChild variant="outline">
-            <Link to="/offices" search={{ city: '', province: '', page: 1 }}>
-              <Building2 />
-              Office
-            </Link>
+          <Button
+            nativeButton={false}
+            render={
+              <Link
+                to="/offices"
+                search={{ city: '', province: '', page: 1 }}
+              />
+            }
+            variant="outline"
+          >
+            <Building2 />
+            Office
           </Button>
         </div>
       </section>
@@ -2216,13 +2319,17 @@ export function AgentDetailPage({
                 Office
               </p>
               <OfficeRow office={agent.office} prominent />
-              <Button asChild variant="outline">
-                <Link
-                  to="/offices"
-                  search={{ city: '', province: '', page: 1 }}
-                >
-                  Office details
-                </Link>
+              <Button
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/offices"
+                    search={{ city: '', province: '', page: 1 }}
+                  />
+                }
+                variant="outline"
+              >
+                Office details
               </Button>
             </div>
           ) : null}
@@ -2428,18 +2535,23 @@ function OfficeDetailView({ office }: { readonly office: OfficeDetail }) {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button asChild>
-                  <Link to="/agents" search={{ officeKey: '', page: 1 }}>
-                    <Users />
-                    Agents
-                  </Link>
+                <Button
+                  nativeButton={false}
+                  render={
+                    <Link to="/agents" search={{ officeKey: '', page: 1 }} />
+                  }
+                >
+                  <Users />
+                  Agents
                 </Button>
                 {office.phone ? (
-                  <Button asChild variant="outline">
-                    <a href={`tel:${office.phone}`}>
-                      <Phone />
-                      Call office
-                    </a>
+                  <Button
+                    nativeButton={false}
+                    render={<a href={`tel:${office.phone}`} />}
+                    variant="outline"
+                  >
+                    <Phone />
+                    Call office
                   </Button>
                 ) : null}
               </div>
@@ -2732,11 +2844,18 @@ export function AgentRow({
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button asChild size="sm">
-          <Link to="/agents/$agentKey" params={{ agentKey: agent.memberKey }}>
-            <UserRound />
-            Details
-          </Link>
+        <Button
+          nativeButton={false}
+          render={
+            <Link
+              to="/agents/$agentKey"
+              params={{ agentKey: agent.memberKey }}
+            />
+          }
+          size="sm"
+        >
+          <UserRound />
+          Details
         </Button>
         <ContactAgentButton agent={agent} buttonLabel="Contact" />
       </div>
@@ -2786,23 +2905,32 @@ export function OpenHouseRow({
             ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
-            <Button asChild size="sm">
-              <Link
-                to="/open-houses/$openHouseKey"
-                params={{ openHouseKey: openHouse.openHouseKey }}
-              >
-                <CalendarDays />
-                Details
-              </Link>
+            <Button
+              nativeButton={false}
+              render={
+                <Link
+                  to="/open-houses/$openHouseKey"
+                  params={{ openHouseKey: openHouse.openHouseKey }}
+                />
+              }
+              size="sm"
+            >
+              <CalendarDays />
+              Details
             </Button>
             {openHouse.property ? (
-              <Button asChild size="sm" variant="outline">
-                <Link
-                  to="/listings/$listingKey"
-                  params={{ listingKey: openHouse.property.listingKey }}
-                >
-                  Property
-                </Link>
+              <Button
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/listings/$listingKey"
+                    params={{ listingKey: openHouse.property.listingKey }}
+                  />
+                }
+                size="sm"
+                variant="outline"
+              >
+                Property
               </Button>
             ) : null}
           </div>

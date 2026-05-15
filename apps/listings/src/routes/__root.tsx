@@ -8,6 +8,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { RegistryProvider } from '@effect/atom-react'
+import { TooltipProvider } from '@workspace/ui/components/tooltip'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
@@ -75,7 +76,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <RegistryProvider>
           <SiteHeader />
-          {children}
+          <TooltipProvider>{children}</TooltipProvider>
           <SiteFooter />
         </RegistryProvider>
         <TanStackDevtools
