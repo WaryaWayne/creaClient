@@ -39,7 +39,7 @@ function OpenHousesRoute() {
   const navigate = useNavigate({ from: '/open-houses/' })
   const loadedPageCount = query.data.pages.length
   const pageIndex = search.page - 1
-  const loadedPage = query.data.pages[pageIndex]
+  const loadedPage = query.data.pages.at(pageIndex)
   const lastLoadedPage = query.data.pages.at(-1)
 
   if (lastLoadedPage === undefined) {
@@ -70,7 +70,7 @@ function OpenHousesRoute() {
       parsed.listingKey === search.listingKey ? parsed : { ...parsed, page: 1 }
     const go = () =>
       void navigate({
-        search: compactOpenHouseSearch(nextSearch),
+        search: parseOpenHouseSearch(compactOpenHouseSearch(nextSearch)),
       })
 
     if (

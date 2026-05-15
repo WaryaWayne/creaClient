@@ -11,6 +11,20 @@ export const listingSortOptions = [
 export type ListingSort = (typeof listingSortOptions)[number]['value']
 export type NumericSearchValue = number | string
 
+export const listingAdvancedFilterKeys = [
+  'appliances',
+  'basement',
+  'waterSource',
+  'sewer',
+  'waterfrontFeatures',
+  'heating',
+  'cooling',
+  'parkingFeatures',
+] as const
+
+export type ListingAdvancedFilterKey =
+  (typeof listingAdvancedFilterKeys)[number]
+
 export type ListingSearch = {
   readonly city: string
   readonly province: string
@@ -19,7 +33,18 @@ export type ListingSearch = {
   readonly minPrice: NumericSearchValue
   readonly maxPrice: NumericSearchValue
   readonly minBeds: NumericSearchValue
+  readonly maxBeds: NumericSearchValue
   readonly minBaths: NumericSearchValue
+  readonly maxBaths: NumericSearchValue
+  readonly minParking: NumericSearchValue
+  readonly appliances: ReadonlyArray<string>
+  readonly basement: ReadonlyArray<string>
+  readonly waterSource: ReadonlyArray<string>
+  readonly sewer: ReadonlyArray<string>
+  readonly waterfrontFeatures: ReadonlyArray<string>
+  readonly heating: ReadonlyArray<string>
+  readonly cooling: ReadonlyArray<string>
+  readonly parkingFeatures: ReadonlyArray<string>
   readonly sort: ListingSort
   readonly page: number
 }
@@ -48,7 +73,18 @@ export const defaultListingSearch: ListingSearch = {
   minPrice: '',
   maxPrice: '',
   minBeds: '',
+  maxBeds: '',
   minBaths: '',
+  maxBaths: '',
+  minParking: '',
+  appliances: [],
+  basement: [],
+  waterSource: [],
+  sewer: [],
+  waterfrontFeatures: [],
+  heating: [],
+  cooling: [],
+  parkingFeatures: [],
   sort: 'newest',
   page: 1,
 }
@@ -84,8 +120,22 @@ const readPage = (value: unknown) => {
 }
 
 const readNumeric = (value: unknown): NumericSearchValue => {
-  const parsed = Number.parseInt(readString(value).replace(/^"(.+)"$/, '$1'), 10)
-  return Number.isFinite(parsed) ? parsed : ''
+  const rawValue = readString(value).replace(/^"(.+)"$/, '$1')
+  if (!/^\d+$/.test(rawValue)) return ''
+  const parsed = Number.parseInt(rawValue, 10)
+  return Number.isSafeInteger(parsed) ? parsed : ''
+}
+
+const readStringList = (value: unknown): ReadonlyArray<string> => {
+  const values = Array.isArray(value) ? value : [value]
+  const seen = new Set<string>()
+  for (const item of values) {
+    const parsed = readString(item)
+    if (parsed.length === 0 || parsed.length > 120) continue
+    if (seen.size >= 20) break
+    seen.add(parsed)
+  }
+  return Array.from(seen)
 }
 
 const readSort = (value: unknown): ListingSort => {
@@ -109,7 +159,18 @@ export const parseListingSearch = (input: unknown): ListingSearch => {
     minPrice: readNumeric(value.minPrice),
     maxPrice: readNumeric(value.maxPrice),
     minBeds: readNumeric(value.minBeds),
+    maxBeds: readNumeric(value.maxBeds),
     minBaths: readNumeric(value.minBaths),
+    maxBaths: readNumeric(value.maxBaths),
+    minParking: readNumeric(value.minParking),
+    appliances: readStringList(value.appliances),
+    basement: readStringList(value.basement),
+    waterSource: readStringList(value.waterSource),
+    sewer: readStringList(value.sewer),
+    waterfrontFeatures: readStringList(value.waterfrontFeatures),
+    heating: readStringList(value.heating),
+    cooling: readStringList(value.cooling),
+    parkingFeatures: readStringList(value.parkingFeatures),
     sort: readSort(value.sort),
     page: readPage(value.page),
   }
@@ -153,7 +214,7 @@ export const parseOpenHouseSearch = (input: unknown): OpenHouseSearch => {
 }
 
 const addIfPresent = (
-  output: Record<string, string | number>,
+  output: Record<string, string | number | ReadonlyArray<string>>,
   key: string,
   value: string,
 ) => {
@@ -161,16 +222,26 @@ const addIfPresent = (
 }
 
 const addNumberIfPresent = (
-  output: Record<string, string | number>,
+  output: Record<string, string | number | ReadonlyArray<string>>,
   key: string,
   value: NumericSearchValue,
 ) => {
-  const parsed = Number.parseInt(String(value), 10)
-  if (Number.isFinite(parsed)) output[key] = parsed
+  const rawValue = String(value).trim()
+  if (!/^\d+$/.test(rawValue)) return
+  const parsed = Number.parseInt(rawValue, 10)
+  if (Number.isSafeInteger(parsed)) output[key] = parsed
+}
+
+const addStringListIfPresent = (
+  output: Record<string, string | number | ReadonlyArray<string>>,
+  key: string,
+  value: ReadonlyArray<string>,
+) => {
+  if (value.length > 0) output[key] = value
 }
 
 export const compactListingSearch = (search: ListingSearch) => {
-  const output: Record<string, string | number> = {}
+  const output: Record<string, string | number | ReadonlyArray<string>> = {}
   addIfPresent(output, 'city', search.city)
   addIfPresent(output, 'province', search.province)
   addIfPresent(output, 'status', search.status)
@@ -178,7 +249,18 @@ export const compactListingSearch = (search: ListingSearch) => {
   addNumberIfPresent(output, 'minPrice', search.minPrice)
   addNumberIfPresent(output, 'maxPrice', search.maxPrice)
   addNumberIfPresent(output, 'minBeds', search.minBeds)
+  addNumberIfPresent(output, 'maxBeds', search.maxBeds)
   addNumberIfPresent(output, 'minBaths', search.minBaths)
+  addNumberIfPresent(output, 'maxBaths', search.maxBaths)
+  addNumberIfPresent(output, 'minParking', search.minParking)
+  addStringListIfPresent(output, 'appliances', search.appliances)
+  addStringListIfPresent(output, 'basement', search.basement)
+  addStringListIfPresent(output, 'waterSource', search.waterSource)
+  addStringListIfPresent(output, 'sewer', search.sewer)
+  addStringListIfPresent(output, 'waterfrontFeatures', search.waterfrontFeatures)
+  addStringListIfPresent(output, 'heating', search.heating)
+  addStringListIfPresent(output, 'cooling', search.cooling)
+  addStringListIfPresent(output, 'parkingFeatures', search.parkingFeatures)
   if (search.sort !== defaultListingSearch.sort) output.sort = search.sort
   if (search.page > 1) output.page = search.page
   return output
@@ -209,6 +291,7 @@ export const compactOpenHouseSearch = (search: OpenHouseSearch) => {
 export const numericFilter = (value: NumericSearchValue) => {
   const rawValue = String(value).trim()
   if (rawValue.length === 0) return undefined
+  if (!/^\d+$/.test(rawValue)) return undefined
   const parsed = Number.parseInt(rawValue, 10)
-  return Number.isFinite(parsed) ? parsed : undefined
+  return Number.isSafeInteger(parsed) ? parsed : undefined
 }

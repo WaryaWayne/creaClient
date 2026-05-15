@@ -24,6 +24,7 @@ import {
 import type {
   AgentSearch,
   DirectorySearch,
+  ListingAdvancedFilterKey,
   ListingSearch,
   ListingSort,
   OpenHouseSearch,
@@ -207,6 +208,22 @@ export type ListingFacets = {
   readonly provinces: ReadonlyArray<string>
   readonly statuses: ReadonlyArray<string>
   readonly types: ReadonlyArray<string>
+  readonly prices: ReadonlyArray<number>
+  readonly bedrooms: ReadonlyArray<number>
+  readonly bathrooms: ReadonlyArray<number>
+  readonly parking: ReadonlyArray<number>
+  readonly advancedGroups: ReadonlyArray<ListingAdvancedFacetGroup>
+}
+
+export type ListingFacetOption = {
+  readonly value: string
+  readonly count: number
+}
+
+export type ListingAdvancedFacetGroup = {
+  readonly key: ListingAdvancedFilterKey
+  readonly label: string
+  readonly options: ReadonlyArray<ListingFacetOption>
 }
 
 export type ListingsData = {
@@ -225,6 +242,12 @@ export type ListingGroupSummary = {
   readonly pluralLabel: string
   readonly valueCount: number
   readonly listingCount: number
+}
+
+export type ListingGroupBucket = {
+  readonly group: ListingGroupRouteInfo
+  readonly summary: ListingGroupSummary
+  readonly values: ReadonlyArray<ListingGroupValueLink>
 }
 
 export type ListingGroupValueLink = {
@@ -258,6 +281,23 @@ export type GroupedListingsData = {
   readonly hasNextPage: boolean
   readonly relatedGroups: ReadonlyArray<ListingGroupSummary>
   readonly relatedValues: ReadonlyArray<ListingGroupValueLink>
+}
+
+export type SearchIndexData = {
+  readonly facets: ListingFacets
+  readonly groups: ReadonlyArray<ListingGroupBucket>
+  readonly topValues: ReadonlyArray<ListingGroupValueLink>
+  readonly featuredListings: ReadonlyArray<ListingCard>
+  readonly openHouses: ReadonlyArray<OpenHouseCard>
+}
+
+export type SearchGroupData = {
+  readonly requestedGroupSlug: string
+  readonly group: ListingGroupRouteInfo | null
+  readonly summary: ListingGroupSummary | null
+  readonly values: ReadonlyArray<ListingGroupValueLink>
+  readonly relatedGroups: ReadonlyArray<ListingGroupSummary>
+  readonly topValues: ReadonlyArray<ListingGroupValueLink>
 }
 
 export type DirectoryData<T> = {
@@ -368,6 +408,17 @@ const parseListingGroupRequest = (input: unknown): ListingGroupRequest => {
     groupSlug: readRequestString(value.groupSlug),
     valueSlug: readRequestString(value.valueSlug),
     search: parseListingSearch(value.search),
+  }
+}
+
+const parseSearchGroupRequest = (input: unknown) => {
+  const value =
+    input !== null && typeof input === 'object'
+      ? (input as Record<string, unknown>)
+      : {}
+
+  return {
+    groupSlug: readRequestString(value.groupSlug),
   }
 }
 
@@ -1028,7 +1079,18 @@ const listingFilters = (search: ListingSearch) => ({
   minPrice: numericFilter(search.minPrice),
   maxPrice: numericFilter(search.maxPrice),
   minBedrooms: numericFilter(search.minBeds),
+  maxBedrooms: numericFilter(search.maxBeds),
   minBathrooms: numericFilter(search.minBaths),
+  maxBathrooms: numericFilter(search.maxBaths),
+  minParking: numericFilter(search.minParking),
+  appliances: search.appliances,
+  basement: search.basement,
+  waterSource: search.waterSource,
+  sewer: search.sewer,
+  waterfrontFeatures: search.waterfrontFeatures,
+  heating: search.heating,
+  cooling: search.cooling,
+  parkingFeatures: search.parkingFeatures,
 })
 
 const groupedListingFilters = (
@@ -1121,6 +1183,22 @@ const makeGroupValueLink = (
   valueSlug,
   count,
 })
+
+const listingGroupBuckets = (
+  index: ListingGroupIndex,
+): ReadonlyArray<ListingGroupBucket> =>
+  index.summaries.flatMap((summary) => {
+    const groupOption = listingGroupDefinitionOption(summary.groupSlug)
+    if (Option.isNone(groupOption)) return []
+
+    return [
+      {
+        group: listingGroupPublicInfo(groupOption.value),
+        summary,
+        values: index.valuesByGroup.get(summary.groupSlug) ?? [],
+      } satisfies ListingGroupBucket,
+    ]
+  })
 
 const listingAgentKeys = (row: DbRow) =>
   [
@@ -1632,6 +1710,77 @@ const listingGroupFields = uniquePropertyFields(
   listingGroupDefinitions.map((group) => group.field),
 )
 
+type ListingAdvancedFacetDefinition = {
+  readonly key: ListingAdvancedFilterKey
+  readonly field: PropertyField
+  readonly schemaKey: SchemaKey<DdfProperty>
+  readonly label: string
+}
+
+const listingAdvancedFacetDefinitions = [
+  {
+    key: 'appliances',
+    field: 'appliances',
+    schemaKey: 'Appliances',
+    label: 'Appliances',
+  },
+  {
+    key: 'basement',
+    field: 'basement',
+    schemaKey: 'Basement',
+    label: 'Basement',
+  },
+  {
+    key: 'waterSource',
+    field: 'waterSource',
+    schemaKey: 'WaterSource',
+    label: 'Water source',
+  },
+  {
+    key: 'sewer',
+    field: 'sewer',
+    schemaKey: 'Sewer',
+    label: 'Sewer',
+  },
+  {
+    key: 'waterfrontFeatures',
+    field: 'waterfrontFeatures',
+    schemaKey: 'WaterfrontFeatures',
+    label: 'Waterfront',
+  },
+  {
+    key: 'heating',
+    field: 'heating',
+    schemaKey: 'Heating',
+    label: 'Heating',
+  },
+  {
+    key: 'cooling',
+    field: 'cooling',
+    schemaKey: 'Cooling',
+    label: 'Cooling',
+  },
+  {
+    key: 'parkingFeatures',
+    field: 'parkingFeatures',
+    schemaKey: 'ParkingFeatures',
+    label: 'Parking features',
+  },
+] as const satisfies ReadonlyArray<ListingAdvancedFacetDefinition>
+
+const listingFacetSelect = uniquePropertyFields([
+  'city',
+  'province',
+  'propertySubType',
+  'standardStatus',
+  'listPrice',
+  'leaseAmount',
+  'bedroomsTotal',
+  'bathroomsTotalInteger',
+  'parkingTotal',
+  ...listingAdvancedFacetDefinitions.map((group) => group.field),
+])
+
 const groupedListingSelect = uniquePropertyFields([
   ...listingSelect,
   ...listingGroupFields,
@@ -1771,6 +1920,74 @@ const detailInclude = {
   },
 } as const
 
+const numericOptions = (values: ReadonlyArray<number | null>) =>
+  Array.from(
+    new Set(
+      values
+        .filter((value): value is number => value !== null)
+        .map((value) => Math.max(0, Math.round(value))),
+    ),
+  ).sort((left, right) => left - right)
+
+const effectivePrice = (row: DbRow) =>
+  schemaNumber<DdfProperty>(row, 'ListPrice', 'listPrice') ??
+  schemaNumber<DdfProperty>(row, 'LeaseAmount', 'leaseAmount')
+
+const nextPriceOption = (value: number) => {
+  if (value < 5_000) return Math.ceil((value + 1) / 500) * 500
+  if (value < 10_000) return Math.ceil((value + 1) / 1_000) * 1_000
+  if (value < 100_000) return Math.ceil((value + 1) / 10_000) * 10_000
+  if (value < 1_000_000) return Math.ceil((value + 1) / 50_000) * 50_000
+  if (value < 5_000_000) return Math.ceil((value + 1) / 100_000) * 100_000
+  return Math.ceil((value + 1) / 250_000) * 250_000
+}
+
+const priceOptions = (values: ReadonlyArray<number | null>) => {
+  const prices = numericOptions(values).filter((value) => value > 0)
+  const min = prices.at(0)
+  const max = prices.at(-1)
+  if (min === undefined || max === undefined) return []
+
+  const options = new Set<number>([min])
+  let next = nextPriceOption(min)
+  while (next < max && options.size < 160) {
+    options.add(next)
+    next = nextPriceOption(next)
+  }
+  options.add(max)
+  return Array.from(options).sort((left, right) => left - right)
+}
+
+const addAdvancedFacetValues = (
+  valuesByKey: Map<ListingAdvancedFilterKey, Map<string, number>>,
+  row: DbRow,
+  definition: ListingAdvancedFacetDefinition,
+) => {
+  const values = valuesByKey.get(definition.key)
+  if (values === undefined) return
+  const seen = new Set<string>()
+  for (const value of groupValueParts(
+    schemaValue<DdfProperty>(row, definition.schemaKey, definition.field),
+  )) {
+    if (typeof value !== 'string') continue
+    const trimmed = value.trim()
+    if (trimmed.length === 0 || seen.has(trimmed)) continue
+    seen.add(trimmed)
+    values.set(trimmed, (values.get(trimmed) ?? 0) + 1)
+  }
+}
+
+const facetOptions = (
+  values: Map<string, number> | undefined,
+): ReadonlyArray<ListingFacetOption> =>
+  Array.from(values ?? [])
+    .map(([value, count]) => ({ value, count }))
+    .sort(
+      (left, right) =>
+        right.count - left.count || left.value.localeCompare(right.value),
+    )
+    .slice(0, 80)
+
 const ddfClientLayer = DdfDbClient.layer.pipe(
   Layer.provide(DdfDatabase.layerConfig),
 )
@@ -1782,12 +1999,38 @@ const runServerEffect = <TValue, TError>(
 
 const buildFacets = Effect.fn('Listings.buildFacets')(function* () {
   const client = yield* DdfDbClient
-  const rows = (yield* client.properties.list({
-    select: ['city', 'province', 'propertySubType', 'standardStatus'],
-    filters: { active: true },
-    limit: 500,
-    orderBy: [{ field: 'modificationTimestamp', direction: 'desc' }],
-  })) as ReadonlyArray<DbRow>
+  const rows: DbRow[] = []
+  const advancedValuesByKey = new Map<
+    ListingAdvancedFilterKey,
+    Map<string, number>
+  >(
+    listingAdvancedFacetDefinitions.map((definition) => [
+      definition.key,
+      new Map<string, number>(),
+    ]),
+  )
+  let offset = 0
+  let hasMoreListings = true
+
+  while (hasMoreListings) {
+    const page = (yield* client.properties.list({
+      select: listingFacetSelect,
+      filters: { active: true },
+      limit: 500,
+      offset,
+      orderBy: [{ field: 'modificationTimestamp', direction: 'desc' }],
+    })) as ReadonlyArray<DbRow>
+
+    rows.push(...page)
+    for (const row of page) {
+      for (const definition of listingAdvancedFacetDefinitions) {
+        addAdvancedFacetValues(advancedValuesByKey, row, definition)
+      }
+    }
+
+    hasMoreListings = page.length === 500
+    offset += page.length
+  }
 
   return {
     cities: uniqueSorted(
@@ -1808,6 +2051,31 @@ const buildFacets = Effect.fn('Listings.buildFacets')(function* () {
         schemaString<DdfProperty>(row, 'PropertySubType', 'propertySubType'),
       ),
     ),
+    prices: priceOptions(rows.map(effectivePrice)),
+    bedrooms: numericOptions(
+      rows.map((row) =>
+        schemaNumber<DdfProperty>(row, 'BedroomsTotal', 'bedroomsTotal'),
+      ),
+    ),
+    bathrooms: numericOptions(
+      rows.map((row) =>
+        schemaNumber<DdfProperty>(
+          row,
+          'BathroomsTotalInteger',
+          'bathroomsTotalInteger',
+        ),
+      ),
+    ),
+    parking: numericOptions(
+      rows.map((row) =>
+        schemaNumber<DdfProperty>(row, 'ParkingTotal', 'parkingTotal'),
+      ),
+    ),
+    advancedGroups: listingAdvancedFacetDefinitions.map((definition) => ({
+      key: definition.key,
+      label: definition.label,
+      options: facetOptions(advancedValuesByKey.get(definition.key)),
+    })),
   } satisfies ListingFacets
 })
 
@@ -1939,6 +2207,49 @@ const loadListings = Effect.fn('Listings.loadListings')(function* (
   } satisfies ListingsData
 })
 
+const loadSearchIndex = Effect.fn('Listings.loadSearchIndex')(function* () {
+  const [index, home] = yield* Effect.all(
+    [buildListingGroupIndex(), loadHome()],
+    { concurrency: 2 },
+  )
+
+  return {
+    facets: home.facets,
+    groups: listingGroupBuckets(index),
+    topValues: index.topValues.slice(0, GROUPED_RELATED_VALUE_LIMIT),
+    featuredListings: home.featuredListings,
+    openHouses: home.openHouses,
+  } satisfies SearchIndexData
+})
+
+const loadSearchGroup = Effect.fn('Listings.loadSearchGroup')(function* (
+  requestedGroupSlug: string,
+) {
+  const groupSlug = slugifyGroupValue(requestedGroupSlug)
+  const index = yield* buildListingGroupIndex()
+  const groupOption = listingGroupDefinitionOption(groupSlug)
+  const bucket = listingGroupBuckets(index).find(
+    (item) => item.group.slug === groupSlug,
+  )
+
+  return {
+    requestedGroupSlug: groupSlug,
+    group:
+      bucket?.group ??
+      (Option.isSome(groupOption)
+        ? listingGroupPublicInfo(groupOption.value)
+        : null),
+    summary: bucket?.summary ?? null,
+    values: bucket?.values ?? [],
+    relatedGroups: index.summaries
+      .filter((summary) => summary.groupSlug !== groupSlug)
+      .slice(0, 12),
+    topValues: index.topValues
+      .filter((value) => value.groupSlug !== groupSlug)
+      .slice(0, GROUPED_RELATED_VALUE_LIMIT),
+  } satisfies SearchGroupData
+})
+
 const loadGroupedListingCards = Effect.fn('Listings.loadGroupedListingCards')(
   function* (
     group: ListingGroupDefinition,
@@ -1980,6 +2291,7 @@ const loadGroupedListingCards = Effect.fn('Listings.loadGroupedListingCards')(
           : [
               client.properties.get(listingKey, {
                 select: groupedListingSelect,
+                includeRaw: true,
                 include: propertyInclude,
               }),
             ]
@@ -2490,6 +2802,14 @@ export const getHomeData = createServerFn({ method: 'GET' }).handler(() =>
 export const getListingsData = createServerFn({ method: 'GET' })
   .inputValidator(parseListingSearch)
   .handler(({ data }) => runServerEffect(loadListings(data)))
+
+export const getSearchIndexData = createServerFn({ method: 'GET' }).handler(
+  () => runServerEffect(loadSearchIndex()),
+)
+
+export const getSearchGroupData = createServerFn({ method: 'GET' })
+  .inputValidator(parseSearchGroupRequest)
+  .handler(({ data }) => runServerEffect(loadSearchGroup(data.groupSlug)))
 
 export const getGroupedListingsData = createServerFn({ method: 'GET' })
   .inputValidator(parseListingGroupRequest)

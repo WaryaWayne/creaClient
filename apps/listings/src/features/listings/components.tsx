@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type {
   FormEvent,
   KeyboardEvent as ReactKeyboardEvent,
@@ -12,6 +12,7 @@ import {
   BedDouble,
   Building2,
   CalendarDays,
+  ChevronDown,
   Clock,
   ExternalLink,
   FileImage,
@@ -35,8 +36,33 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { useAtom } from '@effect/atom-react'
 
 import { Button } from '@workspace/ui/components/button'
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@workspace/ui/components/empty'
 import { Input } from '@workspace/ui/components/input'
 import { Label } from '@workspace/ui/components/label'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@workspace/ui/components/command'
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from '@workspace/ui/components/native-select'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@workspace/ui/components/popover'
+import { ScrollArea } from '@workspace/ui/components/scroll-area'
 import { Textarea } from '@workspace/ui/components/textarea'
 import {
   Select,
@@ -47,6 +73,7 @@ import {
 } from '@workspace/ui/components/select'
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -61,6 +88,7 @@ import {
   compactOpenHouseSearch,
   defaultListingSearch,
   defaultOpenHouseSearch,
+  listingAdvancedFilterKeys,
   listingSortOptions,
 } from './search'
 import { EXIT_EXCEL_OFFICE_NAME } from './data'
@@ -73,6 +101,7 @@ import type {
   HomeData,
   ListingCard as ListingCardType,
   ListingDetail,
+  ListingFacetOption,
   ListingFacets,
   ListingGroupSearchKey,
   ListingsData,
@@ -82,11 +111,14 @@ import type {
   OpenHouseDetail,
   OpenHouseCard,
   PersonCard,
+  SearchGroupData,
+  SearchIndexData,
   SocialMediaCard,
 } from './data'
 import type {
   AgentSearch,
   DirectorySearch,
+  ListingAdvancedFilterKey,
   ListingSearch,
   OpenHouseSearch,
 } from './search'
@@ -141,13 +173,48 @@ const activeListingFilterCount = (
     filters.minPrice,
     filters.maxPrice,
     filters.minBeds,
+    filters.maxBeds,
     filters.minBaths,
+    filters.maxBaths,
+    filters.minParking,
+    ...listingAdvancedFilterKeys.map((key) => filters[key].length > 0),
     filters.sort !== defaultListingSearch.sort && filters.sort,
   ].filter(Boolean).length
 
 const openHouseTimeLabel = (openHouse: OpenHouseCard) =>
   [openHouse.startTime, openHouse.endTime].filter(Boolean).join(' - ') ||
   'Time available'
+
+const numericSearchValue = (value: ListingSearch['minPrice']) => {
+  if (typeof value === 'number' && Number.isSafeInteger(value)) return value
+  const text = String(value).trim()
+  if (!/^\d+$/.test(text)) return null
+  const parsed = Number.parseInt(text, 10)
+  return Number.isSafeInteger(parsed) ? parsed : null
+}
+
+const selectValue = (value: ListingSearch['minPrice']) =>
+  numericSearchValue(value)?.toString() ?? ''
+
+const optionsWithSelectedValue = (
+  values: ReadonlyArray<number>,
+  value: ListingSearch['minPrice'],
+) => {
+  const selected = numericSearchValue(value)
+  if (selected === null || values.includes(selected)) return values
+  return [...values, selected].sort((left, right) => left - right)
+}
+
+const countLabel = (value: number, singular: string, plural: string) =>
+  value === 1 ? `1 ${singular}` : `${number.format(value)} ${plural}`
+
+const minCountLabel = (value: number, singular: string, plural: string) =>
+  value === 0 ? `0+ ${plural}` : `${countLabel(value, singular, plural)}+`
+
+const maxCountLabel = (value: number, singular: string, plural: string) =>
+  value === 0
+    ? `Up to 0 ${plural}`
+    : `Up to ${countLabel(value, singular, plural)}`
 
 function SelectFilter({
   label,
@@ -186,6 +253,146 @@ function SelectFilter({
         </SelectContent>
       </Select>
     </label>
+  )
+}
+
+function NativeSelectFilter({
+  label,
+  value,
+  placeholder = 'All',
+  options,
+  onChange,
+}: {
+  readonly label: string
+  readonly value: string
+  readonly placeholder?: string
+  readonly options: ReadonlyArray<{
+    readonly value: number
+    readonly label: string
+  }>
+  readonly onChange: (value: string) => void
+}) {
+  return (
+    <label className="grid min-w-0 gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+        {label}
+      </span>
+      <NativeSelect
+        className="w-full"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <NativeSelectOption value="">{placeholder}</NativeSelectOption>
+        {options.map((option) => (
+          <NativeSelectOption value={option.value} key={option.value}>
+            {option.label}
+          </NativeSelectOption>
+        ))}
+      </NativeSelect>
+    </label>
+  )
+}
+
+function AdvancedCommandSelect({
+  label,
+  selected,
+  options,
+  onChange,
+}: {
+  readonly label: string
+  readonly selected: ReadonlyArray<string>
+  readonly options: ReadonlyArray<ListingFacetOption>
+  readonly onChange: (value: ReadonlyArray<string>) => void
+}) {
+  const selectedSet = new Set(selected)
+  const mergedOptions = [
+    ...options,
+    ...selected
+      .filter((value) => !options.some((option) => option.value === value))
+      .map((value) => ({ value, count: 0 })),
+  ]
+
+  const toggle = (value: string) => {
+    const next = selectedSet.has(value)
+      ? selected.filter((item) => item !== value)
+      : [...selected, value]
+    onChange(next)
+  }
+
+  return (
+    <div className="grid gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+        {label}
+      </span>
+      <Popover>
+        <PopoverTrigger
+          render={
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-10 w-full justify-between rounded-lg bg-white/70 px-3 py-2 text-left font-semibold text-[var(--sea-ink)] hover:bg-white"
+            />
+          }
+        >
+          <span className="min-w-0 truncate">
+            {selected.length > 0
+              ? `${selected.length} selected`
+              : `All ${label.toLowerCase()}`}
+          </span>
+          <ChevronDown className="size-4 opacity-70" />
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-[min(23rem,calc(100vw-3rem))] p-0"
+        >
+          <Command className="rounded-2xl bg-white">
+            <CommandInput placeholder={`Search ${label.toLowerCase()}`} />
+            <CommandList>
+              <CommandEmpty>No options found.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  value={`${label}-all`}
+                  data-checked={selected.length === 0}
+                  onSelect={() => onChange([])}
+                >
+                  All {label.toLowerCase()}
+                </CommandItem>
+                {mergedOptions.map((option) => (
+                  <CommandItem
+                    value={option.value}
+                    key={option.value}
+                    data-checked={selectedSet.has(option.value)}
+                    onSelect={() => toggle(option.value)}
+                  >
+                    <span className="min-w-0 flex-1 truncate">
+                      {option.value}
+                    </span>
+                    <span className="text-xs text-[var(--sea-ink-soft)]">
+                      {number.format(option.count)}
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
+function ListingFilterActions({ onClear }: { readonly onClear: () => void }) {
+  return (
+    <div className="grid gap-2">
+      <SheetClose
+        render={<Button type="button" className="w-full font-extrabold" />}
+      >
+        Apply filters
+      </SheetClose>
+      <Button type="button" variant="outline" onClick={onClear}>
+        Clear filters
+      </Button>
+    </div>
   )
 }
 
@@ -916,6 +1123,7 @@ export function ListingFilters({
   readonly onChange: (search: ListingSearch) => void
 }) {
   const [filters, setFilters] = useAtom(listingFiltersAtom)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
   const searchKey = JSON.stringify(search)
   const hiddenFieldSet = new Set(hiddenFields)
   const activeFilters = activeListingFilterCount(filters, hiddenFieldSet)
@@ -929,6 +1137,55 @@ export function ListingFilters({
     setFilters(next)
     onChange(cleanSearchObject(next))
   }
+
+  const clearFilters = () => commit(defaultListingSearch)
+  const commitAdvanced = (
+    key: ListingAdvancedFilterKey,
+    value: ReadonlyArray<string>,
+  ) => commit({ [key]: value })
+  const priceValues = optionsWithSelectedValue(
+    optionsWithSelectedValue(facets.prices, filters.minPrice),
+    filters.maxPrice,
+  )
+  const bedroomValues = optionsWithSelectedValue(
+    optionsWithSelectedValue(facets.bedrooms, filters.minBeds),
+    filters.maxBeds,
+  )
+  const bathroomValues = optionsWithSelectedValue(
+    optionsWithSelectedValue(facets.bathrooms, filters.minBaths),
+    filters.maxBaths,
+  )
+  const parkingValues = optionsWithSelectedValue(
+    facets.parking.filter((value) => value > 0),
+    filters.minParking,
+  )
+  const priceOptions = priceValues.map((value) => ({
+    value,
+    label: money.format(value),
+  }))
+  const minBedroomOptions = bedroomValues.map((value) => ({
+    value,
+    label: minCountLabel(value, 'bed', 'beds'),
+  }))
+  const maxBedroomOptions = bedroomValues.map((value) => ({
+    value,
+    label: maxCountLabel(value, 'bed', 'beds'),
+  }))
+  const minBathroomOptions = bathroomValues.map((value) => ({
+    value,
+    label: minCountLabel(value, 'bath', 'baths'),
+  }))
+  const maxBathroomOptions = bathroomValues.map((value) => ({
+    value,
+    label: maxCountLabel(value, 'bath', 'baths'),
+  }))
+  const parkingOptions = parkingValues.map((value) => ({
+    value,
+    label: minCountLabel(value, 'space', 'spaces'),
+  }))
+  const advancedGroups = facets.advancedGroups.filter(
+    (group) => group.options.length > 0 || filters[group.key].length > 0,
+  )
 
   return (
     <Sheet>
@@ -953,134 +1210,165 @@ export function ListingFilters({
       </div>
       <SheetContent
         side="right"
-        className="h-dvh overflow-y-auto border-l-0 bg-[var(--foam)] p-0 data-[side=right]:w-full sm:border-l sm:data-[side=right]:max-w-md"
+        className="h-dvh overflow-hidden border-l-0 bg-[var(--foam)] p-0 data-[side=right]:w-full sm:border-l sm:data-[side=right]:max-w-md"
       >
-        <div className="grid min-h-dvh content-start gap-5 p-5 sm:p-6">
-          <SheetHeader className="pr-8">
+        <div className="flex h-dvh min-h-0 flex-col">
+          <SheetHeader className="px-5 pb-4 pr-12 pt-5 sm:px-6 sm:pt-6">
             <SheetTitle className="display-title text-3xl font-bold text-[var(--sea-ink)]">
               Filter listings
             </SheetTitle>
-            <SheetDescription className="text-sm leading-6 text-[var(--sea-ink-soft)]">
-              Every change is reflected in the URL.
+            <SheetDescription className="sr-only">
+              Listing filter controls
             </SheetDescription>
           </SheetHeader>
-          <div className="grid gap-4">
-            {hiddenFieldSet.has('city') ? null : (
-              <SelectFilter
-                label="City"
-                value={filters.city}
-                placeholder="All cities"
-                options={facets.cities}
-                onChange={(city) => commit({ city })}
-              />
-            )}
-            {hiddenFieldSet.has('province') ? null : (
-              <SelectFilter
-                label="Province"
-                value={filters.province}
-                placeholder="All provinces"
-                options={facets.provinces}
-                onChange={(province) => commit({ province })}
-              />
-            )}
-            {hiddenFieldSet.has('status') ? null : (
-              <SelectFilter
-                label="Status"
-                value={filters.status}
-                placeholder="All statuses"
-                options={facets.statuses}
-                onChange={(status) => commit({ status })}
-              />
-            )}
-            {hiddenFieldSet.has('type') ? null : (
-              <SelectFilter
-                label="Type"
-                value={filters.type}
-                placeholder="All property types"
-                options={facets.types}
-                onChange={(type) => commit({ type })}
-              />
-            )}
-            <div className="grid grid-cols-2 gap-3">
-              <label className="grid min-w-0 gap-1.5">
-                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
-                  Min price
-                </span>
-                <Input
-                  value={filters.minPrice}
-                  inputMode="numeric"
-                  placeholder="0"
-                  onChange={(event) => commit({ minPrice: event.target.value })}
+          <ScrollArea className="min-h-0 flex-1 px-5 pb-5 sm:px-6 sm:pb-6">
+            <div className="grid gap-4 pb-2">
+              {hiddenFieldSet.has('city') ? null : (
+                <SelectFilter
+                  label="City"
+                  value={filters.city}
+                  placeholder="All cities"
+                  options={facets.cities}
+                  onChange={(city) => commit({ city })}
                 />
-              </label>
-              <label className="grid min-w-0 gap-1.5">
-                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
-                  Max price
-                </span>
-                <Input
-                  value={filters.maxPrice}
-                  inputMode="numeric"
-                  placeholder="Any"
-                  onChange={(event) => commit({ maxPrice: event.target.value })}
+              )}
+              {hiddenFieldSet.has('province') ? null : (
+                <SelectFilter
+                  label="Province"
+                  value={filters.province}
+                  placeholder="All provinces"
+                  options={facets.provinces}
+                  onChange={(province) => commit({ province })}
                 />
-              </label>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="grid min-w-0 gap-1.5">
-                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
-                  Beds
-                </span>
-                <Input
-                  value={filters.minBeds}
-                  inputMode="numeric"
-                  placeholder="Any"
-                  onChange={(event) => commit({ minBeds: event.target.value })}
+              )}
+              {hiddenFieldSet.has('status') ? null : (
+                <SelectFilter
+                  label="Status"
+                  value={filters.status}
+                  placeholder="All statuses"
+                  options={facets.statuses}
+                  onChange={(status) => commit({ status })}
                 />
-              </label>
-              <label className="grid min-w-0 gap-1.5">
-                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
-                  Baths
-                </span>
-                <Input
-                  value={filters.minBaths}
-                  inputMode="numeric"
-                  placeholder="Any"
-                  onChange={(event) => commit({ minBaths: event.target.value })}
+              )}
+              {hiddenFieldSet.has('type') ? null : (
+                <SelectFilter
+                  label="Type"
+                  value={filters.type}
+                  placeholder="All property types"
+                  options={facets.types}
+                  onChange={(type) => commit({ type })}
                 />
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <NativeSelectFilter
+                  label="Min price"
+                  value={selectValue(filters.minPrice)}
+                  options={priceOptions}
+                  onChange={(minPrice) => commit({ minPrice })}
+                />
+                <NativeSelectFilter
+                  label="Max price"
+                  value={selectValue(filters.maxPrice)}
+                  options={priceOptions}
+                  onChange={(maxPrice) => commit({ maxPrice })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <NativeSelectFilter
+                  label="Min beds"
+                  value={selectValue(filters.minBeds)}
+                  options={minBedroomOptions}
+                  onChange={(minBeds) => commit({ minBeds })}
+                />
+                <NativeSelectFilter
+                  label="Max beds"
+                  value={selectValue(filters.maxBeds)}
+                  options={maxBedroomOptions}
+                  onChange={(maxBeds) => commit({ maxBeds })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <NativeSelectFilter
+                  label="Min baths"
+                  value={selectValue(filters.minBaths)}
+                  options={minBathroomOptions}
+                  onChange={(minBaths) => commit({ minBaths })}
+                />
+                <NativeSelectFilter
+                  label="Max baths"
+                  value={selectValue(filters.maxBaths)}
+                  options={maxBathroomOptions}
+                  onChange={(maxBaths) => commit({ maxBaths })}
+                />
+              </div>
+              <NativeSelectFilter
+                label="Parking"
+                value={selectValue(filters.minParking)}
+                options={parkingOptions}
+                onChange={(minParking) => commit({ minParking })}
+              />
+              <label className="grid gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
+                  Sort
+                </span>
+                <Select
+                  value={filters.sort}
+                  onValueChange={(sort) => {
+                    if (sort !== null) {
+                      commit({ sort })
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-white/70">
+                    <SelectValue placeholder="Sort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {listingSortOptions.map((option) => (
+                      <SelectItem value={option.value} key={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
-            </div>
-            <label className="grid gap-1.5">
-              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sea-ink-soft)]">
-                Sort
-              </span>
-              <Select
-                value={filters.sort}
-                onValueChange={(sort) => {
-                  if (sort !== null) {
-                    commit({ sort: sort as ListingSearch['sort'] })
-                  }
-                }}
+              <ListingFilterActions onClear={clearFilters} />
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-2 w-full justify-between rounded-lg bg-white/70 font-extrabold text-[var(--sea-ink)] hover:bg-white"
+                aria-expanded={advancedOpen}
+                onClick={() => setAdvancedOpen((open) => !open)}
               >
-                <SelectTrigger className="w-full bg-white/70">
-                  <SelectValue placeholder="Sort" />
-                </SelectTrigger>
-                <SelectContent>
-                  {listingSortOptions.map((option) => (
-                    <SelectItem value={option.value} key={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => commit(defaultListingSearch)}
-            >
-              Clear filters
-            </Button>
-          </div>
+                Advanced search
+                <ChevronDown
+                  className={cn(
+                    'size-4 transition-transform',
+                    advancedOpen && 'rotate-180',
+                  )}
+                />
+              </Button>
+              {advancedOpen ? (
+                <div className="grid gap-4 border-t border-[var(--line)] pt-4">
+                  {advancedGroups.length > 0 ? (
+                    advancedGroups.map((group) => (
+                      <AdvancedCommandSelect
+                        label={group.label}
+                        selected={filters[group.key]}
+                        options={group.options}
+                        onChange={(value) => commitAdvanced(group.key, value)}
+                        key={group.key}
+                      />
+                    ))
+                  ) : (
+                    <p className="rounded-lg border border-dashed border-[var(--line)] bg-white/70 p-4 text-sm text-[var(--sea-ink-soft)]">
+                      No advanced filters are available for the current data.
+                    </p>
+                  )}
+                  <ListingFilterActions onClear={clearFilters} />
+                </div>
+              ) : null}
+            </div>
+          </ScrollArea>
         </div>
       </SheetContent>
     </Sheet>
@@ -1089,9 +1377,11 @@ export function ListingFilters({
 
 export function ListingsPage({
   data,
+  isPaging = false,
   onSearchChange,
 }: {
   readonly data: ListingsData
+  readonly isPaging?: boolean
   readonly onSearchChange: (search: ListingSearch) => void
 }) {
   return (
@@ -1123,6 +1413,7 @@ export function ListingsPage({
         <Pagination
           page={data.search.page}
           hasNextPage={data.hasNextPage}
+          isPending={isPaging}
           onPage={(page) => onSearchChange({ ...data.search, page })}
         />
       </section>
@@ -1132,9 +1423,11 @@ export function ListingsPage({
 
 export function GroupedListingsPage({
   data,
+  isPaging = false,
   onSearchChange,
 }: {
   readonly data: GroupedListingsData
+  readonly isPaging?: boolean
   readonly onSearchChange: (search: ListingSearch) => void
 }) {
   if (data.group === null || data.matchedValue === null) {
@@ -1175,6 +1468,7 @@ export function GroupedListingsPage({
         <Pagination
           page={data.search.page}
           hasNextPage={data.hasNextPage}
+          isPending={isPaging}
           onPage={(page) => onSearchChange({ ...data.search, page })}
         />
         <RelatedListingPages
@@ -1200,14 +1494,13 @@ function ListingGroupFallback({
     <main className="page-wrap grid gap-6 py-8">
       <section className="rounded-lg border border-[var(--line)] bg-white/72 p-6">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
-          Grouped search
+          Listing search
         </p>
         <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
           {title}
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
-          The route did not match a current active listing value. Pick one of
-          the related grouped pages below.
+          Pick another category below or browse all current listings.
         </p>
         <Button
           nativeButton={false}
@@ -1230,37 +1523,87 @@ function ListingGroupFallback({
   )
 }
 
+type ListingGroupValueCard = GroupedListingsData['relatedValues'][number]
+type ListingGroupSummaryCard = GroupedListingsData['relatedGroups'][number]
+
+function SearchEmptyTile({
+  title,
+  description,
+}: {
+  readonly title: string
+  readonly description: string
+}) {
+  return (
+    <Empty className="min-h-36 items-start justify-center border border-dashed border-[var(--line)] bg-white/50 p-5 text-left sm:col-span-2">
+      <EmptyHeader className="items-start text-left">
+        <EmptyMedia
+          variant="icon"
+          className="bg-white/80 text-[var(--lagoon-deep)]"
+        >
+          <Search className="size-5" />
+        </EmptyMedia>
+        <EmptyTitle className="text-base font-extrabold text-[var(--sea-ink)]">
+          {title}
+        </EmptyTitle>
+        <EmptyDescription className="text-left text-sm text-[var(--sea-ink-soft)]">
+          {description}
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  )
+}
+
+const valueMosaicClass = (value: ListingGroupValueCard, index: number) =>
+  cn(
+    'group grid min-h-36 content-between rounded-lg border border-[var(--line)] bg-white/72 p-4 text-[var(--sea-ink)] no-underline transition hover:border-[var(--lagoon-deep)]',
+    value.value.length > 18 ? 'sm:col-span-2' : null,
+    index === 0 && value.value.length > 10 ? 'lg:col-span-2' : null,
+  )
+
 function RelatedListingPages({
   title,
   values,
+  emptyTitle = 'No search options yet',
+  emptyDescription = 'This category has no synced values to link.',
 }: {
   readonly title: string
-  readonly values: GroupedListingsData['relatedValues']
+  readonly values: ReadonlyArray<ListingGroupValueCard>
+  readonly emptyTitle?: string
+  readonly emptyDescription?: string
 }) {
-  if (values.length === 0) return null
+  const visibleValues = values.slice(0, 36)
 
   return (
     <section className="grid gap-3">
       <h2 className="display-title text-2xl font-bold text-[var(--sea-ink)]">
         {title}
       </h2>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {values.map((value) => (
+      <div className="grid items-start gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr))]">
+        {visibleValues.length === 0 ? (
+          <SearchEmptyTile title={emptyTitle} description={emptyDescription} />
+        ) : null}
+        {visibleValues.map((value, index) => (
           <Link
             to="/search/$group/$value"
             params={{ group: value.groupSlug, value: value.valueSlug }}
             search={defaultListingSearch}
-            className="group rounded-lg border border-[var(--line)] bg-white/72 p-4 text-[var(--sea-ink)] no-underline transition hover:border-[var(--lagoon-deep)]"
+            className={valueMosaicClass(value, index)}
             key={`${value.groupSlug}-${value.valueSlug}`}
           >
-            <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
-              {value.groupLabel}
+            <span>
+              <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
+                {value.groupLabel}
+              </span>
+              <span className="mt-1 block text-lg font-extrabold leading-tight group-hover:text-[var(--lagoon-deep)]">
+                {value.value}
+              </span>
+              <span className="mt-3 inline-flex w-fit rounded-full border border-[var(--line)] bg-white/72 px-2.5 py-1 text-xs font-bold text-[var(--sea-ink-soft)]">
+                {countLabel(value.count, 'listing', 'listings')}
+              </span>
             </span>
-            <span className="mt-1 block text-lg font-extrabold group-hover:text-[var(--lagoon-deep)]">
-              {value.value}
-            </span>
-            <span className="mt-2 block text-sm font-semibold text-[var(--sea-ink-soft)]">
-              {number.format(value.count)} listings
+            <span className="mt-4 inline-flex items-center gap-2 text-sm font-extrabold text-[var(--lagoon-deep)]">
+              View listings
+              <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
             </span>
           </Link>
         ))}
@@ -1269,35 +1612,746 @@ function RelatedListingPages({
   )
 }
 
+const groupMosaicClass = (group: ListingGroupSummaryCard, index: number) =>
+  cn(
+    'group grid min-h-32 content-between rounded-lg border border-[var(--line)] bg-white/66 p-4 text-[var(--sea-ink)] no-underline transition hover:border-[var(--lagoon-deep)]',
+    group.pluralLabel.length > 16 ? 'sm:col-span-2' : null,
+    index === 0 ? 'lg:col-span-2' : null,
+  )
+
+const prioritizedGroupSummaries = (
+  groups: ReadonlyArray<ListingGroupSummaryCard>,
+) =>
+  [...groups].sort(
+    (left, right) =>
+      groupOrderRank(left.groupSlug) - groupOrderRank(right.groupSlug) ||
+      left.pluralLabel.localeCompare(right.pluralLabel),
+  )
+
 function ListingGroupDirectory({
   groups,
+  emptyTitle = 'No related categories',
+  emptyDescription = 'There are no other search categories available from the synced listing data.',
 }: {
-  readonly groups: GroupedListingsData['relatedGroups']
+  readonly groups: ReadonlyArray<ListingGroupSummaryCard>
+  readonly emptyTitle?: string
+  readonly emptyDescription?: string
+}) {
+  const visibleGroups = prioritizedGroupSummaries(groups).slice(0, 16)
+
+  return (
+    <section className="grid gap-3">
+      <h2 className="display-title text-2xl font-bold text-[var(--sea-ink)]">
+        Browse by category
+      </h2>
+      <div className="grid items-start gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr))]">
+        {visibleGroups.length === 0 ? (
+          <SearchEmptyTile title={emptyTitle} description={emptyDescription} />
+        ) : null}
+        {visibleGroups.map((group, index) => (
+          <Link
+            to="/search/$group"
+            params={{ group: group.groupSlug }}
+            className={groupMosaicClass(group, index)}
+            key={group.groupSlug}
+          >
+            <span>
+              <span className="block text-lg font-extrabold leading-tight group-hover:text-[var(--lagoon-deep)]">
+                {group.pluralLabel}
+              </span>
+              <span className="mt-3 inline-flex w-fit rounded-full border border-[var(--line)] bg-white/72 px-2.5 py-1 text-xs font-bold text-[var(--sea-ink-soft)]">
+                {countLabel(group.valueCount, 'option', 'options')}
+              </span>
+            </span>
+            <span className="mt-4 inline-flex items-center gap-2 text-sm font-extrabold text-[var(--lagoon-deep)]">
+              Explore options
+              <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+type SearchDestination =
+  | {
+      readonly type: 'listings'
+      readonly search: ListingSearch
+    }
+  | {
+      readonly type: 'open-houses'
+    }
+  | {
+      readonly type: 'offices'
+    }
+  | {
+      readonly type: 'agents'
+    }
+  | {
+      readonly type: 'group'
+      readonly groupSlug: string
+    }
+  | {
+      readonly type: 'group-value'
+      readonly groupSlug: string
+      readonly valueSlug: string
+    }
+
+type SearchIndexAction = {
+  readonly id: string
+  readonly eyebrow: string
+  readonly label: string
+  readonly description: string
+  readonly count?: number
+  readonly keywords: ReadonlyArray<string>
+  readonly destination: SearchDestination
+}
+
+const normalizeSearchText = (value: string) =>
+  value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+
+const searchActionHaystack = (action: SearchIndexAction) =>
+  normalizeSearchText(
+    [action.eyebrow, action.label, action.description, ...action.keywords].join(
+      ' ',
+    ),
+  )
+
+const scoreSearchAction = (
+  action: SearchIndexAction,
+  normalizedQuery: string,
+  terms: ReadonlyArray<string>,
+) => {
+  const label = normalizeSearchText(action.label)
+  const haystack = searchActionHaystack(action)
+
+  if (label === normalizedQuery) return 0
+  if (label.startsWith(normalizedQuery)) return 1
+  if (haystack.includes(normalizedQuery)) return 2
+  if (terms.length > 0 && terms.every((term) => haystack.includes(term))) {
+    return 3
+  }
+
+  return null
+}
+
+const rankedSearchActions = (
+  actions: ReadonlyArray<SearchIndexAction>,
+  query: string,
+) => {
+  const normalizedQuery = normalizeSearchText(query)
+  if (normalizedQuery.length === 0) return actions.slice(0, 12)
+
+  const terms = normalizedQuery.split(' ').filter(Boolean)
+
+  return actions
+    .flatMap((action) => {
+      const score = scoreSearchAction(action, normalizedQuery, terms)
+      return score === null ? [] : [{ action, score }]
+    })
+    .sort(
+      (left, right) =>
+        left.score - right.score ||
+        (right.action.count ?? 0) - (left.action.count ?? 0) ||
+        left.action.label.localeCompare(right.action.label),
+    )
+    .map((item) => item.action)
+    .slice(0, 12)
+}
+
+const groupValueAction = (
+  value: SearchIndexData['topValues'][number],
+): SearchIndexAction => ({
+  id: `value-${value.groupSlug}-${value.valueSlug}`,
+  eyebrow: value.groupLabel,
+  label: value.value,
+  description: `View listings that match this ${value.groupLabel.toLowerCase()}.`,
+  count: value.count,
+  keywords: [
+    value.valueSlug,
+    value.groupSlug,
+    value.groupLabel,
+    value.pluralLabel,
+    `${value.value} listings`,
+  ],
+  destination: {
+    type: 'group-value',
+    groupSlug: value.groupSlug,
+    valueSlug: value.valueSlug,
+  },
+})
+
+const buildSearchIndexActions = (
+  data: SearchIndexData,
+): ReadonlyArray<SearchIndexAction> => [
+  {
+    id: 'browse-listings',
+    eyebrow: 'Browse',
+    label: 'Listings',
+    description: 'All active property listings.',
+    keywords: ['properties', 'homes', 'houses', 'search listings'],
+    destination: { type: 'listings', search: defaultListingSearch },
+  },
+  {
+    id: 'browse-open-houses',
+    eyebrow: 'Schedule',
+    label: 'Open houses',
+    description: 'Scheduled open house records.',
+    keywords: ['open house', 'showing', 'schedule'],
+    destination: { type: 'open-houses' },
+  },
+  {
+    id: 'browse-office',
+    eyebrow: 'Office',
+    label: 'Office',
+    description: 'EXIT EXCEL REALTY office page.',
+    keywords: ['brokerage', 'exit excel realty', 'office listings'],
+    destination: { type: 'offices' },
+  },
+  {
+    id: 'browse-agents',
+    eyebrow: 'Agents',
+    label: 'Agents',
+    description: 'Agents attached to active listings.',
+    keywords: ['members', 'realtors', 'salespeople', 'broker'],
+    destination: { type: 'agents' },
+  },
+  ...data.groups.map(({ group, summary }) => ({
+    id: `group-${group.slug}`,
+    eyebrow: 'Category',
+    label: group.pluralLabel,
+    description: `Browse listings by ${group.label.toLowerCase()}.`,
+    count: summary.listingCount,
+    keywords: [
+      group.slug,
+      group.label,
+      group.pluralLabel,
+      group.description,
+      `${group.label} index`,
+    ],
+    destination: { type: 'group', groupSlug: group.slug } as const,
+  })),
+  ...data.groups.flatMap((group) => group.values.map(groupValueAction)),
+  ...data.facets.cities.map((city) => ({
+    id: `city-${city}`,
+    eyebrow: 'City',
+    label: city,
+    description: `Listings in ${city}.`,
+    keywords: [`${city} listings`, `city ${city}`],
+    destination: {
+      type: 'listings',
+      search: { ...defaultListingSearch, city },
+    } as const,
+  })),
+  ...data.facets.provinces.map((province) => ({
+    id: `province-${province}`,
+    eyebrow: 'Province',
+    label: province,
+    description: `Listings in ${province}.`,
+    keywords: [`${province} listings`, `province ${province}`],
+    destination: {
+      type: 'listings',
+      search: { ...defaultListingSearch, province },
+    } as const,
+  })),
+  ...data.facets.statuses.map((status) => ({
+    id: `status-${status}`,
+    eyebrow: 'Status',
+    label: status,
+    description: `${status} listings.`,
+    keywords: [`${status} properties`, `${status} homes`],
+    destination: {
+      type: 'listings',
+      search: { ...defaultListingSearch, status },
+    } as const,
+  })),
+  ...data.facets.types.map((type) => ({
+    id: `type-${type}`,
+    eyebrow: 'Property type',
+    label: type,
+    description: `${type} listings.`,
+    keywords: [`${type} properties`, `${type} homes`],
+    destination: {
+      type: 'listings',
+      search: { ...defaultListingSearch, type },
+    } as const,
+  })),
+]
+
+const runSearchDestination = (
+  navigate: ReturnType<typeof useNavigate>,
+  destination: SearchDestination,
+) => {
+  switch (destination.type) {
+    case 'listings':
+      void navigate({ to: '/listings', search: destination.search })
+      return
+    case 'open-houses':
+      void navigate({
+        to: '/open-houses',
+        search: defaultOpenHouseSearch,
+      })
+      return
+    case 'offices':
+      void navigate({
+        to: '/offices',
+        search: { city: '', province: '', page: 1 },
+      })
+      return
+    case 'agents':
+      void navigate({
+        to: '/agents',
+        search: { officeKey: '', page: 1 },
+      })
+      return
+    case 'group':
+      void navigate({
+        to: '/search/$group',
+        params: { group: destination.groupSlug },
+      })
+      return
+    case 'group-value':
+      void navigate({
+        to: '/search/$group/$value',
+        params: {
+          group: destination.groupSlug,
+          value: destination.valueSlug,
+        },
+        search: defaultListingSearch,
+      })
+      return
+  }
+}
+
+function SearchActionList({
+  actions,
+  emptyLabel,
+  onSelect,
+}: {
+  readonly actions: ReadonlyArray<SearchIndexAction>
+  readonly emptyLabel: string
+  readonly onSelect: (action: SearchIndexAction) => void
+}) {
+  if (actions.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-[var(--line)] bg-white/70 p-6 text-sm font-semibold text-[var(--sea-ink-soft)]">
+        {emptyLabel}
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      {actions.map((action) => (
+        <button
+          className="group grid gap-2 rounded-lg border border-[var(--line)] bg-white/74 p-4 text-left text-[var(--sea-ink)] transition hover:border-[var(--lagoon-deep)]"
+          type="button"
+          onClick={() => onSelect(action)}
+          key={action.id}
+        >
+          <span className="flex items-start justify-between gap-3">
+            <span>
+              <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
+                {action.eyebrow}
+              </span>
+              <span className="mt-1 block text-lg font-extrabold group-hover:text-[var(--lagoon-deep)]">
+                {action.label}
+              </span>
+            </span>
+            <ArrowRight className="mt-1 size-4 shrink-0 transition group-hover:translate-x-0.5" />
+          </span>
+          <span className="block text-sm leading-5 text-[var(--sea-ink-soft)]">
+            {action.description}
+          </span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+const rotatingSearchPrompts = [
+  'Single family homes',
+  'Multi family properties',
+  'Vacant land',
+  'Waterfront listings',
+  'Private well',
+  'Finished basement',
+  'Commercial kitchens',
+] as const
+
+const featuredSearchGroupOrder = [
+  'property-sub-type',
+  'neighborhood',
+  'waterfront-features',
+  'water-source',
+  'lot-features',
+  'view',
+  'business-type',
+  'architectural-style',
+  'parking-features',
+  'basement',
+  'zoning',
+] as const
+
+const groupOrderRank = (slug: string) => {
+  const index = featuredSearchGroupOrder.findIndex((item) => item === slug)
+  return index === -1 ? featuredSearchGroupOrder.length : index
+}
+
+const prioritizedSearchGroups = (
+  groups: SearchIndexData['groups'],
+): SearchIndexData['groups'] =>
+  [...groups].sort(
+    (left, right) =>
+      groupOrderRank(left.group.slug) - groupOrderRank(right.group.slug) ||
+      left.group.pluralLabel.localeCompare(right.group.pluralLabel),
+  )
+
+const quickSearchValues = (
+  data: SearchIndexData | SearchGroupData,
+  limit = 24,
+) =>
+  'groups' in data
+    ? prioritizedSearchGroups(data.groups)
+        .flatMap((bucket) => bucket.values)
+        .sort(
+          (left, right) =>
+            groupOrderRank(left.groupSlug) - groupOrderRank(right.groupSlug) ||
+            right.count - left.count ||
+            left.value.localeCompare(right.value),
+        )
+        .slice(0, limit)
+    : data.values
+
+const useRotatingSearchPrompt = () => {
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setIndex((current) => (current + 1) % rotatingSearchPrompts.length)
+    }, 2600)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
+  return rotatingSearchPrompts[index] ?? rotatingSearchPrompts[0]
+}
+
+function SearchGroupMosaic({
+  groups,
+}: {
+  readonly groups: SearchIndexData['groups']
 }) {
   if (groups.length === 0) return null
 
   return (
     <section className="grid gap-3">
-      <h2 className="display-title text-2xl font-bold text-[var(--sea-ink)]">
-        Group fields
-      </h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {groups.map((group) => (
-          <div
-            className="rounded-lg border border-[var(--line)] bg-white/66 p-4"
-            key={group.groupSlug}
+      <SectionHeader title="Browse by category" />
+      <div className="grid items-start gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))]">
+        {groups.map(({ group }, index) => (
+          <Link
+            to="/search/$group"
+            params={{ group: group.slug }}
+            className={cn(
+              'group grid min-h-36 content-between rounded-lg border border-[var(--line)] bg-white/74 p-5 text-[var(--sea-ink)] no-underline transition hover:border-[var(--lagoon-deep)]',
+              index === 0 ? 'md:col-span-2' : null,
+            )}
+            key={group.slug}
           >
-            <p className="text-sm font-extrabold text-[var(--sea-ink)]">
-              {group.pluralLabel}
-            </p>
-            <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
-              {number.format(group.valueCount)} values ·{' '}
-              {number.format(group.listingCount)} listings
-            </p>
-          </div>
+            <span>
+              <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--kicker)]">
+                Browse
+              </span>
+              <span className="mt-2 block text-2xl font-extrabold group-hover:text-[var(--lagoon-deep)]">
+                {group.pluralLabel}
+              </span>
+              <span className="mt-2 block text-sm leading-6 text-[var(--sea-ink-soft)]">
+                {group.description}
+              </span>
+            </span>
+            <span className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-[var(--lagoon-deep)]">
+              See options
+              <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+            </span>
+          </Link>
         ))}
       </div>
     </section>
+  )
+}
+
+function SearchPreviewSections({
+  featuredListings,
+  openHouses,
+}: {
+  readonly featuredListings: ReadonlyArray<ListingCardType>
+  readonly openHouses: SearchIndexData['openHouses']
+}) {
+  return (
+    <section className="grid gap-6">
+      {featuredListings.length > 0 ? (
+        <div className="grid gap-4">
+          <SectionHeader
+            title="Latest listings"
+            action={
+              <Button
+                nativeButton={false}
+                render={<Link to="/listings" search={defaultListingSearch} />}
+                variant="outline"
+              >
+                View all
+              </Button>
+            }
+          />
+          <ListingsGrid listings={featuredListings.slice(0, 6)} />
+        </div>
+      ) : null}
+      {openHouses.length > 0 ? (
+        <DirectoryPanel title="Upcoming open houses">
+          {openHouses.slice(0, 4).map((openHouse) => (
+            <OpenHouseRow openHouse={openHouse} key={openHouse.openHouseKey} />
+          ))}
+        </DirectoryPanel>
+      ) : null}
+    </section>
+  )
+}
+
+export function SearchIndexPage({ data }: { readonly data: SearchIndexData }) {
+  const [query, setQuery] = useState('')
+  const navigate = useNavigate()
+  const prompt = useRotatingSearchPrompt()
+  const groups = useMemo(() => prioritizedSearchGroups(data.groups), [data])
+  const quickValues = useMemo(() => quickSearchValues(data), [data])
+  const actions = useMemo(() => buildSearchIndexActions(data), [data])
+  const matches = useMemo(
+    () => rankedSearchActions(actions, query),
+    [actions, query],
+  )
+  const selectAction = (action: SearchIndexAction) =>
+    runSearchDestination(navigate, action.destination)
+
+  return (
+    <main className="search-page-wrap grid gap-6 py-8">
+      <section className="grid gap-6 rounded-lg border border-[var(--line)] bg-white/76 p-6 lg:grid-cols-[1fr_340px] lg:items-start">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+            Listing search
+          </p>
+          <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+            Search by property type, location, water, land, and features.
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
+            Start with a category like property type or water source, then pick
+            the option that matches what you want.
+          </p>
+          <form
+            className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]"
+            onSubmit={(event) => {
+              event.preventDefault()
+              const firstMatch = matches.at(0)
+              if (firstMatch) selectAction(firstMatch)
+            }}
+          >
+            <Input
+              aria-label="Search listings index"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={prompt}
+              className="min-h-12 bg-white/86 text-base"
+            />
+            <Button type="submit" size="lg">
+              <Search />
+              Search
+            </Button>
+          </form>
+        </div>
+        <div className="grid gap-3 rounded-lg border border-[var(--line)] bg-[var(--foam)] p-4">
+          <p className="text-sm font-extrabold text-[var(--sea-ink)]">
+            Quick starts
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {quickValues.slice(0, 6).map((value) => (
+              <Button
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/search/$group/$value"
+                    params={{ group: value.groupSlug, value: value.valueSlug }}
+                    search={defaultListingSearch}
+                  />
+                }
+                variant="outline"
+                key={`${value.groupSlug}-${value.valueSlug}`}
+              >
+                {value.value}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </section>
+      {query.trim().length > 0 ? (
+        <SearchActionList
+          actions={matches}
+          emptyLabel="No matching listing shortcut."
+          onSelect={selectAction}
+        />
+      ) : null}
+      <SearchGroupMosaic groups={groups} />
+      <section className="grid gap-6">
+        <RelatedListingPages title="Quick searches" values={quickValues} />
+      </section>
+      <SearchPreviewSections
+        featuredListings={data.featuredListings}
+        openHouses={data.openHouses}
+      />
+    </main>
+  )
+}
+
+export function SearchGroupPage({ data }: { readonly data: SearchGroupData }) {
+  const [query, setQuery] = useState('')
+  const navigate = useNavigate()
+  const quickValues = useMemo(() => quickSearchValues(data), [data])
+  const actions = useMemo(
+    () => data.values.map(groupValueAction),
+    [data.values],
+  )
+  const matches = useMemo(
+    () => rankedSearchActions(actions, query),
+    [actions, query],
+  )
+  const selectAction = (action: SearchIndexAction) =>
+    runSearchDestination(navigate, action.destination)
+
+  if (data.group === null || data.summary === null) {
+    return (
+      <main className="search-page-wrap grid gap-6 py-8">
+        <section className="rounded-lg border border-[var(--line)] bg-white/76 p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+            Listing search
+          </p>
+          <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+            Category not found
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
+            Browse another category or use one of the quick searches below.
+          </p>
+          <Button
+            nativeButton={false}
+            render={<Link to="/search" />}
+            className="mt-5"
+          >
+            <Search />
+            Search listings
+          </Button>
+        </section>
+        <ListingGroupDirectory groups={data.relatedGroups} />
+        <RelatedListingPages
+          title="Quick searches"
+          values={data.topValues}
+          emptyTitle="No grouped searches"
+          emptyDescription="No grouped search values are available from the synced listings."
+        />
+      </main>
+    )
+  }
+
+  return (
+    <main className="search-page-wrap grid gap-6 py-8">
+      <section className="grid gap-6 rounded-lg border border-[var(--line)] bg-white/76 p-6 lg:grid-cols-[1fr_340px] lg:items-start">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--kicker)]">
+            {data.group.label}
+          </p>
+          <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+            {data.group.pluralLabel}
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)]">
+            Choose a {data.group.label.toLowerCase()} to see matching listings.
+          </p>
+          <form
+            className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]"
+            onSubmit={(event) => {
+              event.preventDefault()
+              const firstMatch = matches.at(0)
+              if (firstMatch) selectAction(firstMatch)
+            }}
+          >
+            <Input
+              aria-label={`Search ${data.group.pluralLabel}`}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={quickValues.at(0)?.value ?? data.group.pluralLabel}
+              className="min-h-12 bg-white/86 text-base"
+            />
+            <Button type="submit" size="lg">
+              <Search />
+              Search
+            </Button>
+          </form>
+        </div>
+        <div className="grid gap-3 rounded-lg border border-[var(--line)] bg-[var(--foam)] p-4">
+          <p className="text-sm font-extrabold text-[var(--sea-ink)]">
+            Popular options
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {quickValues.slice(0, 6).map((value) => (
+              <Button
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/search/$group/$value"
+                    params={{ group: value.groupSlug, value: value.valueSlug }}
+                    search={defaultListingSearch}
+                  />
+                }
+                variant="outline"
+                key={`${value.groupSlug}-${value.valueSlug}`}
+              >
+                {value.value}
+              </Button>
+            ))}
+          </div>
+          <Button
+            nativeButton={false}
+            render={<Link to="/search" />}
+            variant="outline"
+          >
+            <Search />
+            All search categories
+          </Button>
+        </div>
+      </section>
+      {query.trim().length > 0 ? (
+        <SearchActionList
+          actions={matches}
+          emptyLabel="No matching option in this category."
+          onSelect={selectAction}
+        />
+      ) : null}
+      <section className="grid items-start gap-6">
+        <RelatedListingPages
+          title={`Choose ${data.group.label.toLowerCase()}`}
+          values={quickValues}
+          emptyTitle={`No ${data.group.label.toLowerCase()} values`}
+          emptyDescription="This category exists, but the current listing data does not have values for it yet."
+        />
+        <RelatedListingPages
+          title="Related search values"
+          values={data.topValues}
+          emptyTitle="No related values"
+          emptyDescription="There are no related search values outside this category yet."
+        />
+        <ListingGroupDirectory groups={data.relatedGroups} />
+      </section>
+    </main>
   )
 }
 

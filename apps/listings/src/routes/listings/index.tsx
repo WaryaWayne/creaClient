@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query'
 import {
   createFileRoute,
   stripSearchParams,
@@ -5,7 +7,7 @@ import {
 } from '@tanstack/react-router'
 
 import { ListingsPage } from '#/features/listings/components'
-import { listingsQueryOptions } from '#/features/listings/queries'
+import { listingsInfiniteQueryOptions } from '#/features/listings/queries'
 import {
   compactListingSearch,
   defaultListingSearch,
@@ -21,7 +23,10 @@ export const Route = createFileRoute('/listings/')({
   },
   loaderDeps: ({ search }) => search,
   loader: ({ context, deps }) =>
-    context.queryClient.ensureQueryData(listingsQueryOptions(deps)),
+    context.queryClient.ensureInfiniteQueryData({
+      ...listingsInfiniteQueryOptions(deps),
+      pages: deps.page,
+    }),
   head: () => ({
     meta: [{ title: 'Listings | CREA Listings Browser' }],
   }),
@@ -29,16 +34,69 @@ export const Route = createFileRoute('/listings/')({
 })
 
 function ListingsRoute() {
-  const data = Route.useLoaderData()
+  const search = Route.useSearch()
+  const query = useSuspenseInfiniteQuery(listingsInfiniteQueryOptions(search))
   const navigate = useNavigate({ from: '/listings/' })
+  const loadedPageCount = query.data.pages.length
+  const pageIndex = search.page - 1
+  const loadedPage = query.data.pages.at(pageIndex)
+  const lastLoadedPage = query.data.pages.at(-1)
 
-  const onSearchChange = (search: ListingSearch) => {
-    void navigate({
-      search: parseListingSearch(
-        compactListingSearch(parseListingSearch(search)),
-      ),
-    })
+  if (lastLoadedPage === undefined) {
+    throw new Error('Listings query returned no pages')
   }
 
-  return <ListingsPage data={data} onSearchChange={onSearchChange} />
+  useEffect(() => {
+    if (
+      search.page <= loadedPageCount ||
+      !query.hasNextPage ||
+      query.isFetchingNextPage
+    ) {
+      return
+    }
+
+    void query.fetchNextPage()
+  }, [
+    search.page,
+    loadedPageCount,
+    query.hasNextPage,
+    query.isFetchingNextPage,
+    query.fetchNextPage,
+  ])
+
+  const onSearchChange = (next: ListingSearch) => {
+    const nextSearch = parseListingSearch(
+      compactListingSearch(parseListingSearch(next)),
+    )
+    const go = () =>
+      void navigate({
+        search: nextSearch,
+      })
+
+    if (
+      nextSearch.page === loadedPageCount + 1 &&
+      query.hasNextPage &&
+      !query.isFetchingNextPage
+    ) {
+      void query.fetchNextPage().then(go)
+      return
+    }
+
+    go()
+  }
+
+  return (
+    <ListingsPage
+      data={
+        loadedPage ?? {
+          ...lastLoadedPage,
+          listings: [],
+          search,
+          hasNextPage: query.hasNextPage,
+        }
+      }
+      isPaging={query.isFetchingNextPage}
+      onSearchChange={onSearchChange}
+    />
+  )
 }

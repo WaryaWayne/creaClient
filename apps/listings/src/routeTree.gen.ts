@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SearchIndexRouteImport } from './routes/search/index'
 import { Route as OpenHousesIndexRouteImport } from './routes/open-houses/index'
 import { Route as OfficesIndexRouteImport } from './routes/offices/index'
 import { Route as ListingsIndexRouteImport } from './routes/listings/index'
@@ -18,6 +19,7 @@ import { Route as AgentsIndexRouteImport } from './routes/agents/index'
 import { Route as OpenHousesOpenHouseKeyRouteImport } from './routes/open-houses/$openHouseKey'
 import { Route as ListingsListingKeyRouteImport } from './routes/listings/$listingKey'
 import { Route as AgentsAgentKeyRouteImport } from './routes/agents/$agentKey'
+import { Route as SearchGroupIndexRouteImport } from './routes/search/$group/index'
 import { Route as SearchGroupValueRouteImport } from './routes/search/$group/$value'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -29,6 +31,11 @@ const McpRoute = McpRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchIndexRoute = SearchIndexRouteImport.update({
+  id: '/search/',
+  path: '/search/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OpenHousesIndexRoute = OpenHousesIndexRouteImport.update({
@@ -66,6 +73,11 @@ const AgentsAgentKeyRoute = AgentsAgentKeyRouteImport.update({
   path: '/agents/$agentKey',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SearchGroupIndexRoute = SearchGroupIndexRouteImport.update({
+  id: '/search/$group/',
+  path: '/search/$group/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchGroupValueRoute = SearchGroupValueRouteImport.update({
   id: '/search/$group/$value',
   path: '/search/$group/$value',
@@ -87,8 +99,10 @@ export interface FileRoutesByFullPath {
   '/listings/': typeof ListingsIndexRoute
   '/offices/': typeof OfficesIndexRoute
   '/open-houses/': typeof OpenHousesIndexRoute
+  '/search/': typeof SearchIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/search/$group/$value': typeof SearchGroupValueRoute
+  '/search/$group/': typeof SearchGroupIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -100,8 +114,10 @@ export interface FileRoutesByTo {
   '/listings': typeof ListingsIndexRoute
   '/offices': typeof OfficesIndexRoute
   '/open-houses': typeof OpenHousesIndexRoute
+  '/search': typeof SearchIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/search/$group/$value': typeof SearchGroupValueRoute
+  '/search/$group': typeof SearchGroupIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -114,8 +130,10 @@ export interface FileRoutesById {
   '/listings/': typeof ListingsIndexRoute
   '/offices/': typeof OfficesIndexRoute
   '/open-houses/': typeof OpenHousesIndexRoute
+  '/search/': typeof SearchIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/search/$group/$value': typeof SearchGroupValueRoute
+  '/search/$group/': typeof SearchGroupIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -129,8 +147,10 @@ export interface FileRouteTypes {
     | '/listings/'
     | '/offices/'
     | '/open-houses/'
+    | '/search/'
     | '/api/auth/$'
     | '/search/$group/$value'
+    | '/search/$group/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -142,8 +162,10 @@ export interface FileRouteTypes {
     | '/listings'
     | '/offices'
     | '/open-houses'
+    | '/search'
     | '/api/auth/$'
     | '/search/$group/$value'
+    | '/search/$group'
   id:
     | '__root__'
     | '/'
@@ -155,8 +177,10 @@ export interface FileRouteTypes {
     | '/listings/'
     | '/offices/'
     | '/open-houses/'
+    | '/search/'
     | '/api/auth/$'
     | '/search/$group/$value'
+    | '/search/$group/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -169,8 +193,10 @@ export interface RootRouteChildren {
   ListingsIndexRoute: typeof ListingsIndexRoute
   OfficesIndexRoute: typeof OfficesIndexRoute
   OpenHousesIndexRoute: typeof OpenHousesIndexRoute
+  SearchIndexRoute: typeof SearchIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   SearchGroupValueRoute: typeof SearchGroupValueRoute
+  SearchGroupIndexRoute: typeof SearchGroupIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -187,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search/': {
+      id: '/search/'
+      path: '/search'
+      fullPath: '/search/'
+      preLoaderRoute: typeof SearchIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/open-houses/': {
@@ -238,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentsAgentKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/search/$group/': {
+      id: '/search/$group/'
+      path: '/search/$group'
+      fullPath: '/search/$group/'
+      preLoaderRoute: typeof SearchGroupIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/search/$group/$value': {
       id: '/search/$group/$value'
       path: '/search/$group/$value'
@@ -265,8 +305,10 @@ const rootRouteChildren: RootRouteChildren = {
   ListingsIndexRoute: ListingsIndexRoute,
   OfficesIndexRoute: OfficesIndexRoute,
   OpenHousesIndexRoute: OpenHousesIndexRoute,
+  SearchIndexRoute: SearchIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   SearchGroupValueRoute: SearchGroupValueRoute,
+  SearchGroupIndexRoute: SearchGroupIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

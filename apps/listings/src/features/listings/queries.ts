@@ -10,6 +10,8 @@ import {
   getOfficesData,
   getOpenHouseDetail,
   getOpenHousesData,
+  getSearchGroupData,
+  getSearchIndexData,
 } from './data'
 
 import type {
@@ -31,6 +33,74 @@ export const listingsQueryOptions = (search: ListingSearch) =>
     queryFn: () => getListingsData({ data: search }),
   })
 
+export const searchIndexQueryOptions = () =>
+  queryOptions({
+    queryKey: ['search-index'],
+    queryFn: () => getSearchIndexData(),
+  })
+
+export const searchGroupQueryOptions = (groupSlug: string) =>
+  queryOptions({
+    queryKey: ['search-group', groupSlug],
+    queryFn: () => getSearchGroupData({ data: { groupSlug } }),
+  })
+
+export type ListingPageParam = {
+  readonly page: number
+}
+
+const firstListingPage = {
+  page: 1,
+} satisfies ListingPageParam
+
+const listingInfiniteQueryKey = (search: ListingSearch) => ({
+  city: search.city,
+  province: search.province,
+  status: search.status,
+  type: search.type,
+  minPrice: search.minPrice,
+  maxPrice: search.maxPrice,
+  minBeds: search.minBeds,
+  maxBeds: search.maxBeds,
+  minBaths: search.minBaths,
+  maxBaths: search.maxBaths,
+  minParking: search.minParking,
+  appliances: search.appliances,
+  basement: search.basement,
+  waterSource: search.waterSource,
+  sewer: search.sewer,
+  waterfrontFeatures: search.waterfrontFeatures,
+  heating: search.heating,
+  cooling: search.cooling,
+  parkingFeatures: search.parkingFeatures,
+  sort: search.sort,
+})
+
+export const listingsInfiniteQueryOptions = (search: ListingSearch) =>
+  infiniteQueryOptions({
+    queryKey: ['listings', 'infinite', listingInfiniteQueryKey(search)],
+    initialPageParam: firstListingPage,
+    queryFn: ({ pageParam }) =>
+      getListingsData({
+        data: {
+          ...search,
+          page: pageParam.page,
+        },
+      }),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasNextPage
+        ? {
+            page: lastPage.search.page + 1,
+          }
+        : undefined,
+    getPreviousPageParam: (firstPage) =>
+      firstPage.search.page <= 1
+        ? undefined
+        : {
+            page: Math.max(1, firstPage.search.page - 1),
+          },
+  })
+
 export const groupedListingsQueryOptions = ({
   groupSlug,
   valueSlug,
@@ -50,6 +120,49 @@ export const groupedListingsQueryOptions = ({
           search,
         },
       }),
+  })
+
+export const groupedListingsInfiniteQueryOptions = ({
+  groupSlug,
+  valueSlug,
+  search,
+}: {
+  readonly groupSlug: string
+  readonly valueSlug: string
+  readonly search: ListingSearch
+}) =>
+  infiniteQueryOptions({
+    queryKey: [
+      'grouped-listings',
+      'infinite',
+      groupSlug,
+      valueSlug,
+      listingInfiniteQueryKey(search),
+    ],
+    initialPageParam: firstListingPage,
+    queryFn: ({ pageParam }) =>
+      getGroupedListingsData({
+        data: {
+          groupSlug,
+          valueSlug,
+          search: {
+            ...search,
+            page: pageParam.page,
+          },
+        },
+      }),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasNextPage
+        ? {
+            page: lastPage.search.page + 1,
+          }
+        : undefined,
+    getPreviousPageParam: (firstPage) =>
+      firstPage.search.page <= 1
+        ? undefined
+        : {
+            page: Math.max(1, firstPage.search.page - 1),
+          },
   })
 
 export const listingDetailQueryOptions = (listingKey: string) =>
@@ -111,15 +224,14 @@ export const openHousesInfiniteQueryOptions = (search: OpenHouseSearch) =>
         },
       }),
     getNextPageParam: (lastPage) =>
-      lastPage.nextCursor === null || lastPage.nextCursor === undefined
+      lastPage.nextCursor === null
         ? undefined
         : {
             cursor: lastPage.nextCursor,
             page: lastPage.search.page + 1,
           },
     getPreviousPageParam: (firstPage) =>
-      firstPage.previousCursor === null ||
-      firstPage.previousCursor === undefined
+      firstPage.previousCursor === null
         ? undefined
         : {
             cursor: firstPage.previousCursor,

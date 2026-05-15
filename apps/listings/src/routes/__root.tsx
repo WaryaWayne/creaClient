@@ -125,6 +125,9 @@ function SiteHeader() {
           >
             Open houses
           </Link>
+          <Link to="/search" className={linkClass}>
+            Search
+          </Link>
           <Link
             to="/offices"
             search={defaultDirectorySearch}

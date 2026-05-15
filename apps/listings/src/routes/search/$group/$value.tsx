@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query'
 import {
   createFileRoute,
   stripSearchParams,
@@ -5,7 +7,7 @@ import {
 } from '@tanstack/react-router'
 
 import { GroupedListingsPage } from '#/features/listings/components'
-import { groupedListingsQueryOptions } from '#/features/listings/queries'
+import { groupedListingsInfiniteQueryOptions } from '#/features/listings/queries'
 import {
   compactListingSearch,
   defaultListingSearch,
@@ -21,13 +23,14 @@ export const Route = createFileRoute('/search/$group/$value')({
   },
   loaderDeps: ({ search }) => search,
   loader: ({ context, deps, params }) =>
-    context.queryClient.ensureQueryData(
-      groupedListingsQueryOptions({
+    context.queryClient.ensureInfiniteQueryData({
+      ...groupedListingsInfiniteQueryOptions({
         groupSlug: params.group,
         valueSlug: params.value,
         search: deps,
       }),
-    ),
+      pages: deps.page,
+    }),
   head: () => ({
     meta: [
       {
@@ -39,16 +42,76 @@ export const Route = createFileRoute('/search/$group/$value')({
 })
 
 function GroupedListingsRoute() {
-  const data = Route.useLoaderData()
+  const search = Route.useSearch()
+  const params = Route.useParams()
+  const query = useSuspenseInfiniteQuery(
+    groupedListingsInfiniteQueryOptions({
+      groupSlug: params.group,
+      valueSlug: params.value,
+      search,
+    }),
+  )
   const navigate = useNavigate({ from: '/search/$group/$value' })
+  const loadedPageCount = query.data.pages.length
+  const pageIndex = search.page - 1
+  const loadedPage = query.data.pages.at(pageIndex)
+  const lastLoadedPage = query.data.pages.at(-1)
 
-  const onSearchChange = (search: ListingSearch) => {
-    void navigate({
-      search: parseListingSearch(
-        compactListingSearch(parseListingSearch(search)),
-      ),
-    })
+  if (lastLoadedPage === undefined) {
+    throw new Error('Grouped listings query returned no pages')
   }
 
-  return <GroupedListingsPage data={data} onSearchChange={onSearchChange} />
+  useEffect(() => {
+    if (
+      search.page <= loadedPageCount ||
+      !query.hasNextPage ||
+      query.isFetchingNextPage
+    ) {
+      return
+    }
+
+    void query.fetchNextPage()
+  }, [
+    search.page,
+    loadedPageCount,
+    query.hasNextPage,
+    query.isFetchingNextPage,
+    query.fetchNextPage,
+  ])
+
+  const onSearchChange = (next: ListingSearch) => {
+    const nextSearch = parseListingSearch(
+      compactListingSearch(parseListingSearch(next)),
+    )
+    const go = () =>
+      void navigate({
+        search: nextSearch,
+      })
+
+    if (
+      nextSearch.page === loadedPageCount + 1 &&
+      query.hasNextPage &&
+      !query.isFetchingNextPage
+    ) {
+      void query.fetchNextPage().then(go)
+      return
+    }
+
+    go()
+  }
+
+  return (
+    <GroupedListingsPage
+      data={
+        loadedPage ?? {
+          ...lastLoadedPage,
+          listings: [],
+          search,
+          hasNextPage: query.hasNextPage,
+        }
+      }
+      isPaging={query.isFetchingNextPage}
+      onSearchChange={onSearchChange}
+    />
+  )
 }
