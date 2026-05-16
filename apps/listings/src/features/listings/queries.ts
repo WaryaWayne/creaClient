@@ -66,7 +66,6 @@ const listingInfiniteQueryKey = (search: ListingSearch) => ({
   city: search.city,
   province: search.province,
   neighborhood: search.neighborhood,
-  status: search.status,
   type: search.type,
   lotFeature: search.lotFeature,
   minPrice: search.minPrice,

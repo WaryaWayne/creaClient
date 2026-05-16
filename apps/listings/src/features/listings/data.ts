@@ -217,7 +217,6 @@ export type ListingFacets = {
   readonly cities: ReadonlyArray<string>
   readonly neighborhoods: ReadonlyArray<string>
   readonly provinces: ReadonlyArray<string>
-  readonly statuses: ReadonlyArray<string>
   readonly types: ReadonlyArray<string>
   readonly lotFeatures: ReadonlyArray<string>
   readonly prices: ReadonlyArray<number>
@@ -250,7 +249,6 @@ export type ListingGroupSearchKey =
   | 'city'
   | 'province'
   | 'neighborhood'
-  | 'status'
   | 'type'
   | 'lotFeature'
 
@@ -1129,7 +1127,6 @@ const toListingDetail = (
 
 const listingFilters = (search: ListingSearch) => ({
   active: true,
-  standardStatus: search.status || undefined,
   propertySubType: search.type || undefined,
   city: search.city || undefined,
   province: search.province || undefined,
@@ -1161,7 +1158,6 @@ const groupedListingFilters = (
   if (suppressed.has('city')) filters.city = undefined
   if (suppressed.has('province')) filters.province = undefined
   if (suppressed.has('neighborhood')) filters.cityRegion = undefined
-  if (suppressed.has('status')) filters.standardStatus = undefined
   if (suppressed.has('type')) filters.propertySubType = undefined
   if (suppressed.has('lotFeature')) filters.lotFeatures = []
   return filters
@@ -2185,7 +2181,6 @@ const listingFacetSelect = uniquePropertyFields([
   'province',
   'cityRegion',
   'propertySubType',
-  'standardStatus',
   'lotFeatures',
   'listPrice',
   'leaseAmount',
@@ -2465,11 +2460,6 @@ const buildFacets = Effect.fn('Listings.buildFacets')(function* (
     provinces: uniqueSorted(
       rows.map((row) =>
         schemaString<DdfProperty>(row, 'StateOrProvince', 'province'),
-      ),
-    ),
-    statuses: uniqueSorted(
-      rows.map((row) =>
-        schemaString<DdfProperty>(row, 'StandardStatus', 'standardStatus'),
       ),
     ),
     types: uniqueSorted(

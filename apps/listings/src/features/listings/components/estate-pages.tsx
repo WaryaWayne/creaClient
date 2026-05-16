@@ -394,13 +394,13 @@ const estateSearch = (state: EstateSearchState): ListingSearch => {
     page: 1,
   }
 
-  if (state.bedrooms) {
+  if (state.bedrooms !== '') {
     search = { ...search, minBeds: Number.parseInt(state.bedrooms, 10) }
   }
-  if (state.bathrooms) {
+  if (state.bathrooms !== '') {
     search = { ...search, minBaths: Number.parseInt(state.bathrooms, 10) }
   }
-  if (state.parking) {
+  if (state.parking !== '') {
     search = { ...search, minParking: Number.parseInt(state.parking, 10) }
   }
 
@@ -416,7 +416,7 @@ const estateSearch = (state: EstateSearchState): ListingSearch => {
 
   for (const needKey of state.needs) {
     const need = estateNeedOptions.find((option) => option.key === needKey)
-    if (need) search = mergeSearchPatch(search, need.search)
+    if (need !== undefined) search = mergeSearchPatch(search, need.search)
   }
 
   return search
@@ -1118,10 +1118,14 @@ export function EstateCalculatorPage() {
                 className="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
                 key={row.label}
               >
-                <span className={row.strong ? 'font-extrabold' : undefined}>
+                <span
+                  className={row.strong === true ? 'font-extrabold' : undefined}
+                >
                   {row.label}
                 </span>
-                <span className={row.strong ? 'font-extrabold' : undefined}>
+                <span
+                  className={row.strong === true ? 'font-extrabold' : undefined}
+                >
                   {row.value}
                 </span>
               </div>

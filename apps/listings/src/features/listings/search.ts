@@ -150,6 +150,8 @@ const readSort = (value: unknown): ListingSort => {
     : 'newest'
 }
 
+const readStatus = (_value: unknown) => ''
+
 export const parseListingSearch = (input: unknown): ListingSearch => {
   const value =
     input !== null && typeof input === 'object'
@@ -160,7 +162,7 @@ export const parseListingSearch = (input: unknown): ListingSearch => {
     city: readString(value.city),
     province: readString(value.province),
     neighborhood: readString(value.neighborhood),
-    status: readString(value.status),
+    status: readStatus(value.status),
     type: readString(value.type),
     lotFeature: readString(value.lotFeature),
     minPrice: readNumeric(value.minPrice),
@@ -252,7 +254,6 @@ export const compactListingSearch = (search: ListingSearch) => {
   addIfPresent(output, 'city', search.city)
   addIfPresent(output, 'province', search.province)
   addIfPresent(output, 'neighborhood', search.neighborhood)
-  addIfPresent(output, 'status', search.status)
   addIfPresent(output, 'type', search.type)
   addIfPresent(output, 'lotFeature', search.lotFeature)
   addNumberIfPresent(output, 'minPrice', search.minPrice)
