@@ -21,11 +21,14 @@ import {
 } from '@workspace/ui/components/native-select'
 
 import { defaultListingSearch } from '../search'
+import { AskExpertButton, ExpertHelpCallout } from './contact'
 import { money, number } from './utils'
 
 import type { ListingSearch } from '../search'
 
 type EstateTool = 'overview' | 'properties' | 'calculator' | 'organizer'
+
+const estateWorkspaceId = 'estate-workspace'
 
 type EstateNeedKey =
   | 'familyScale'
@@ -437,8 +440,14 @@ function EstateToolNav({ active }: { readonly active: EstateTool }) {
         return (
           <Link
             to={item.to}
-            className="rounded-lg border border-border bg-card p-4 text-foreground no-underline hover:border-border"
+            hash={estateWorkspaceId}
+            className={`rounded-lg border p-4 text-foreground no-underline ${
+              isActive
+                ? 'border-foreground bg-background shadow-sm'
+                : 'border-border bg-card hover:border-foreground/50'
+            }`}
             data-active={isActive}
+            aria-current={isActive ? 'page' : undefined}
             key={item.key}
           >
             <span className="flex items-start gap-3">
@@ -484,6 +493,31 @@ function EstateHero({
         <p className="mt-3 max-w-3xl text-sm leading-6 text-foreground">
           {description}
         </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <AskExpertButton
+            context={{
+              source: `estate-${active}-hero`,
+              audience: 'estate',
+              tool: active,
+            }}
+            label="Ask an estate expert"
+            defaultMessage="I need help deciding the next step for an estate property."
+          />
+          <Button
+            nativeButton={false}
+            render={
+              <Link
+                to="/estates/properties"
+                hash={estateWorkspaceId}
+                search={estateSearch(defaultEstateSearchState)}
+              />
+            }
+            variant="outline"
+          >
+            <Search />
+            Search properties
+          </Button>
+        </div>
       </div>
       <EstateToolNav active={active} />
     </section>
@@ -538,6 +572,7 @@ function ToolLink({
   return (
     <Link
       to={to}
+      hash={estateWorkspaceId}
       className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-3 text-foreground no-underline hover:border-border"
     >
       <span className="flex min-w-0 items-center gap-3">
@@ -672,7 +707,10 @@ export function EstateLandingPage() {
         active="overview"
       />
 
-      <section className="grid gap-5 lg:grid-cols-[1fr_340px]">
+      <section
+        id={estateWorkspaceId}
+        className="grid scroll-mt-24 gap-5 lg:grid-cols-[1fr_340px]"
+      >
         <form
           className="grid gap-5 rounded-lg border border-border bg-card p-5"
           onSubmit={(event) => {
@@ -817,7 +855,9 @@ export function EstateLandingPage() {
             </Button>
             <Button
               nativeButton={false}
-              render={<Link to="/estates/calculator" />}
+              render={
+                <Link to="/estates/calculator" hash={estateWorkspaceId} />
+              }
               variant="outline"
             >
               <Calculator />
@@ -847,6 +887,18 @@ export function EstateLandingPage() {
             title="Organize the file"
             description="Track family, documents, advisors, and access."
             icon={ListChecks}
+          />
+          <ExpertHelpCallout
+            context={{
+              source: 'estate-tools-sidebar',
+              audience: 'estate',
+              tool: 'overview',
+            }}
+            framed={false}
+            title="Need help making the file workable?"
+            description="Send the property or family-decision blocker and we will help identify the next practical step."
+            buttonLabel="Ask about the estate"
+            defaultMessage="I need help organizing an estate property decision."
           />
         </aside>
       </section>
@@ -936,7 +988,10 @@ export function EstateCalculatorPage() {
         active="calculator"
       />
 
-      <section className="grid gap-5 lg:grid-cols-[1fr_380px]">
+      <section
+        id={estateWorkspaceId}
+        className="grid scroll-mt-24 gap-5 lg:grid-cols-[1fr_380px]"
+      >
         <div className="grid gap-5 rounded-lg border border-border bg-card p-5">
           <section className="grid gap-4">
             <div>
@@ -1136,6 +1191,27 @@ export function EstateCalculatorPage() {
             discharge, and distribution rules with the right advisors before
             making family or executor commitments.
           </p>
+          <ExpertHelpCallout
+            context={{
+              source: 'estate-calculator-sidebar',
+              audience: 'estate',
+              tool: 'calculator',
+              details: {
+                saleLow: normalizedSaleLow,
+                saleHigh: normalizedSaleHigh,
+                carryingTotal,
+                prepTotal,
+                payoffTotal,
+                netLow,
+                netHigh,
+              },
+            }}
+            framed={false}
+            title="Need help explaining the range?"
+            description="Send the planning estimate and we will help turn it into clearer next questions."
+            buttonLabel="Ask about the range"
+            defaultMessage="I need help reviewing this estate planning estimate."
+          />
         </aside>
       </section>
     </main>
@@ -1169,7 +1245,10 @@ export function EstateOrganizerPage() {
         active="organizer"
       />
 
-      <section className="grid gap-5 lg:grid-cols-[320px_1fr]">
+      <section
+        id={estateWorkspaceId}
+        className="grid scroll-mt-24 gap-5 lg:grid-cols-[320px_1fr]"
+      >
         <aside className="grid content-start gap-4 rounded-lg border border-border bg-card p-5">
           <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
             Progress
@@ -1199,6 +1278,22 @@ export function EstateOrganizerPage() {
           >
             Reset organizer
           </Button>
+          <ExpertHelpCallout
+            context={{
+              source: 'estate-organizer-sidebar',
+              audience: 'estate',
+              tool: 'organizer',
+              details: {
+                completedCount,
+                progress,
+              },
+            }}
+            framed={false}
+            title="Need help choosing the next document?"
+            description="Send the organizer blocker and we will help sort authority, payoff, access, or prep questions."
+            buttonLabel="Ask about organizing"
+            defaultMessage="I need help deciding what to organize next for this estate property."
+          />
         </aside>
 
         <div className="grid gap-4">
@@ -1251,14 +1346,30 @@ export function EstateOrganizerPage() {
 
 export function EstatePropertiesIntro() {
   return (
-    <div className="rounded-lg border border-border bg-card p-4 text-sm leading-6 text-foreground">
-      <p className="font-extrabold">Estate-scale search reminder</p>
-      <p className="mt-1">
-        Start from larger active homes, then use filters for city, neighborhood,
-        lot feature, property type, price, beds, baths, parking, garage,
-        finished space, utilities, and waterfront signals. Share the URL so
-        family, executors, and advisors review the same result set.
-      </p>
+    <div
+      id={estateWorkspaceId}
+      className="grid scroll-mt-24 gap-4 text-sm leading-6 text-foreground lg:grid-cols-[1fr_320px]"
+    >
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="font-extrabold">Estate-scale search reminder</p>
+        <p className="mt-1">
+          Start from larger active homes, then use filters for city,
+          neighborhood, lot feature, property type, price, beds, baths, parking,
+          garage, finished space, utilities, and waterfront signals. Share the
+          URL so family, executors, and advisors review the same result set.
+        </p>
+      </div>
+      <ExpertHelpCallout
+        context={{
+          source: 'estate-properties-intro',
+          audience: 'estate',
+          tool: 'properties',
+        }}
+        title="Need help reading a property?"
+        description="Send the listing or family question and we will help decide what needs proof before anyone acts."
+        buttonLabel="Ask about a property"
+        defaultMessage="I need help reviewing an estate-scale property candidate."
+      />
     </div>
   )
 }

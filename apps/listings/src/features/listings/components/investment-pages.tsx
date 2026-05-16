@@ -27,6 +27,7 @@ import {
 } from '@workspace/ui/components/native-select'
 
 import { defaultListingSearch } from '../search'
+import { AskExpertButton, ExpertHelpCallout } from './contact'
 import { money, number } from './utils'
 
 import type { ListingSearch } from '../search'
@@ -36,6 +37,8 @@ type InvestmentTool =
   | 'opportunities'
   | 'calculator'
   | 'due-diligence'
+
+const investmentWorkspaceId = 'investment-workspace'
 
 type InvestmentStrategy = 'cash-flow' | 'house-hack' | 'value-add'
 
@@ -401,8 +404,14 @@ function InvestmentToolNav({ active }: { readonly active: InvestmentTool }) {
         return (
           <Link
             to={item.to}
-            className="rounded-lg border border-border bg-card p-4 text-foreground no-underline hover:border-border"
+            hash={investmentWorkspaceId}
+            className={`rounded-lg border p-4 text-foreground no-underline ${
+              isActive
+                ? 'border-foreground bg-background shadow-sm'
+                : 'border-border bg-card hover:border-foreground/50'
+            }`}
             data-active={isActive}
+            aria-current={isActive ? 'page' : undefined}
             key={item.key}
           >
             <span className="flex items-start gap-3">
@@ -448,6 +457,31 @@ function InvestmentHero({
         <p className="mt-3 max-w-3xl text-sm leading-6 text-foreground">
           {description}
         </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <AskExpertButton
+            context={{
+              source: `investment-${active}-hero`,
+              audience: 'investor',
+              tool: active,
+            }}
+            label="Ask an investment expert"
+            defaultMessage="I need help deciding whether this investment path is worth a closer look."
+          />
+          <Button
+            nativeButton={false}
+            render={
+              <Link
+                to="/investments/opportunities"
+                hash={investmentWorkspaceId}
+                search={investmentSearch(defaultInvestmentProfileState)}
+              />
+            }
+            variant="outline"
+          >
+            <Search />
+            Search opportunities
+          </Button>
+        </div>
       </div>
       <InvestmentToolNav active={active} />
     </section>
@@ -544,6 +578,7 @@ function ToolLink({
   return (
     <Link
       to={to}
+      hash={investmentWorkspaceId}
       className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-3 text-foreground no-underline hover:border-border"
     >
       <span className="flex min-w-0 items-center gap-3">
@@ -593,7 +628,10 @@ export function InvestmentLandingPage() {
         active="screen"
       />
 
-      <section className="grid gap-5 lg:grid-cols-[1fr_340px]">
+      <section
+        id={investmentWorkspaceId}
+        className="grid scroll-mt-24 gap-5 lg:grid-cols-[1fr_340px]"
+      >
         <form
           className="grid gap-5 rounded-lg border border-border bg-card p-5"
           onSubmit={(event) => {
@@ -716,7 +754,12 @@ export function InvestmentLandingPage() {
             </Button>
             <Button
               nativeButton={false}
-              render={<Link to="/investments/calculator" />}
+              render={
+                <Link
+                  to="/investments/calculator"
+                  hash={investmentWorkspaceId}
+                />
+              }
               variant="outline"
             >
               <Calculator />
@@ -746,6 +789,18 @@ export function InvestmentLandingPage() {
             title="Check diligence"
             description="Work through offer-readiness questions."
             icon={ListChecks}
+          />
+          <ExpertHelpCallout
+            context={{
+              source: 'investment-tools-sidebar',
+              audience: 'investor',
+              tool: 'screen',
+            }}
+            framed={false}
+            title="Need help sizing the deal?"
+            description="Send the strategy, price range, or risk you are unsure about and we will help sharpen the screen."
+            buttonLabel="Ask about the deal"
+            defaultMessage="I need help screening an investment listing or buy box."
           />
         </aside>
       </section>
@@ -818,7 +873,10 @@ export function InvestmentCalculatorPage() {
         active="calculator"
       />
 
-      <section className="grid gap-5 lg:grid-cols-[1fr_380px]">
+      <section
+        id={investmentWorkspaceId}
+        className="grid scroll-mt-24 gap-5 lg:grid-cols-[1fr_380px]"
+      >
         <div className="grid gap-5 rounded-lg border border-border bg-card p-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
@@ -967,6 +1025,24 @@ export function InvestmentCalculatorPage() {
               </div>
             ))}
           </div>
+          <ExpertHelpCallout
+            context={{
+              source: 'investment-calculator-sidebar',
+              audience: 'investor',
+              tool: 'calculator',
+              details: {
+                purchasePrice,
+                monthlyRent,
+                monthlyCashFlow: Math.round(monthlyCashFlow),
+                capRate: Math.round(capRate * 100) / 100,
+              },
+            }}
+            framed={false}
+            title="Need a second look at the deal?"
+            description="Send the snapshot with your question and we will help separate math risk from listing risk."
+            buttonLabel="Ask about the math"
+            defaultMessage="I need help reviewing this investment calculator result."
+          />
         </aside>
       </section>
     </main>
@@ -1023,7 +1099,10 @@ export function InvestmentDueDiligencePage() {
         active="due-diligence"
       />
 
-      <section className="grid gap-5 lg:grid-cols-[320px_1fr]">
+      <section
+        id={investmentWorkspaceId}
+        className="grid scroll-mt-24 gap-5 lg:grid-cols-[320px_1fr]"
+      >
         <aside className="grid content-start gap-4 rounded-lg border border-border bg-card p-5">
           <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
             Progress
@@ -1045,6 +1124,22 @@ export function InvestmentDueDiligencePage() {
           >
             Reset checklist
           </Button>
+          <ExpertHelpCallout
+            context={{
+              source: 'investment-diligence-sidebar',
+              audience: 'investor',
+              tool: 'due-diligence',
+              details: {
+                completedCount,
+                progress,
+              },
+            }}
+            framed={false}
+            title="Stuck on a risk question?"
+            description="Send the diligence item and we will help decide what to verify before offering."
+            buttonLabel="Ask about diligence"
+            defaultMessage="I need help deciding what diligence matters for this investment."
+          />
         </aside>
 
         <div className="grid gap-4">
@@ -1097,13 +1192,29 @@ export function InvestmentDueDiligencePage() {
 
 export function InvestmentOpportunityIntro() {
   return (
-    <div className="rounded-lg border border-border bg-card p-4 text-sm leading-6 text-foreground">
-      <p className="font-extrabold">Opportunity screen reminder</p>
-      <p className="mt-1">
-        Price is only the first pass. Use filters to narrow by property type,
-        beds, baths, parking, city, and rental signals, then run the calculator
-        before a listing becomes a real candidate.
-      </p>
+    <div
+      id={investmentWorkspaceId}
+      className="grid scroll-mt-24 gap-4 text-sm leading-6 text-foreground lg:grid-cols-[1fr_320px]"
+    >
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="font-extrabold">Opportunity screen reminder</p>
+        <p className="mt-1">
+          Price is only the first pass. Use filters to narrow by property type,
+          beds, baths, parking, city, and rental signals, then run the
+          calculator before a listing becomes a real candidate.
+        </p>
+      </div>
+      <ExpertHelpCallout
+        context={{
+          source: 'investment-opportunities-intro',
+          audience: 'investor',
+          tool: 'opportunities',
+        }}
+        title="Need help reading a candidate?"
+        description="Send the buy-box question and we will help decide what to calculate or verify next."
+        buttonLabel="Ask about a candidate"
+        defaultMessage="I need help reviewing an investment listing candidate."
+      />
     </div>
   )
 }

@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UsageRouteImport } from './routes/usage'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as IndexOlderRouteImport } from './routes/index-older'
 import { Route as IndexRouteImport } from './routes/index'
@@ -33,6 +34,7 @@ import { Route as InvestmentsCalculatorRouteImport } from './routes/investments/
 import { Route as EstatesPropertiesRouteImport } from './routes/estates/properties'
 import { Route as EstatesOrganizerRouteImport } from './routes/estates/organizer'
 import { Route as EstatesCalculatorRouteImport } from './routes/estates/calculator'
+import { Route as ApiUsageMetricsRouteImport } from './routes/api/usage-metrics'
 import { Route as AgentsAgentKeyRouteImport } from './routes/agents/$agentKey'
 import { Route as SearchGroupIndexRouteImport } from './routes/search/$group/index'
 import { Route as RentalsGroupIndexRouteImport } from './routes/rentals/$group/index'
@@ -40,6 +42,11 @@ import { Route as SearchGroupValueRouteImport } from './routes/search/$group/$va
 import { Route as RentalsGroupValueRouteImport } from './routes/rentals/$group/$value'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
+const UsageRoute = UsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
@@ -161,6 +168,11 @@ const EstatesCalculatorRoute = EstatesCalculatorRouteImport.update({
   path: '/estates/calculator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUsageMetricsRoute = ApiUsageMetricsRouteImport.update({
+  id: '/api/usage-metrics',
+  path: '/api/usage-metrics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AgentsAgentKeyRoute = AgentsAgentKeyRouteImport.update({
   id: '/agents/$agentKey',
   path: '/agents/$agentKey',
@@ -196,7 +208,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/index-older': typeof IndexOlderRoute
   '/mcp': typeof McpRoute
+  '/usage': typeof UsageRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
+  '/api/usage-metrics': typeof ApiUsageMetricsRoute
   '/estates/calculator': typeof EstatesCalculatorRoute
   '/estates/organizer': typeof EstatesOrganizerRoute
   '/estates/properties': typeof EstatesPropertiesRoute
@@ -228,7 +242,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/index-older': typeof IndexOlderRoute
   '/mcp': typeof McpRoute
+  '/usage': typeof UsageRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
+  '/api/usage-metrics': typeof ApiUsageMetricsRoute
   '/estates/calculator': typeof EstatesCalculatorRoute
   '/estates/organizer': typeof EstatesOrganizerRoute
   '/estates/properties': typeof EstatesPropertiesRoute
@@ -261,7 +277,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/index-older': typeof IndexOlderRoute
   '/mcp': typeof McpRoute
+  '/usage': typeof UsageRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
+  '/api/usage-metrics': typeof ApiUsageMetricsRoute
   '/estates/calculator': typeof EstatesCalculatorRoute
   '/estates/organizer': typeof EstatesOrganizerRoute
   '/estates/properties': typeof EstatesPropertiesRoute
@@ -295,7 +313,9 @@ export interface FileRouteTypes {
     | '/'
     | '/index-older'
     | '/mcp'
+    | '/usage'
     | '/agents/$agentKey'
+    | '/api/usage-metrics'
     | '/estates/calculator'
     | '/estates/organizer'
     | '/estates/properties'
@@ -327,7 +347,9 @@ export interface FileRouteTypes {
     | '/'
     | '/index-older'
     | '/mcp'
+    | '/usage'
     | '/agents/$agentKey'
+    | '/api/usage-metrics'
     | '/estates/calculator'
     | '/estates/organizer'
     | '/estates/properties'
@@ -359,7 +381,9 @@ export interface FileRouteTypes {
     | '/'
     | '/index-older'
     | '/mcp'
+    | '/usage'
     | '/agents/$agentKey'
+    | '/api/usage-metrics'
     | '/estates/calculator'
     | '/estates/organizer'
     | '/estates/properties'
@@ -392,7 +416,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IndexOlderRoute: typeof IndexOlderRoute
   McpRoute: typeof McpRoute
+  UsageRoute: typeof UsageRoute
   AgentsAgentKeyRoute: typeof AgentsAgentKeyRoute
+  ApiUsageMetricsRoute: typeof ApiUsageMetricsRoute
   EstatesCalculatorRoute: typeof EstatesCalculatorRoute
   EstatesOrganizerRoute: typeof EstatesOrganizerRoute
   EstatesPropertiesRoute: typeof EstatesPropertiesRoute
@@ -423,6 +449,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/usage': {
+      id: '/usage'
+      path: '/usage'
+      fullPath: '/usage'
+      preLoaderRoute: typeof UsageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp': {
       id: '/mcp'
       path: '/mcp'
@@ -591,6 +624,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EstatesCalculatorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/usage-metrics': {
+      id: '/api/usage-metrics'
+      path: '/api/usage-metrics'
+      fullPath: '/api/usage-metrics'
+      preLoaderRoute: typeof ApiUsageMetricsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/agents/$agentKey': {
       id: '/agents/$agentKey'
       path: '/agents/$agentKey'
@@ -640,7 +680,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IndexOlderRoute: IndexOlderRoute,
   McpRoute: McpRoute,
+  UsageRoute: UsageRoute,
   AgentsAgentKeyRoute: AgentsAgentKeyRoute,
+  ApiUsageMetricsRoute: ApiUsageMetricsRoute,
   EstatesCalculatorRoute: EstatesCalculatorRoute,
   EstatesOrganizerRoute: EstatesOrganizerRoute,
   EstatesPropertiesRoute: EstatesPropertiesRoute,

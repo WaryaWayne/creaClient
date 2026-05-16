@@ -1,8 +1,10 @@
 import { createServerFn } from '@tanstack/react-start'
+import * as BunFileSystem from '@effect/platform-bun/BunFileSystem'
 import { Effect, Layer, Option } from 'effect'
 import { DdfDatabase, DdfDbClient } from '@warya/crea-ddf/db'
 import type { PropertyField, PropertyFilters } from '@warya/crea-ddf/db'
 import type {
+  DestinationSchema,
   MediaSchema,
   MemberSchema,
   OfficeSchema,
@@ -20,6 +22,7 @@ import {
   parseListingSearch,
   parseOpenHouseSearch,
 } from './search'
+import { trackLoaderExecution } from '#/features/usage-metrics/server'
 
 import type {
   AgentSearch,
@@ -33,6 +36,7 @@ import type {
 type DbValue = string | number | boolean | Date | unknown[] | object | null
 type DbRow = Record<string, DbValue | undefined>
 type DdfProperty = typeof PropertyListingSchema.Type
+type DdfDestination = typeof DestinationSchema.Type
 type DdfMember = typeof MemberSchema.Type
 type DdfOffice = typeof OfficeSchema.Type
 type DdfOpenHouse = typeof OpenHouseSchema.Type
@@ -158,6 +162,27 @@ export type OfficeDetail = OfficeCard & {
 export type AgentDetail = PersonCard & {
   readonly listings: ReadonlyArray<ListingCard>
   readonly openHouses: ReadonlyArray<OpenHouseCard>
+}
+
+export type DestinationExpert = {
+  readonly expertKey: string
+  readonly destinationId: number | null
+  readonly destinationName: string | null
+  readonly destinationUrl: string | null
+  readonly destinationType: string | null
+  readonly destinationStatus: string | null
+  readonly memberKey: string | null
+  readonly name: string
+  readonly title: string
+  readonly officeName: string | null
+  readonly imageUrl: string | null
+  readonly experience: string
+  readonly agent: PersonCard | null
+}
+
+export type ExpertDestinationsData = {
+  readonly experts: ReadonlyArray<DestinationExpert>
+  readonly fetchedAt: string
 }
 
 export type OpenHouseCard = {
@@ -599,6 +624,94 @@ const uniqueBy = <T>(
     seen.add(key)
     return true
   })
+}
+
+const personDisplayName = (
+  person: Pick<PersonCard, 'firstName' | 'lastName' | 'nickname' | 'memberKey'>,
+) =>
+  (person.nickname ??
+    [person.firstName, person.lastName].filter(Boolean).join(' ')) ||
+  person.memberKey
+
+const destinationFallbackName = (row: DbRow) =>
+  [
+    schemaString<DdfDestination>(row, 'MemberFirstName', 'memberFirstName'),
+    schemaString<DdfDestination>(row, 'MemberLastName', 'memberLastName'),
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+const destinationExpertExperience = (
+  expertName: string,
+  agent: PersonCard | null,
+  destinationName: string | null,
+) => {
+  const officeName = agent?.office?.officeName ?? destinationName
+  const location = [agent?.city, agent?.province].filter(Boolean).join(', ')
+  const officePhrase = officeName ? ` with ${officeName}` : ''
+  const locationPhrase = location ? ` around ${location}` : ''
+
+  return `${expertName} helps clients turn listing data, open house timing, pricing context, and next-step questions into a practical plan${officePhrase}${locationPhrase}.`
+}
+
+const toDestinationExpert = (
+  row: DbRow,
+  agent: PersonCard | null,
+): DestinationExpert | null => {
+  const destinationId = schemaNumber<DdfDestination>(
+    row,
+    'DestinationId',
+    'destinationId',
+  )
+  const destinationName = schemaString<DdfDestination>(
+    row,
+    'DestinationName',
+    'destinationName',
+  )
+  const destinationUrl = schemaString<DdfDestination>(
+    row,
+    'DestinationUrl',
+    'destinationUrl',
+  )
+  const destinationType = schemaString<DdfDestination>(
+    row,
+    'DestinationType',
+    'destinationType',
+  )
+  const destinationStatus = schemaString<DdfDestination>(
+    row,
+    'DestinationStatus',
+    'destinationStatus',
+  )
+  const memberKey = schemaString<DdfDestination>(row, 'MemberKey', 'memberKey')
+  const fallbackName = destinationFallbackName(row)
+  const name =
+    agent === null
+      ? fallbackName || destinationName || 'Local real estate expert'
+      : personDisplayName(agent)
+  const expertKey =
+    memberKey ??
+    (destinationId === null
+      ? `destination-${slugifyGroupValue(name)}`
+      : `destination-${destinationId}`)
+
+  if (!name && destinationId === null && memberKey === null) return null
+
+  return {
+    expertKey,
+    destinationId,
+    destinationName,
+    destinationUrl,
+    destinationType,
+    destinationStatus,
+    memberKey,
+    name,
+    title: agent?.jobTitle ?? destinationType ?? 'Real estate advisor',
+    officeName: agent?.office?.officeName ?? destinationName,
+    imageUrl: agent?.imageUrl ?? null,
+    experience: destinationExpertExperience(name, agent, destinationName),
+    agent,
+  }
 }
 
 const toMedia = (row: DbRow): MediaCard => ({
@@ -2404,11 +2517,17 @@ const facetOptions = (
 const ddfClientLayer = DdfDbClient.layer.pipe(
   Layer.provide(DdfDatabase.layerConfig),
 )
+const serverEffectLayer = Layer.mergeAll(ddfClientLayer, BunFileSystem.layer)
 
 const runServerEffect = <TValue, TError>(
+  loader: string,
   effect: Effect.Effect<TValue, TError, DdfDbClient>,
 ): Promise<TValue> =>
-  Effect.runPromise(effect.pipe(Effect.provide(ddfClientLayer)))
+  Effect.runPromise(
+    trackLoaderExecution(loader, effect).pipe(
+      Effect.provide(serverEffectLayer),
+    ),
+  )
 
 const buildFacets = Effect.fn('Listings.buildFacets')(function* (
   rentalsOnly = false,
@@ -2880,6 +2999,70 @@ const loadGroupedListings = Effect.fn('Listings.loadGroupedListings')(
         .filter((value) => value.valueSlug !== matchedValue.valueSlug)
         .slice(0, GROUPED_RELATED_VALUE_LIMIT),
     } satisfies GroupedListingsData
+  },
+)
+
+const destinationExpertSelect = [
+  'destinationId',
+  'destinationName',
+  'destinationUrl',
+  'destinationType',
+  'destinationStatus',
+  'memberFirstName',
+  'memberLastName',
+  'memberKey',
+] as const
+
+const loadDestinationExperts = Effect.fn('Listings.loadDestinationExperts')(
+  function* () {
+    const client = yield* DdfDbClient
+    const destinationRows = (yield* client.destinations.list({
+      select: destinationExpertSelect,
+      filters: { destinationStatus: 'Active' },
+      limit: 80,
+      orderBy: [{ field: 'destinationId', direction: 'asc' }],
+    })) as ReadonlyArray<DbRow>
+    const memberKeys = uniqueSorted(
+      destinationRows.map((row) =>
+        schemaString<DdfDestination>(row, 'MemberKey', 'memberKey'),
+      ),
+    )
+    const memberRows = (yield* Effect.all(
+      memberKeys.map((memberKey) =>
+        client.members.get(memberKey, {
+          select: memberSelect,
+          includeRaw: true,
+          include: memberInclude,
+        }),
+      ),
+      { concurrency: 6 },
+    )) as ReadonlyArray<DbRow | null>
+    const agentsByKey = new Map(
+      memberRows.flatMap((row) => {
+        const agent = toPerson(row)
+        return agent === null ? [] : [[agent.memberKey, agent] as const]
+      }),
+    )
+    const experts = uniqueBy(
+      destinationRows.flatMap((row) => {
+        const memberKey = schemaString<DdfDestination>(
+          row,
+          'MemberKey',
+          'memberKey',
+        )
+        const expert = toDestinationExpert(
+          row,
+          memberKey === null ? null : (agentsByKey.get(memberKey) ?? null),
+        )
+        return expert === null ? [] : [expert]
+      }),
+      (expert) => expert.expertKey,
+    )
+
+    return {
+      experts: experts.slice(0, 8),
+      fetchedAt: new Date().toISOString(),
+    } satisfies ExpertDestinationsData
   },
 )
 
@@ -3358,36 +3541,63 @@ const loadOpenHouses = Effect.fn('Listings.loadOpenHouses')(function* (
 })
 
 export const getHomeData = createServerFn({ method: 'GET' }).handler(() =>
-  runServerEffect(loadHome()),
+  runServerEffect('Listings.loadHome', loadHome()),
 )
 
 export const getListingsData = createServerFn({ method: 'GET' })
   .inputValidator(parseListingSearch)
-  .handler(({ data }) => runServerEffect(loadListings(data)))
+  .handler(({ data }) =>
+    runServerEffect('Listings.loadListings', loadListings(data)),
+  )
 
 export const getRentalListingsData = createServerFn({ method: 'GET' })
   .inputValidator(parseListingSearch)
-  .handler(({ data }) => runServerEffect(loadRentalListings(data)))
+  .handler(({ data }) =>
+    runServerEffect('Listings.loadRentalListings', loadRentalListings(data)),
+  )
 
 export const getSearchIndexData = createServerFn({ method: 'GET' }).handler(
-  () => runServerEffect(loadSearchIndex()),
+  () => runServerEffect('Listings.loadSearchIndex', loadSearchIndex()),
+)
+
+export const getExpertDestinationsData = createServerFn({
+  method: 'GET',
+}).handler(() =>
+  runServerEffect('Listings.loadDestinationExperts', loadDestinationExperts()),
 )
 
 export const getSearchGroupData = createServerFn({ method: 'GET' })
   .inputValidator(parseSearchGroupRequest)
-  .handler(({ data }) => runServerEffect(loadSearchGroup(data.groupSlug)))
+  .handler(({ data }) =>
+    runServerEffect(
+      'Listings.loadSearchGroup',
+      loadSearchGroup(data.groupSlug),
+    ),
+  )
 
 export const getRentalSearchGroupData = createServerFn({ method: 'GET' })
   .inputValidator(parseSearchGroupRequest)
-  .handler(({ data }) => runServerEffect(loadSearchGroup(data.groupSlug, true)))
+  .handler(({ data }) =>
+    runServerEffect(
+      'Listings.loadRentalSearchGroup',
+      loadSearchGroup(data.groupSlug, true),
+    ),
+  )
 
 export const getGroupedListingsData = createServerFn({ method: 'GET' })
   .inputValidator(parseListingGroupRequest)
-  .handler(({ data }) => runServerEffect(loadGroupedListings(data)))
+  .handler(({ data }) =>
+    runServerEffect('Listings.loadGroupedListings', loadGroupedListings(data)),
+  )
 
 export const getRentalGroupedListingsData = createServerFn({ method: 'GET' })
   .inputValidator(parseListingGroupRequest)
-  .handler(({ data }) => runServerEffect(loadGroupedListings(data, true)))
+  .handler(({ data }) =>
+    runServerEffect(
+      'Listings.loadRentalGroupedListings',
+      loadGroupedListings(data, true),
+    ),
+  )
 
 export const getListingDetail = createServerFn({ method: 'GET' })
   .inputValidator((input: unknown) => {
@@ -3400,7 +3610,12 @@ export const getListingDetail = createServerFn({ method: 'GET' })
     if (!listingKey) throw new Error('listingKey is required')
     return { listingKey }
   })
-  .handler(({ data }) => runServerEffect(loadListingDetail(data.listingKey)))
+  .handler(({ data }) =>
+    runServerEffect(
+      'Listings.loadListingDetail',
+      loadListingDetail(data.listingKey),
+    ),
+  )
 
 export const getOpenHouseDetail = createServerFn({ method: 'GET' })
   .inputValidator((input: unknown) => {
@@ -3414,16 +3629,23 @@ export const getOpenHouseDetail = createServerFn({ method: 'GET' })
     return { openHouseKey }
   })
   .handler(({ data }) =>
-    runServerEffect(loadOpenHouseDetail(data.openHouseKey)),
+    runServerEffect(
+      'Listings.loadOpenHouseDetail',
+      loadOpenHouseDetail(data.openHouseKey),
+    ),
   )
 
 export const getOfficesData = createServerFn({ method: 'GET' })
   .inputValidator(parseDirectorySearch)
-  .handler(({ data }) => runServerEffect(loadOffices(data)))
+  .handler(({ data }) =>
+    runServerEffect('Listings.loadOffices', loadOffices(data)),
+  )
 
 export const getAgentsData = createServerFn({ method: 'GET' })
   .inputValidator(parseAgentSearch)
-  .handler(({ data }) => runServerEffect(loadAgents(data)))
+  .handler(({ data }) =>
+    runServerEffect('Listings.loadAgents', loadAgents(data)),
+  )
 
 export const getAgentDetail = createServerFn({ method: 'GET' })
   .inputValidator((input: unknown) => {
@@ -3436,8 +3658,12 @@ export const getAgentDetail = createServerFn({ method: 'GET' })
     if (!agentKey) throw new Error('agentKey is required')
     return { agentKey }
   })
-  .handler(({ data }) => runServerEffect(loadAgentDetail(data.agentKey)))
+  .handler(({ data }) =>
+    runServerEffect('Listings.loadAgentDetail', loadAgentDetail(data.agentKey)),
+  )
 
 export const getOpenHousesData = createServerFn({ method: 'GET' })
   .inputValidator(parseOpenHousePageRequest)
-  .handler(({ data }) => runServerEffect(loadOpenHouses(data)))
+  .handler(({ data }) =>
+    runServerEffect('Listings.loadOpenHouses', loadOpenHouses(data)),
+  )

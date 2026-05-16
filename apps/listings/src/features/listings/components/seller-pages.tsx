@@ -20,11 +20,14 @@ import {
 } from '@workspace/ui/components/native-select'
 
 import { defaultListingSearch } from '../search'
+import { AskExpertButton, ExpertHelpCallout } from './contact'
 import { money, number } from './utils'
 
 import type { ListingSearch } from '../search'
 
 type SellerTool = 'research' | 'comparables' | 'calculator' | 'get-ready'
+
+const sellerWorkspaceId = 'seller-workspace'
 
 type SellerAmenityKey =
   | 'finishedBasement'
@@ -337,8 +340,14 @@ function SellerToolNav({ active }: { readonly active: SellerTool }) {
         return (
           <Link
             to={item.to}
-            className="rounded-lg border border-border bg-card p-4 text-foreground no-underline hover:border-border"
+            hash={sellerWorkspaceId}
+            className={`rounded-lg border p-4 text-foreground no-underline ${
+              isActive
+                ? 'border-foreground bg-background shadow-sm'
+                : 'border-border bg-card hover:border-foreground/50'
+            }`}
             data-active={isActive}
+            aria-current={isActive ? 'page' : undefined}
             key={item.key}
           >
             <span className="flex items-start gap-3">
@@ -384,6 +393,31 @@ function SellerHero({
         <p className="mt-3 max-w-3xl text-sm leading-6 text-foreground">
           {description}
         </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <AskExpertButton
+            context={{
+              source: `seller-${active}-hero`,
+              audience: 'seller',
+              tool: active,
+            }}
+            label="Ask a seller expert"
+            defaultMessage="I need help deciding the next selling step for my property."
+          />
+          <Button
+            nativeButton={false}
+            render={
+              <Link
+                to="/sellers/comparables"
+                hash={sellerWorkspaceId}
+                search={sellerCompSearch(defaultSellerCompState)}
+              />
+            }
+            variant="outline"
+          >
+            <Search />
+            Review comps
+          </Button>
+        </div>
       </div>
       <SellerToolNav active={active} />
     </section>
@@ -456,7 +490,10 @@ export function SellerLandingPage() {
         active="research"
       />
 
-      <section className="grid gap-5 lg:grid-cols-[1fr_340px]">
+      <section
+        id={sellerWorkspaceId}
+        className="grid scroll-mt-24 gap-5 lg:grid-cols-[1fr_340px]"
+      >
         <form
           className="grid gap-5 rounded-lg border border-border bg-card p-5"
           onSubmit={(event) => {
@@ -589,7 +626,9 @@ export function SellerLandingPage() {
             </Button>
             <Button
               nativeButton={false}
-              render={<Link to="/sellers/calculator" />}
+              render={
+                <Link to="/sellers/calculator" hash={sellerWorkspaceId} />
+              }
               variant="outline"
             >
               <Calculator />
@@ -620,6 +659,18 @@ export function SellerLandingPage() {
             description="Work through the selling checklist."
             icon={ListChecks}
           />
+          <ExpertHelpCallout
+            context={{
+              source: 'seller-tools-sidebar',
+              audience: 'seller',
+              tool: 'research',
+            }}
+            framed={false}
+            title="Have a pricing or prep question?"
+            description="Send the property problem and we will help decide whether to compare, calculate, or prepare first."
+            buttonLabel="Ask about selling"
+            defaultMessage="I need help deciding the best next step before selling."
+          />
         </aside>
       </section>
     </main>
@@ -640,6 +691,7 @@ function ToolLink({
   return (
     <Link
       to={to}
+      hash={sellerWorkspaceId}
       className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-3 text-foreground no-underline hover:border-border"
     >
       <span className="flex min-w-0 items-center gap-3">
@@ -785,7 +837,10 @@ export function SellerCalculatorPage() {
         active="calculator"
       />
 
-      <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
+      <section
+        id={sellerWorkspaceId}
+        className="grid scroll-mt-24 gap-5 lg:grid-cols-[1fr_360px]"
+      >
         <div className="grid gap-5 rounded-lg border border-border bg-card p-5">
           <div className="grid gap-4 sm:grid-cols-3">
             <NumericInput
@@ -933,6 +988,23 @@ export function SellerCalculatorPage() {
               </div>
             ))}
           </div>
+          <ExpertHelpCallout
+            context={{
+              source: 'seller-calculator-sidebar',
+              audience: 'seller',
+              tool: 'calculator',
+              details: {
+                estimatedValue,
+                debtTotal,
+                takeHome,
+              },
+            }}
+            framed={false}
+            title="Want a human read on the number?"
+            description="Send the estimate with your question and we will help identify what needs verification."
+            buttonLabel="Ask about proceeds"
+            defaultMessage="I need help reviewing this seller proceeds estimate."
+          />
         </aside>
       </section>
     </main>
@@ -966,7 +1038,10 @@ export function SellerGetReadyPage() {
         active="get-ready"
       />
 
-      <section className="grid gap-5 lg:grid-cols-[320px_1fr]">
+      <section
+        id={sellerWorkspaceId}
+        className="grid scroll-mt-24 gap-5 lg:grid-cols-[320px_1fr]"
+      >
         <aside className="grid content-start gap-4 rounded-lg border border-border bg-card p-5">
           <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
             Progress
@@ -988,6 +1063,22 @@ export function SellerGetReadyPage() {
           >
             Reset checklist
           </Button>
+          <ExpertHelpCallout
+            context={{
+              source: 'seller-checklist-sidebar',
+              audience: 'seller',
+              tool: 'get-ready',
+              details: {
+                completedCount,
+                progress,
+              },
+            }}
+            framed={false}
+            title="Need help choosing what matters?"
+            description="Send the checklist blocker and we will help sort prep work from distractions."
+            buttonLabel="Ask about prep"
+            defaultMessage="I need help deciding what to do before listing."
+          />
         </aside>
 
         <div className="grid gap-4">
@@ -1040,13 +1131,29 @@ export function SellerGetReadyPage() {
 
 export function SellerComparableIntro() {
   return (
-    <div className="rounded-lg border border-border bg-card p-4 text-sm leading-6 text-foreground">
-      <p className="font-extrabold">Comparable search reminder</p>
-      <p className="mt-1">
-        The more specific the filters, the tighter the comp set. Use the filter
-        button to refine bedrooms, bathrooms, parking, property type, garage
-        features, and amenities before comparing results.
-      </p>
+    <div
+      id={sellerWorkspaceId}
+      className="grid scroll-mt-24 gap-4 text-sm leading-6 text-foreground lg:grid-cols-[1fr_320px]"
+    >
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="font-extrabold">Comparable search reminder</p>
+        <p className="mt-1">
+          The more specific the filters, the tighter the comp set. Use the
+          filter button to refine bedrooms, bathrooms, parking, property type,
+          garage features, and amenities before comparing results.
+        </p>
+      </div>
+      <ExpertHelpCallout
+        context={{
+          source: 'seller-comparables-intro',
+          audience: 'seller',
+          tool: 'comparables',
+        }}
+        title="Need a comp read?"
+        description="Send the filters or listing question and we will help decide what is actually comparable."
+        buttonLabel="Ask about comps"
+        defaultMessage="I need help deciding whether these listings are good comparables."
+      />
     </div>
   )
 }

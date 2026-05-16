@@ -14,6 +14,7 @@ import { Button } from '@workspace/ui/components/button'
 
 import type { ListingDetail, OpenHouseDetail } from '../data'
 import { defaultListingSearch, defaultOpenHouseSearch } from '../search'
+import { AskExpertButton, ExpertHelpCallout } from './contact'
 import { OpenHouseRow } from './directory-pages'
 import { ListingActions } from './listing-actions'
 import {
@@ -160,8 +161,35 @@ export function OpenHouseDetailPage({
               <Home />
               Property details
             </Button>
+            <AskExpertButton
+              context={{
+                source: 'open-house-detail-property-card',
+                audience: 'listing',
+                tool: 'open-house-detail',
+                openHouseKey: openHouse.openHouseKey,
+                openHouseListingKey: openHouse.listingKey,
+                listingKey: property.listingKey,
+                listingAddress: property.address,
+              }}
+              label="Ask about this open house"
+              defaultMessage={`I need help with the open house for ${property.address}.`}
+            />
           </div>
-        ) : null}
+        ) : (
+          <div className="island-shell grid content-start gap-3 rounded-lg p-5">
+            <AskExpertButton
+              context={{
+                source: 'open-house-detail-empty-property-card',
+                audience: 'listing',
+                tool: 'open-house-detail',
+                openHouseKey: openHouse.openHouseKey,
+                openHouseListingKey: openHouse.listingKey,
+              }}
+              label="Ask about this open house"
+              defaultMessage={`I need help with this open house: ${openHouse.openHouseKey}.`}
+            />
+          </div>
+        )}
       </section>
       <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <InfoSection title="Open house details">
@@ -445,6 +473,29 @@ export function ListingDetailPage({
             </MetricPill>
           </div>
         </div>
+        <ExpertHelpCallout
+          context={{
+            source: 'listing-detail-sidebar',
+            audience: 'listing',
+            tool: 'listing-detail',
+            listingKey: listing.listingKey,
+            listingAddress: listing.address,
+            details: {
+              price: listing.price,
+              leaseAmount: listing.leaseAmount,
+              status: listing.status,
+              propertySubType: listing.propertySubType,
+              bedrooms: listing.bedrooms,
+              bathrooms: listing.bathrooms,
+              parking: listing.parking,
+            },
+          }}
+          framed={false}
+          title="Need help with this listing?"
+          description="Send the question with this listing attached so an expert can answer from the actual property context."
+          buttonLabel="Ask about this listing"
+          defaultMessage={`I need help with ${listing.address}.`}
+        />
         <LocationMap
           place={listing}
           title={`Map for ${listing.address}`}

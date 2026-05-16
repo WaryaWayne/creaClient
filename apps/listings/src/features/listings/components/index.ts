@@ -1,3 +1,4 @@
+export * from './buyer-pages'
 export * from './detail-pages'
 export * from './directory-pages'
 export * from './estate-pages'

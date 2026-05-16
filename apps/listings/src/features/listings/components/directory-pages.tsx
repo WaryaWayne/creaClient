@@ -32,7 +32,7 @@ import { EXIT_EXCEL_OFFICE_NAME } from '../data'
 import { compactOpenHouseSearch, defaultListingSearch } from '../search'
 import type { AgentSearch, DirectorySearch, OpenHouseSearch } from '../search'
 import { openHouseFiltersAtom } from '../state'
-import { ContactAgentButton } from './contact'
+import { AskExpertButton, ContactAgentButton } from './contact'
 import { ListingsGrid } from './listing-card'
 import { MediaGroupsView, mediaGroups, mediaKey } from './media'
 import { DetailItem, EmptyState, InfoSection, Pagination } from './shared'
@@ -894,6 +894,34 @@ export function OpenHouseRow({
                 Property
               </Button>
             ) : null}
+            <AskExpertButton
+              context={{
+                source: 'open-house-row',
+                audience: 'listing',
+                tool: 'open-house-row',
+                openHouseKey: openHouse.openHouseKey,
+                openHouseListingKey: openHouse.listingKey,
+                ...(openHouse.property
+                  ? {
+                      listingKey: openHouse.property.listingKey,
+                      listingAddress: openHouse.property.address,
+                    }
+                  : {}),
+                details: {
+                  date: openHouse.date,
+                  startTime: openHouse.startTime,
+                  endTime: openHouse.endTime,
+                  status: openHouse.status,
+                },
+              }}
+              label="Ask"
+              defaultMessage={
+                openHouse.property
+                  ? `I need help with the open house for ${openHouse.property.address}.`
+                  : `I need help with this open house: ${openHouse.openHouseKey}.`
+              }
+              variant="outline"
+            />
           </div>
         </div>
         {openHouse.property ? (

@@ -19,6 +19,7 @@ import { getLocale } from '#/paraglide/runtime'
 import { defaultListingSearch } from '#/features/listings/search'
 import { EmptyState } from '#/features/listings/components/shared'
 import { appIconLinks, appSeoDefaults } from '#/features/listings/seo'
+import { UsageMetricsClient } from '#/features/usage-metrics/client'
 
 import appCss from '../styles.css?url'
 
@@ -62,6 +63,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <RegistryProvider>
             <SiteHeader />
             <TooltipProvider>{children}</TooltipProvider>
+            <UsageMetricsClient />
             <SiteFooter />
           </RegistryProvider>
         </ThemeProvider>
