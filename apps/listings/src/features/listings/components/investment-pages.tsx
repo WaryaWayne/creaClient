@@ -401,12 +401,12 @@ function InvestmentToolNav({ active }: { readonly active: InvestmentTool }) {
         return (
           <Link
             to={item.to}
-            className="rounded-lg border border-border bg-background p-4 text-foreground no-underline hover:border-border"
+            className="rounded-lg border border-border bg-card p-4 text-foreground no-underline hover:border-border"
             data-active={isActive}
             key={item.key}
           >
             <span className="flex items-start gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-background">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-card">
                 <Icon className="size-5" />
               </span>
               <span className="min-w-0">
@@ -437,7 +437,7 @@ function InvestmentHero({
   readonly active: InvestmentTool
 }) {
   return (
-    <section className="grid gap-5 rounded-lg border border-border bg-background p-5">
+    <section className="grid gap-5 rounded-lg border border-border bg-card p-5">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
           {eyebrow}
@@ -544,7 +544,7 @@ function ToolLink({
   return (
     <Link
       to={to}
-      className="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-3 text-foreground no-underline hover:border-border"
+      className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-3 text-foreground no-underline hover:border-border"
     >
       <span className="flex min-w-0 items-center gap-3">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-background">
@@ -595,7 +595,7 @@ export function InvestmentLandingPage() {
 
       <section className="grid gap-5 lg:grid-cols-[1fr_340px]">
         <form
-          className="grid gap-5 rounded-lg border border-border bg-background p-5"
+          className="grid gap-5 rounded-lg border border-border bg-card p-5"
           onSubmit={(event) => {
             event.preventDefault()
             void navigate({
@@ -613,12 +613,12 @@ export function InvestmentLandingPage() {
                 Define the buy box.
               </h2>
             </div>
-            <span className="rounded-full border border-border bg-background px-3 py-1 text-xs font-extrabold text-foreground">
+            <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-extrabold text-foreground">
               {number.format(selectedFilterCount)} filters selected
             </span>
           </div>
 
-          <p className="rounded-lg border border-border bg-background p-3 text-sm font-semibold leading-6 text-foreground">
+          <p className="rounded-lg border border-border bg-card p-3 text-sm font-semibold leading-6 text-foreground">
             This screen starts with active listings sorted by lower price. Use
             it to remove obvious misses, then tighten the results with the
             filter button on the opportunities page.
@@ -631,7 +631,7 @@ export function InvestmentLandingPage() {
             <div className="grid gap-3 sm:grid-cols-3">
               {strategyOptions.map((option) => (
                 <label
-                  className="flex cursor-pointer gap-3 rounded-lg border border-border bg-background p-3 text-sm text-foreground"
+                  className="flex cursor-pointer gap-3 rounded-lg border border-border bg-card p-3 text-sm text-foreground"
                   key={option.value}
                 >
                   <input
@@ -689,7 +689,7 @@ export function InvestmentLandingPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {investorSignalOptions.map((option) => (
                 <label
-                  className="flex cursor-pointer gap-3 rounded-lg border border-border bg-background p-3 text-sm text-foreground"
+                  className="flex cursor-pointer gap-3 rounded-lg border border-border bg-card p-3 text-sm text-foreground"
                   key={option.key}
                 >
                   <input
@@ -725,7 +725,7 @@ export function InvestmentLandingPage() {
           </div>
         </form>
 
-        <aside className="grid content-start gap-3 rounded-lg border border-border bg-background p-5">
+        <aside className="grid content-start gap-3 rounded-lg border border-border bg-card p-5">
           <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
             Investor tools
           </p>
@@ -819,7 +819,7 @@ export function InvestmentCalculatorPage() {
       />
 
       <section className="grid gap-5 lg:grid-cols-[1fr_380px]">
-        <div className="grid gap-5 rounded-lg border border-border bg-background p-5">
+        <div className="grid gap-5 rounded-lg border border-border bg-card p-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
               Purchase and rent
@@ -879,7 +879,7 @@ export function InvestmentCalculatorPage() {
             />
           </div>
 
-          <fieldset className="grid gap-3 rounded-lg border border-border bg-background p-4">
+          <fieldset className="grid gap-3 rounded-lg border border-border bg-card p-4">
             <legend className="px-1 text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
               Financing
             </legend>
@@ -900,7 +900,7 @@ export function InvestmentCalculatorPage() {
                 decimal
                 onChange={(amortizationYears) => update({ amortizationYears })}
               />
-              <div className="grid content-end gap-1.5 rounded-md border border-border bg-background p-3 text-sm text-foreground">
+              <div className="grid content-end gap-1.5 rounded-md border border-border bg-card p-3 text-sm text-foreground">
                 <span className="text-xs font-semibold uppercase tracking-[0.16em]">
                   Loan amount
                 </span>
@@ -911,14 +911,14 @@ export function InvestmentCalculatorPage() {
             </div>
           </fieldset>
 
-          <p className="rounded-lg border border-border bg-background p-3 text-sm font-semibold leading-6 text-foreground">
+          <p className="rounded-lg border border-border bg-card p-3 text-sm font-semibold leading-6 text-foreground">
             This calculator is only a screening tool. Verify rent, tax,
             insurance, maintenance, financing, and legal use before relying on
             the result.
           </p>
         </div>
 
-        <aside className="grid content-start gap-4 rounded-lg border border-border bg-background p-5">
+        <aside className="grid content-start gap-4 rounded-lg border border-border bg-card p-5">
           <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
             Deal snapshot
           </p>
@@ -951,7 +951,7 @@ export function InvestmentCalculatorPage() {
           <div className="grid gap-2">
             {summaryRows.map((row) => (
               <div
-                className="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
                 key={row.label}
               >
                 <span
@@ -985,7 +985,7 @@ function MetricTile({
   readonly detail: string
 }) {
   return (
-    <div className="rounded-lg border border-border bg-background p-4 text-foreground">
+    <div className="rounded-lg border border-border bg-card p-4 text-foreground">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]">
         <Icon className="size-4" />
         {label}
@@ -1024,11 +1024,11 @@ export function InvestmentDueDiligencePage() {
       />
 
       <section className="grid gap-5 lg:grid-cols-[320px_1fr]">
-        <aside className="grid content-start gap-4 rounded-lg border border-border bg-background p-5">
+        <aside className="grid content-start gap-4 rounded-lg border border-border bg-card p-5">
           <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
             Progress
           </p>
-          <div className="rounded-lg border border-border bg-background p-4">
+          <div className="rounded-lg border border-border bg-card p-4">
             <p className="display-title text-4xl font-bold text-foreground">
               {number.format(progress)}%
             </p>
@@ -1050,7 +1050,7 @@ export function InvestmentDueDiligencePage() {
         <div className="grid gap-4">
           {dueDiligenceSections.map((section) => (
             <section
-              className="grid gap-3 rounded-lg border border-border bg-background p-5"
+              className="grid gap-3 rounded-lg border border-border bg-card p-5"
               key={section.title}
             >
               <h2 className="display-title text-3xl font-bold text-foreground">
@@ -1061,7 +1061,7 @@ export function InvestmentDueDiligencePage() {
                   const isChecked = checkedSet.has(item.key)
                   return (
                     <label
-                      className="flex cursor-pointer gap-3 rounded-md border border-border bg-background p-4 text-foreground"
+                      className="flex cursor-pointer gap-3 rounded-md border border-border bg-card p-4 text-foreground"
                       key={item.key}
                     >
                       <input
@@ -1097,7 +1097,7 @@ export function InvestmentDueDiligencePage() {
 
 export function InvestmentOpportunityIntro() {
   return (
-    <div className="rounded-lg border border-border bg-background p-4 text-sm leading-6 text-foreground">
+    <div className="rounded-lg border border-border bg-card p-4 text-sm leading-6 text-foreground">
       <p className="font-extrabold">Opportunity screen reminder</p>
       <p className="mt-1">
         Price is only the first pass. Use filters to narrow by property type,

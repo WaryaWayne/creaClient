@@ -516,7 +516,7 @@ export function ListingFilters({
                       icon={SlidersHorizontal}
                       align="start"
                       size="compact"
-                      className="bg-background p-4"
+                      className="bg-card p-4"
                     />
                   )}
                   <ListingFilterActions onClear={clearFilters} />

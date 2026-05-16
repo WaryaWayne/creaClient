@@ -104,7 +104,7 @@ function SummaryStat({
   readonly value: number
 }) {
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <p className="text-2xl font-extrabold text-foreground">
         {number.format(value)}
       </p>

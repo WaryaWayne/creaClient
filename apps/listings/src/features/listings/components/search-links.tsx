@@ -33,7 +33,7 @@ function SearchEmptyTile({
       description={description}
       icon={Search}
       align="start"
-      className="min-h-36 justify-center bg-background p-5 sm:col-span-2"
+      className="min-h-36 justify-center bg-card p-5 sm:col-span-2"
     />
   )
 }
@@ -42,7 +42,7 @@ const valueMosaicClass = (value: ListingGroupValueCard, index: number) => {
   const displayValue = displaySearchGroupValue(value.groupSlug, value.value)
 
   return cn(
-    'group h-full min-h-40 rounded-lg border border-border bg-background py-0 text-foreground ring-0 shadow-none transition hover:border-border',
+    'group h-full min-h-40 rounded-lg border border-border bg-card py-0 text-foreground ring-0 shadow-none transition hover:border-border',
     displayValue.length > 18 ? 'sm:col-span-2' : null,
     index === 0 && displayValue.length > 10 ? 'lg:col-span-2' : null,
   )
@@ -103,7 +103,7 @@ function RelatedListingPageCard({
         <div className="min-w-0">
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
             <span className="line-clamp-1">{value.groupLabel}</span>
-            <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold normal-case tracking-normal text-foreground">
+            <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold normal-case tracking-normal text-foreground">
               {countLabel(value.count, 'listing', 'listings')}
             </span>
           </span>
@@ -156,7 +156,7 @@ export function RelatedListingPages({
 
 const groupMosaicClass = (group: ListingGroupSummaryCard, index: number) =>
   cn(
-    'group h-full min-h-36 rounded-lg border border-border bg-background py-0 text-foreground ring-0 shadow-none transition hover:border-border',
+    'group h-full min-h-36 rounded-lg border border-border bg-card py-0 text-foreground ring-0 shadow-none transition hover:border-border',
     group.pluralLabel.length > 16 ? 'sm:col-span-2' : null,
     index === 0 ? 'lg:col-span-2' : null,
   )
@@ -206,7 +206,7 @@ function ListingGroupDirectoryCard({
       <CardHeader className="min-w-0 gap-1 px-4 pt-4">
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
           <span>Browse</span>
-          <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold normal-case tracking-normal text-foreground">
+          <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold normal-case tracking-normal text-foreground">
             {countLabel(group.valueCount, 'option', 'options')}
           </span>
         </span>

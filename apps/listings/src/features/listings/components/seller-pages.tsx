@@ -337,12 +337,12 @@ function SellerToolNav({ active }: { readonly active: SellerTool }) {
         return (
           <Link
             to={item.to}
-            className="rounded-lg border border-border bg-background p-4 text-foreground no-underline hover:border-border"
+            className="rounded-lg border border-border bg-card p-4 text-foreground no-underline hover:border-border"
             data-active={isActive}
             key={item.key}
           >
             <span className="flex items-start gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-background">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-card">
                 <Icon className="size-5" />
               </span>
               <span className="min-w-0">
@@ -373,7 +373,7 @@ function SellerHero({
   readonly active: SellerTool
 }) {
   return (
-    <section className="grid gap-5 rounded-lg border border-border bg-background p-5">
+    <section className="grid gap-5 rounded-lg border border-border bg-card p-5">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
           {eyebrow}
@@ -458,7 +458,7 @@ export function SellerLandingPage() {
 
       <section className="grid gap-5 lg:grid-cols-[1fr_340px]">
         <form
-          className="grid gap-5 rounded-lg border border-border bg-background p-5"
+          className="grid gap-5 rounded-lg border border-border bg-card p-5"
           onSubmit={(event) => {
             event.preventDefault()
             void navigate({
@@ -476,12 +476,12 @@ export function SellerLandingPage() {
                 Describe the house.
               </h2>
             </div>
-            <span className="rounded-full border border-border bg-background px-3 py-1 text-xs font-extrabold text-foreground">
+            <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-extrabold text-foreground">
               {number.format(selectedFilterCount)} filters selected
             </span>
           </div>
 
-          <p className="rounded-lg border border-border bg-background p-3 text-sm font-semibold leading-6 text-foreground">
+          <p className="rounded-lg border border-border bg-card p-3 text-sm font-semibold leading-6 text-foreground">
             The more detailed the filters, the more accurate the similar
             listings. Start with beds, baths, parking, garage, and amenities,
             then refine the results on the comparables page.
@@ -529,7 +529,7 @@ export function SellerLandingPage() {
                 },
               ].map((option) => (
                 <label
-                  className="flex cursor-pointer gap-3 rounded-lg border border-border bg-background p-3 text-sm text-foreground"
+                  className="flex cursor-pointer gap-3 rounded-lg border border-border bg-card p-3 text-sm text-foreground"
                   key={option.value}
                 >
                   <input
@@ -562,7 +562,7 @@ export function SellerLandingPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {sellerAmenityOptions.map((option) => (
                 <label
-                  className="flex cursor-pointer gap-3 rounded-lg border border-border bg-background p-3 text-sm text-foreground"
+                  className="flex cursor-pointer gap-3 rounded-lg border border-border bg-card p-3 text-sm text-foreground"
                   key={option.key}
                 >
                   <input
@@ -598,7 +598,7 @@ export function SellerLandingPage() {
           </div>
         </form>
 
-        <aside className="grid content-start gap-3 rounded-lg border border-border bg-background p-5">
+        <aside className="grid content-start gap-3 rounded-lg border border-border bg-card p-5">
           <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
             Seller tools
           </p>
@@ -640,7 +640,7 @@ function ToolLink({
   return (
     <Link
       to={to}
-      className="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-3 text-foreground no-underline hover:border-border"
+      className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-3 text-foreground no-underline hover:border-border"
     >
       <span className="flex min-w-0 items-center gap-3">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-background">
@@ -706,14 +706,14 @@ function CostRadioGroup({
   readonly onChange: (value: string) => void
 }) {
   return (
-    <fieldset className="grid gap-3 rounded-lg border border-border bg-background p-4">
+    <fieldset className="grid gap-3 rounded-lg border border-border bg-card p-4">
       <legend className="px-1 text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
         {title}
       </legend>
       <div className="grid gap-3 sm:grid-cols-3">
         {options.map((option) => (
           <label
-            className="flex cursor-pointer gap-3 rounded-md border border-border bg-background p-3 text-sm text-foreground"
+            className="flex cursor-pointer gap-3 rounded-md border border-border bg-card p-3 text-sm text-foreground"
             key={option.value}
           >
             <input
@@ -786,7 +786,7 @@ export function SellerCalculatorPage() {
       />
 
       <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
-        <div className="grid gap-5 rounded-lg border border-border bg-background p-5">
+        <div className="grid gap-5 rounded-lg border border-border bg-card p-5">
           <div className="grid gap-4 sm:grid-cols-3">
             <NumericInput
               label="Current mortgage debt"
@@ -839,7 +839,7 @@ export function SellerCalculatorPage() {
                 },
               ].map((option) => (
                 <label
-                  className="flex cursor-pointer gap-3 rounded-lg border border-border bg-background p-3 text-sm text-foreground"
+                  className="flex cursor-pointer gap-3 rounded-lg border border-border bg-card p-3 text-sm text-foreground"
                   key={option.value}
                 >
                   <input
@@ -905,11 +905,11 @@ export function SellerCalculatorPage() {
           />
         </div>
 
-        <aside className="grid content-start gap-4 rounded-lg border border-border bg-background p-5">
+        <aside className="grid content-start gap-4 rounded-lg border border-border bg-card p-5">
           <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
             Net proceeds
           </p>
-          <div className="rounded-lg border border-border bg-background p-4">
+          <div className="rounded-lg border border-border bg-card p-4">
             <p className="display-title text-4xl font-bold text-foreground">
               {money.format(takeHome)}
             </p>
@@ -921,7 +921,7 @@ export function SellerCalculatorPage() {
           <div className="grid gap-2">
             {summaryRows.map((row) => (
               <div
-                className="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
                 key={row.label}
               >
                 <span className={row.strong ? 'font-extrabold' : undefined}>
@@ -967,11 +967,11 @@ export function SellerGetReadyPage() {
       />
 
       <section className="grid gap-5 lg:grid-cols-[320px_1fr]">
-        <aside className="grid content-start gap-4 rounded-lg border border-border bg-background p-5">
+        <aside className="grid content-start gap-4 rounded-lg border border-border bg-card p-5">
           <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
             Progress
           </p>
-          <div className="rounded-lg border border-border bg-background p-4">
+          <div className="rounded-lg border border-border bg-card p-4">
             <p className="display-title text-4xl font-bold text-foreground">
               {number.format(progress)}%
             </p>
@@ -993,7 +993,7 @@ export function SellerGetReadyPage() {
         <div className="grid gap-4">
           {checklistSections.map((section) => (
             <section
-              className="grid gap-3 rounded-lg border border-border bg-background p-5"
+              className="grid gap-3 rounded-lg border border-border bg-card p-5"
               key={section.title}
             >
               <h2 className="display-title text-3xl font-bold text-foreground">
@@ -1004,7 +1004,7 @@ export function SellerGetReadyPage() {
                   const isChecked = checkedSet.has(item.key)
                   return (
                     <label
-                      className="flex cursor-pointer gap-3 rounded-md border border-border bg-background p-4 text-foreground"
+                      className="flex cursor-pointer gap-3 rounded-md border border-border bg-card p-4 text-foreground"
                       key={item.key}
                     >
                       <input
@@ -1040,7 +1040,7 @@ export function SellerGetReadyPage() {
 
 export function SellerComparableIntro() {
   return (
-    <div className="rounded-lg border border-border bg-background p-4 text-sm leading-6 text-foreground">
+    <div className="rounded-lg border border-border bg-card p-4 text-sm leading-6 text-foreground">
       <p className="font-extrabold">Comparable search reminder</p>
       <p className="mt-1">
         The more specific the filters, the tighter the comp set. Use the filter

@@ -16,13 +16,7 @@ const isCoordinate = (value: number | null | undefined) =>
   typeof value === 'number' && Number.isFinite(value)
 
 const addressQuery = (place: LocationMapPlace) =>
-  [
-    place.address,
-    place.city,
-    place.province,
-    place.postalCode,
-    place.country,
-  ]
+  [place.address, place.city, place.province, place.postalCode, place.country]
     .map((part) => part?.trim())
     .filter((part): part is string => !!part)
     .join(', ')
@@ -57,7 +51,7 @@ export function LocationMap({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-lg border border-border bg-background',
+        'overflow-hidden rounded-lg border border-border bg-card',
         className,
       )}
     >

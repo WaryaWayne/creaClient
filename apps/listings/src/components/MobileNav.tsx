@@ -14,11 +14,22 @@ import {
   defaultOpenHouseSearch,
 } from '#/features/listings/search'
 
+import type { ListingSearch } from '#/features/listings/search'
+
 const sheetLinkClass =
   'block py-2.5 font-medium text-foreground no-underline hover:text-primary'
 
 const sheetCardLinkClass =
   'block border border-border px-3 py-3 text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:backdrop-blur-sm'
+
+const estatePropertiesSearch = {
+  ...defaultListingSearch,
+  status: 'Active',
+  minBeds: 4,
+  minBaths: 3,
+  minParking: 2,
+  sort: 'price-desc',
+} satisfies ListingSearch
 
 export function MobileNav() {
   return (
@@ -33,7 +44,7 @@ export function MobileNav() {
       <SheetContent
         side="right"
         showCloseButton={false}
-        className="overflow-y-auto border-border bg-background"
+        className="overflow-y-auto border-border bg-card text-card-foreground"
       >
         <div className="flex flex-col gap-1 px-4 py-4 text-sm">
           <div className="flex items-center justify-between">
@@ -118,6 +129,26 @@ export function MobileNav() {
                   Pricing, preparation, and market comparison tools.
                 </p>
               </SheetClose>
+              <SheetClose
+                nativeButton={false}
+                render={
+                  <Link to="/investments" className={sheetCardLinkClass} />
+                }
+              >
+                <p className="font-semibold text-foreground">Investments</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  Screen active listings and move into deal math.
+                </p>
+              </SheetClose>
+              <SheetClose
+                nativeButton={false}
+                render={<Link to="/estates" className={sheetCardLinkClass} />}
+              >
+                <p className="font-semibold text-foreground">Estates</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  Organize sale planning, documents, and property decisions.
+                </p>
+              </SheetClose>
             </div>
           </div>
 
@@ -167,6 +198,19 @@ export function MobileNav() {
                 nativeButton={false}
                 render={
                   <Link
+                    to="/investments/calculator"
+                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                  />
+                }
+              >
+                <span className="leading-snug font-medium">
+                  Investment calculator
+                </span>
+              </SheetClose>
+              <SheetClose
+                nativeButton={false}
+                render={
+                  <Link
                     to="/estates/organizer"
                     className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
                   />
@@ -174,6 +218,33 @@ export function MobileNav() {
               >
                 <span className="leading-snug font-medium">
                   Estate organizer
+                </span>
+              </SheetClose>
+              <SheetClose
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/estates/calculator"
+                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                  />
+                }
+              >
+                <span className="leading-snug font-medium">
+                  Estate calculator
+                </span>
+              </SheetClose>
+              <SheetClose
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/estates/properties"
+                    search={estatePropertiesSearch}
+                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                  />
+                }
+              >
+                <span className="leading-snug font-medium">
+                  Estate properties
                 </span>
               </SheetClose>
               <SheetClose

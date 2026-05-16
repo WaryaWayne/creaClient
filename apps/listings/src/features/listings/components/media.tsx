@@ -197,9 +197,7 @@ function MediaGrid({
 }) {
   return (
     <div className="grid gap-3">
-      <h3 className="text-base font-extrabold text-foreground">
-        {title}
-      </h3>
+      <h3 className="text-base font-extrabold text-foreground">{title}</h3>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{children}</div>
     </div>
   )
@@ -213,7 +211,7 @@ function ImageMediaTile({
   readonly altFallback: string
 }) {
   return (
-    <figure className="overflow-hidden rounded-md border border-border bg-background">
+    <figure className="overflow-hidden rounded-md border border-border bg-card">
       <img
         src={media.mediaUrl ?? ''}
         alt={media.longDescription ?? altFallback}
@@ -240,7 +238,7 @@ function LinkedMediaTile({
 }) {
   const isImage = hasImageExtension(media)
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-background">
+    <div className="overflow-hidden rounded-md border border-border bg-card">
       {isImage ? (
         <img
           src={media.mediaUrl ?? ''}
@@ -261,7 +259,7 @@ function LinkedMediaTile({
 function VideoMediaTile({ media }: { readonly media: MediaCard }) {
   const directVideo = hasVideoExtension(media)
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-background">
+    <div className="overflow-hidden rounded-md border border-border bg-card">
       {directVideo ? (
         <video
           src={media.mediaUrl ?? ''}

@@ -11,11 +11,22 @@ import {
   defaultOpenHouseSearch,
 } from '#/features/listings/search'
 
+import type { ListingSearch } from '#/features/listings/search'
+
 const desktopLinkClass =
   'text-sm font-medium text-foreground no-underline transition-colors hover:text-primary'
 
 const dropdownLinkClass =
   'border border-transparent px-4 py-3 text-sm text-foreground no-underline transition-colors hover:border-primary/20 hover:bg-primary/5 hover:backdrop-blur-sm'
+
+const estatePropertiesSearch = {
+  ...defaultListingSearch,
+  status: 'Active',
+  minBeds: 4,
+  minBaths: 3,
+  minParking: 2,
+  sort: 'price-desc',
+} satisfies ListingSearch
 
 export function SiteHeader() {
   return (
@@ -65,8 +76,8 @@ export function SiteHeader() {
               Paths
               <ChevronDown className="h-4 w-4 transition-transform group-hover:rotate-180" />
             </button>
-            <div className="invisible absolute top-full left-1/2 z-50 w-[520px] -translate-x-1/2 border border-border bg-background p-2 opacity-0 shadow-xl transition-all duration-200 group-hover:visible group-hover:opacity-100">
-              <div className="grid grid-cols-1 gap-2">
+            <div className="invisible absolute top-full left-1/2 z-50 w-[620px] -translate-x-1/2 border border-border bg-card p-2 opacity-0 shadow-xl transition-all duration-200 group-hover:visible group-hover:opacity-100">
+              <div className="grid grid-cols-2 gap-2">
                 <Link to="/buyers" className={dropdownLinkClass}>
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -87,6 +98,34 @@ export function SiteHeader() {
                       <p className="font-semibold text-foreground">Sellers</p>
                       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                         Prepare, price, and compare before listing a property.
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs font-semibold text-primary">
+                      Plan
+                    </span>
+                  </div>
+                </Link>
+                <Link to="/investments" className={dropdownLinkClass}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        Investments
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        Screen active listings and move into deal math.
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs font-semibold text-primary">
+                      Analyze
+                    </span>
+                  </div>
+                </Link>
+                <Link to="/estates" className={dropdownLinkClass}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-semibold text-foreground">Estates</p>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        Organize larger-property and executor decisions.
                       </p>
                     </div>
                     <span className="shrink-0 text-xs font-semibold text-primary">
@@ -116,7 +155,7 @@ export function SiteHeader() {
               Tools
               <ChevronDown className="h-4 w-4 transition-transform group-hover:rotate-180" />
             </button>
-            <div className="invisible absolute top-full left-1/2 z-50 w-[560px] -translate-x-1/2 border border-border bg-background p-2 opacity-0 shadow-xl transition-all duration-200 group-hover:visible group-hover:opacity-100">
+            <div className="invisible absolute top-full left-1/2 z-50 w-[680px] -translate-x-1/2 border border-border bg-card p-2 opacity-0 shadow-xl transition-all duration-200 group-hover:visible group-hover:opacity-100">
               <p className="mb-3 px-2 pt-2 text-xs font-bold tracking-widest text-primary uppercase">
                 Calculators, comparisons, and directories
               </p>
@@ -144,11 +183,36 @@ export function SiteHeader() {
                   <span className="leading-tight font-medium">Investments</span>
                 </Link>
                 <Link
+                  to="/investments/calculator"
+                  className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                >
+                  <span className="leading-tight font-medium">
+                    Investment calculator
+                  </span>
+                </Link>
+                <Link
                   to="/estates/organizer"
                   className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
                 >
                   <span className="leading-tight font-medium">
                     Estate organizer
+                  </span>
+                </Link>
+                <Link
+                  to="/estates/calculator"
+                  className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                >
+                  <span className="leading-tight font-medium">
+                    Estate calculator
+                  </span>
+                </Link>
+                <Link
+                  to="/estates/properties"
+                  search={estatePropertiesSearch}
+                  className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                >
+                  <span className="leading-tight font-medium">
+                    Estate properties
                   </span>
                 </Link>
                 <Link

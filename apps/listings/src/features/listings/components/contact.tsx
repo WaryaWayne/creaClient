@@ -12,7 +12,7 @@ import { personName } from './utils'
 
 function AgentCreditBox({ agent }: { readonly agent: PersonCard }) {
   return (
-    <div className="flex items-start gap-3 rounded-md border border-border bg-background p-3">
+    <div className="flex items-start gap-3 rounded-md border border-border bg-card p-3">
       <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-background text-foreground">
         {agent.imageUrl ? (
           <img
@@ -26,9 +26,7 @@ function AgentCreditBox({ agent }: { readonly agent: PersonCard }) {
         )}
       </div>
       <div className="min-w-0">
-        <p className="font-extrabold text-foreground">
-          {personName(agent)}
-        </p>
+        <p className="font-extrabold text-foreground">{personName(agent)}</p>
         {agent.jobTitle ? (
           <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
             {agent.jobTitle}
@@ -108,7 +106,7 @@ function AgentMessageForm({
   }
 
   return (
-    <div className="grid content-start gap-3 rounded-lg border border-border bg-background p-4">
+    <div className="grid content-start gap-3 rounded-lg border border-border bg-card p-4">
       <div>
         <p className="inline-flex items-center gap-2 text-sm font-extrabold text-foreground">
           <MessageSquare className="size-4" />
@@ -135,7 +133,11 @@ function AgentMessageForm({
           <span className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
             Message
           </span>
-          <Textarea name="message" required className="min-h-28 bg-background" />
+          <Textarea
+            name="message"
+            required
+            className="min-h-28 bg-background"
+          />
         </label>
         <Button type="submit" className="justify-self-start">
           <Send />
@@ -197,10 +199,8 @@ function AgentLeadForm({
 
   return (
     <div className="grid gap-4">
-      <div className="rounded-md border border-border bg-background p-3">
-        <p className="font-extrabold text-foreground">
-          {personName(agent)}
-        </p>
+      <div className="rounded-md border border-border bg-card p-3">
+        <p className="font-extrabold text-foreground">{personName(agent)}</p>
         <p className="mt-1 text-sm text-foreground">
           {[agent.jobTitle, agent.office?.officeName]
             .filter(Boolean)

@@ -21,11 +21,13 @@ type ThemeProviderState = {
   readonly setTheme: (theme: Theme) => void
 }
 
+const themePreferenceEvent = 'theme-preference-change'
+
 function getThemeScript(storageKey: string, defaultTheme: Theme) {
   const key = JSON.stringify(storageKey)
   const fallback = JSON.stringify(defaultTheme)
 
-  return `(function(){try{var t=localStorage.getItem(${key});if(t!=='light'&&t!=='dark'&&t!=='system'){t=${fallback}}var d=matchMedia('(prefers-color-scheme: dark)').matches;var r=t==='system'?(d?'dark':'light'):t;var e=document.documentElement;e.classList.remove('light','dark');e.classList.add(r);e.style.colorScheme=r}catch(e){}})();`
+  return `(function(){try{var t=localStorage.getItem(${key});if(t==='theme-light'){t='light'}if(t!=='light'&&t!=='dark'&&t!=='system'){t=${fallback}}var d=matchMedia('(prefers-color-scheme: dark)').matches;var r=t==='system'?(d?'dark':'light'):t;var e=document.documentElement;e.classList.remove('light','dark');e.classList.add(r);e.style.colorScheme=r;e.dataset.theme=t}catch(e){}})();`
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState | undefined>(
@@ -45,16 +47,39 @@ function applyTheme(theme: Theme) {
 
   root.classList.add(resolved)
   root.style.colorScheme = resolved
+  root.dataset.theme = theme
 }
 
 function readStoredTheme(storageKey: string, defaultTheme: Theme): Theme {
-  const stored = window.localStorage.getItem(storageKey)
+  try {
+    const stored = window.localStorage.getItem(storageKey)
 
-  if (stored === 'light' || stored === 'dark' || stored === 'system') {
-    return stored
+    if (stored === 'theme-light') {
+      return 'light'
+    }
+
+    if (stored === 'light' || stored === 'dark' || stored === 'system') {
+      return stored
+    }
+  } catch {
+    return defaultTheme
   }
 
   return defaultTheme
+}
+
+function writeStoredTheme(storageKey: string, theme: Theme) {
+  try {
+    window.localStorage.setItem(storageKey, theme)
+  } catch {
+    // The selected theme still applies for the current page when storage is unavailable.
+  }
+}
+
+function dispatchThemePreference(theme: Theme) {
+  window.dispatchEvent(
+    new CustomEvent<Theme>(themePreferenceEvent, { detail: theme }),
+  )
 }
 
 export function ThemeProvider({
@@ -76,6 +101,7 @@ export function ThemeProvider({
     }
 
     applyTheme(theme)
+    dispatchThemePreference(theme)
   }, [mounted, theme])
 
   useEffect(() => {
@@ -94,7 +120,7 @@ export function ThemeProvider({
     () => ({
       theme,
       setTheme: (nextTheme) => {
-        window.localStorage.setItem(storageKey, nextTheme)
+        writeStoredTheme(storageKey, nextTheme)
         setThemeState(nextTheme)
       },
     }),

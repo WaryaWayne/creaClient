@@ -21,7 +21,7 @@ export default function ParaglideLocaleSwitcher() {
             key={locale}
             onClick={() => setLocale(locale)}
             aria-pressed={locale === currentLocale}
-            className={`cursor-pointer rounded-full border border-border bg-background px-3 py-1.5 text-foreground ${
+            className={`cursor-pointer rounded-full border border-border bg-card px-3 py-1.5 text-foreground ${
               locale === currentLocale ? 'font-bold' : 'font-medium opacity-70'
             }`}
           >

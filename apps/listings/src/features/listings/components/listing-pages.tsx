@@ -71,7 +71,7 @@ export function ListingsPage({
         onChange={onSearchChange}
       />
       <section className="grid gap-5">
-        <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-background p-5 md:flex-row md:items-end">
+        <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-5 md:flex-row md:items-end">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
               {copy.eyebrow}
@@ -147,7 +147,7 @@ export function GroupedListingsPage({
         onChange={onSearchChange}
       />
       <section className="grid gap-5">
-        <div className="rounded-lg border border-border bg-background p-5">
+        <div className="rounded-lg border border-border bg-card p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
             {data.group.label}
           </p>
@@ -158,13 +158,13 @@ export function GroupedListingsPage({
             {data.group.description} {copy.groupedDescriptionSuffix}
           </p>
           <div className="mt-4 flex flex-wrap gap-2 text-sm font-semibold text-foreground">
-            <span className="rounded-full border border-border bg-background px-3 py-1">
+            <span className="rounded-full border border-border bg-card px-3 py-1">
               {number.format(data.matchedValue.count)}{' '}
               {routeRoot === 'rentals'
                 ? 'rental listings in this group'
                 : 'active listings in this group'}
             </span>
-            <span className="rounded-full border border-border bg-background px-3 py-1">
+            <span className="rounded-full border border-border bg-card px-3 py-1">
               Page {data.search.page} · Showing {data.listings.length}
             </span>
           </div>
@@ -211,7 +211,7 @@ function ListingGroupFallback({
         title={title}
         description={copy.fallbackDescription}
         align="start"
-        className="bg-background p-6"
+        className="bg-card p-6"
       >
         {routeRoot === 'rentals' ? (
           <Button
@@ -258,7 +258,7 @@ export function RentalSearchGroupPage({
           title="Rental category not found"
           description="Browse another rental category or return to all rentals."
           align="start"
-          className="bg-background p-6"
+          className="bg-card p-6"
         >
           <Button
             nativeButton={false}
@@ -284,7 +284,7 @@ export function RentalSearchGroupPage({
 
   return (
     <main className="search-page-wrap grid gap-6 py-8">
-      <section className="rounded-lg border border-border bg-background p-6">
+      <section className="rounded-lg border border-border bg-card p-6">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
           Rental {data.group.label.toLowerCase()}
         </p>
@@ -296,10 +296,10 @@ export function RentalSearchGroupPage({
           listings.
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-sm font-semibold text-foreground">
-          <span className="rounded-full border border-border bg-background px-3 py-1">
+          <span className="rounded-full border border-border bg-card px-3 py-1">
             {number.format(data.summary.valueCount)} rental options
           </span>
-          <span className="rounded-full border border-border bg-background px-3 py-1">
+          <span className="rounded-full border border-border bg-card px-3 py-1">
             {number.format(data.summary.listingCount)} rental listings
           </span>
         </div>

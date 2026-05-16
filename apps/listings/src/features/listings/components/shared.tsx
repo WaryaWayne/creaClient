@@ -56,7 +56,7 @@ export function DetailsDialog({
         role="dialog"
         aria-labelledby={`${title.replace(/\W+/g, '-').toLowerCase()}-dialog-title`}
         className={cn(
-          'relative grid max-h-[min(88vh,760px)] w-full max-w-3xl gap-5 overflow-y-auto rounded-lg border border-border bg-background p-5 text-foreground shadow-[0_30px_90px_rgba(23,58,64,0.28)]',
+          'relative grid max-h-[min(88vh,760px)] w-full max-w-3xl gap-5 overflow-y-auto rounded-lg border border-border bg-card p-5 text-foreground shadow-[0_30px_90px_rgba(23,58,64,0.28)]',
           className,
         )}
       >
@@ -91,7 +91,7 @@ export function MetricPill({
   readonly children: ReactNode
 }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
+    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-semibold text-foreground">
       <Icon className="size-3.5 text-foreground" />
       {children}
     </span>
@@ -123,7 +123,7 @@ export function DirectoryPanel({
   readonly children: ReactNode
 }) {
   return (
-    <section className="rounded-lg border border-border bg-background p-5">
+    <section className="rounded-lg border border-border bg-card p-5">
       <h3 className="text-lg font-extrabold text-foreground">{title}</h3>
       <div className="mt-4 grid gap-3 lg:grid-cols-2">{children}</div>
     </section>
@@ -162,17 +162,14 @@ export function EmptyState({
   return (
     <Empty
       className={cn(
-        'border border-dashed border-border bg-background p-8',
+        'border border-dashed border-border bg-card p-8',
         isStart && 'items-start text-left',
         isCompact && 'gap-2 p-4',
         className,
       )}
     >
       <EmptyHeader className={cn(isStart && 'items-start text-left')}>
-        <EmptyMedia
-          variant="icon"
-          className="bg-background text-foreground"
-        >
+        <EmptyMedia variant="icon" className="bg-background text-foreground">
           <Icon className="size-5" />
         </EmptyMedia>
         <EmptyTitle
@@ -185,10 +182,7 @@ export function EmptyState({
         </EmptyTitle>
         {hasDescription ? (
           <EmptyDescription
-            className={cn(
-              'text-sm text-foreground',
-              isStart && 'text-left',
-            )}
+            className={cn('text-sm text-foreground', isStart && 'text-left')}
           >
             {description}
           </EmptyDescription>
@@ -211,7 +205,7 @@ export function InfoSection({
   readonly children: ReactNode
 }) {
   return (
-    <section className="rounded-lg border border-border bg-background p-5">
+    <section className="rounded-lg border border-border bg-card p-5">
       <h2 className="text-xl font-extrabold text-foreground">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
@@ -242,7 +236,7 @@ export function DetailItem({
   readonly value: string | number | null
 }) {
   return (
-    <div className="rounded-md border border-border bg-background p-3">
+    <div className="rounded-md border border-border bg-card p-3">
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
         {label}
       </p>
@@ -265,7 +259,7 @@ export function Pagination({
   readonly onPage: (page: number) => void
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background p-3">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3">
       <Button
         type="button"
         variant="outline"
@@ -274,9 +268,7 @@ export function Pagination({
       >
         Previous
       </Button>
-      <span className="text-sm font-semibold text-foreground">
-        Page {page}
-      </span>
+      <span className="text-sm font-semibold text-foreground">Page {page}</span>
       <Button
         type="button"
         variant="outline"

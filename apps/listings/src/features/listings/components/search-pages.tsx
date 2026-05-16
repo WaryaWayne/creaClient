@@ -290,7 +290,7 @@ function SearchActionList({
         icon={Search}
         align="start"
         size="compact"
-        className="bg-background p-6"
+        className="bg-card p-6"
       />
     )
   }
@@ -300,7 +300,7 @@ function SearchActionList({
       {actions.map((action) => (
         <Card
           size="sm"
-          className="group h-full min-h-40 rounded-lg border border-border bg-background py-0 text-foreground ring-0 shadow-none transition hover:border-border"
+          className="group h-full min-h-40 rounded-lg border border-border bg-card py-0 text-foreground ring-0 shadow-none transition hover:border-border"
           key={action.id}
         >
           <CardHeader className="min-w-0 gap-1 px-4 pt-4">
@@ -308,7 +308,7 @@ function SearchActionList({
               <CardDescription className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
                 <span className="line-clamp-1">{action.eyebrow}</span>
                 {typeof action.count === 'number' ? (
-                  <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold normal-case tracking-normal text-foreground">
+                  <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold normal-case tracking-normal text-foreground">
                     {countLabel(action.count, 'listing', 'listings')}
                   </span>
                 ) : null}
@@ -391,7 +391,7 @@ const useRotatingSearchPrompt = () => {
 
 const groupMosaicClass = (label: string, index: number) =>
   cn(
-    'group h-full min-h-44 rounded-lg border border-border bg-background py-0 text-foreground ring-0 shadow-none transition hover:border-border',
+    'group h-full min-h-44 rounded-lg border border-border bg-card py-0 text-foreground ring-0 shadow-none transition hover:border-border',
     label.length > 18 ? 'sm:col-span-2' : null,
     index === 0 ? 'md:col-span-2' : null,
   )
@@ -412,7 +412,7 @@ function SearchGroupMosaicCard({
           <CardDescription className="line-clamp-1 text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
             <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               <span>Browse</span>
-              <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold normal-case tracking-normal text-foreground">
+              <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold normal-case tracking-normal text-foreground">
                 {countLabel(listingCount, 'listing', 'listings')}
               </span>
             </span>
@@ -519,7 +519,7 @@ export function SearchIndexPage({ data }: { readonly data: SearchIndexData }) {
 
   return (
     <main className="search-page-wrap grid gap-6 py-8">
-      <section className="grid gap-6 rounded-lg border border-border bg-background p-6 lg:grid-cols-[1fr_340px] lg:items-start">
+      <section className="grid gap-6 rounded-lg border border-border bg-card p-6 lg:grid-cols-[1fr_340px] lg:items-start">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
             Listing search
@@ -552,7 +552,7 @@ export function SearchIndexPage({ data }: { readonly data: SearchIndexData }) {
             </Button>
           </form>
         </div>
-        <div className="grid gap-3 rounded-lg border border-border bg-background p-4">
+        <div className="grid gap-3 rounded-lg border border-border bg-card p-4">
           <p className="text-sm font-extrabold text-foreground">Quick starts</p>
           <div className="flex flex-wrap gap-2">
             {quickValues.slice(0, 6).map((value) => {
@@ -635,7 +635,7 @@ export function SearchGroupPage({ data }: { readonly data: SearchGroupData }) {
           description="Browse another category or use one of the quick searches below."
           icon={Search}
           align="start"
-          className="bg-background p-6"
+          className="bg-card p-6"
         >
           <Button nativeButton={false} render={<Link to="/search" />}>
             <Search />
@@ -655,7 +655,7 @@ export function SearchGroupPage({ data }: { readonly data: SearchGroupData }) {
 
   return (
     <main className="search-page-wrap grid gap-6 py-8">
-      <section className="grid gap-6 rounded-lg border border-border bg-background p-6 lg:grid-cols-[1fr_340px] lg:items-start">
+      <section className="grid gap-6 rounded-lg border border-border bg-card p-6 lg:grid-cols-[1fr_340px] lg:items-start">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
             {data.group.label}
@@ -687,7 +687,7 @@ export function SearchGroupPage({ data }: { readonly data: SearchGroupData }) {
             </Button>
           </form>
         </div>
-        <div className="grid gap-3 rounded-lg border border-border bg-background p-4">
+        <div className="grid gap-3 rounded-lg border border-border bg-card p-4">
           <p className="text-sm font-extrabold text-foreground">
             Popular options
           </p>

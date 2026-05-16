@@ -168,7 +168,7 @@ function Home() {
             </Button>
           </div>
         </div>
-        <div className="grid gap-3 rounded-lg border border-border bg-background p-4 shadow-[0_18px_42px_rgba(23,58,64,0.08)]">
+        <div className="grid gap-3 rounded-lg border border-border bg-card p-4 shadow-[0_18px_42px_rgba(23,58,64,0.08)]">
           <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
             What you can do here
           </p>
@@ -192,7 +192,7 @@ function Home() {
           </div>
           <Link
             to="/search"
-            className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-extrabold text-foreground no-underline hover:border-border"
+            className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-extrabold text-foreground no-underline hover:border-border"
           >
             Search all categories
             <ArrowRight className="size-4" />
@@ -215,7 +215,7 @@ function SiteHighlight({
 }) {
   const Icon = item.icon
   return (
-    <article className="grid gap-3 rounded-lg border border-border bg-background p-4 sm:grid-cols-[auto_1fr] sm:items-start">
+    <article className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[auto_1fr] sm:items-start">
       <span className="flex size-10 items-center justify-center rounded-md bg-background text-foreground">
         <Icon className="size-5" />
       </span>
@@ -240,7 +240,7 @@ function AudienceCard({ option }: { readonly option: AudienceOption }) {
           <span className="flex size-11 items-center justify-center rounded-md bg-background text-foreground">
             <Icon className="size-5" />
           </span>
-          <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold text-foreground">
+          <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold text-foreground">
             {option.title}
           </span>
         </div>
@@ -258,7 +258,7 @@ function AudienceCard({ option }: { readonly option: AudienceOption }) {
         <div className="grid gap-2">
           {option.bullets.map((bullet) => (
             <span
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground"
+              className="rounded-md border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground"
               key={bullet}
             >
               {bullet}

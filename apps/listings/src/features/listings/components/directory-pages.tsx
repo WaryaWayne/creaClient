@@ -87,14 +87,12 @@ function OfficeMetric({
   readonly value: string
 }) {
   return (
-    <div className="rounded-md border border-border bg-background p-3">
+    <div className="rounded-md border border-border bg-card p-3">
       <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-foreground">
         <Icon className="size-3.5" />
         {label}
       </p>
-      <p className="mt-1 text-2xl font-extrabold text-foreground">
-        {value}
-      </p>
+      <p className="mt-1 text-2xl font-extrabold text-foreground">{value}</p>
     </div>
   )
 }
@@ -156,7 +154,7 @@ export function AgentDetailPage({
 
   return (
     <main className="page-wrap grid gap-6 py-8">
-      <section className="grid gap-6 rounded-lg border border-border bg-background p-5 lg:grid-cols-[auto_1fr_auto] lg:items-start">
+      <section className="grid gap-6 rounded-lg border border-border bg-card p-5 lg:grid-cols-[auto_1fr_auto] lg:items-start">
         <div className="flex size-28 items-center justify-center overflow-hidden rounded-lg bg-background text-foreground">
           {agent.imageUrl ? (
             <img
@@ -288,7 +286,7 @@ function AgentTagsSection({
         <div className="flex flex-wrap gap-2">
           {values.map((value) => (
             <span
-              className="rounded-full border border-border bg-background px-3 py-1 text-sm font-semibold text-foreground"
+              className="rounded-full border border-border bg-card px-3 py-1 text-sm font-semibold text-foreground"
               key={value}
             >
               {value}
@@ -418,7 +416,7 @@ function DirectoryPageShell({
 }) {
   return (
     <main className="page-wrap grid gap-6 py-8">
-      <section className="rounded-lg border border-border bg-background p-5">
+      <section className="rounded-lg border border-border bg-card p-5">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
           {eyebrow}
         </p>
@@ -441,7 +439,7 @@ function DirectoryEmpty({ message }: { readonly message: string }) {
 
 function OfficeAgentCard({ agent }: { readonly agent: PersonCard }) {
   return (
-    <div className="flex items-center gap-3 rounded-md border border-border bg-background p-3 text-foreground">
+    <div className="flex items-center gap-3 rounded-md border border-border bg-card p-3 text-foreground">
       <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-background text-foreground">
         {agent.imageUrl ? (
           <img
@@ -474,7 +472,7 @@ function OfficeDetailView({ office }: { readonly office: OfficeDetail }) {
   return (
     <main className="page-wrap grid gap-6 py-8">
       <section className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
-        <div className="overflow-hidden rounded-lg border border-border bg-background">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
           <div className="grid gap-0 md:grid-cols-[minmax(0,1fr)_280px]">
             <div className="grid content-between gap-6 p-6">
               <div>
@@ -630,7 +628,7 @@ function SocialLinksList({
         title="No social media links are attached."
         align="start"
         size="compact"
-        className="rounded-md bg-background p-3"
+        className="rounded-md bg-card p-3"
       />
     )
   }
@@ -642,7 +640,7 @@ function SocialLinksList({
       </p>
       {socialMedia.map((item) => (
         <a
-          className="flex items-center justify-between gap-3 rounded-md border border-border bg-background p-3 text-sm font-semibold text-foreground no-underline hover:text-foreground"
+          className="flex items-center justify-between gap-3 rounded-md border border-border bg-card p-3 text-sm font-semibold text-foreground no-underline hover:text-foreground"
           href={item.socialMediaUrlOrId ?? '#'}
           target="_blank"
           rel="noreferrer"
@@ -683,7 +681,7 @@ function LabeledInput({
 
 function DirectoryCard({ children }: { readonly children: ReactNode }) {
   return (
-    <article className="rounded-lg border border-border bg-background p-4 shadow-[0_10px_24px_rgba(23,58,64,0.07)]">
+    <article className="rounded-lg border border-border bg-card p-4 shadow-[0_10px_24px_rgba(23,58,64,0.07)]">
       {children}
     </article>
   )
@@ -830,7 +828,7 @@ export function OpenHouseRow({
   return (
     <div
       className={cn(
-        'grid gap-3 rounded-lg border border-border bg-background p-3 md:grid-cols-[auto_1fr]',
+        'grid gap-3 rounded-lg border border-border bg-card p-3 md:grid-cols-[auto_1fr]',
         prominent && 'p-4 shadow-[0_10px_24px_rgba(23,58,64,0.07)]',
       )}
     >
@@ -902,7 +900,7 @@ export function OpenHouseRow({
           <Link
             to="/listings/$listingKey"
             params={{ listingKey: openHouse.property.listingKey }}
-            className="group grid gap-1 rounded-md border border-border bg-background p-3 no-underline hover:border-border"
+            className="group grid gap-1 rounded-md border border-border bg-card p-3 no-underline hover:border-border"
           >
             <span className="text-sm font-extrabold text-foreground group-hover:text-foreground">
               <HighlightedValue
@@ -950,9 +948,7 @@ function HighlightedValue({
 
   if (parts.length <= 1) {
     return (
-      <mark className="rounded bg-background px-0.5 text-inherit">
-        {value}
-      </mark>
+      <mark className="rounded bg-background px-0.5 text-inherit">{value}</mark>
     )
   }
 

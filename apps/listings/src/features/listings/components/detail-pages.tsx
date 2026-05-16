@@ -85,7 +85,7 @@ function ListingOpenHousesPanel({
           icon={CalendarDays}
           align="start"
           size="compact"
-          className="rounded-md bg-background p-3"
+          className="rounded-md bg-card p-3"
         />
       )}
     </section>
@@ -117,7 +117,7 @@ export function OpenHouseDetailPage({
   return (
     <main className="page-wrap grid gap-6 py-8">
       <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <div className="rounded-lg border border-border bg-background p-6">
+        <div className="rounded-lg border border-border bg-card p-6">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
             Open house
           </p>
@@ -129,12 +129,12 @@ export function OpenHouseDetailPage({
               {openHouseTimeLabel(openHouse)}
             </MetricPill>
             {openHouse.status ? (
-              <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
+              <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-semibold text-foreground">
                 {openHouse.status}
               </span>
             ) : null}
             {openHouse.type ? (
-              <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
+              <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-semibold text-foreground">
                 {openHouse.type}
               </span>
             ) : null}
@@ -166,9 +166,7 @@ export function OpenHouseDetailPage({
       <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <InfoSection title="Open house details">
           {openHouse.remarks ? (
-            <p className="leading-7 text-foreground">
-              {openHouse.remarks}
-            </p>
+            <p className="leading-7 text-foreground">{openHouse.remarks}</p>
           ) : (
             <EmptyState
               title="No additional remarks were attached to this open house."
@@ -240,7 +238,7 @@ export function OpenHouseDetailPage({
           </InfoSection>
         ) : null}
       </section>
-      <section className="grid gap-4 rounded-lg border border-border bg-background p-5">
+      <section className="grid gap-4 rounded-lg border border-border bg-card p-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
@@ -274,7 +272,7 @@ export function OpenHouseDetailPage({
             icon={CalendarDays}
             align="start"
             size="compact"
-            className="rounded-md bg-background p-3"
+            className="rounded-md bg-card p-3"
           />
         )}
       </section>
@@ -309,7 +307,7 @@ export function ListingDetailPage({
   return (
     <main className="page-wrap grid gap-6 py-8 lg:grid-cols-[1fr_360px] lg:items-start">
       <div className="grid gap-6">
-        <div className="overflow-hidden rounded-lg border border-border bg-background">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
           <div className="relative aspect-[16/10] bg-background">
             {heroImageUrl ? (
               <img
@@ -341,9 +339,7 @@ export function ListingDetailPage({
         </div>
         <InfoSection title="Remarks">
           {listing.remarks ? (
-            <p className="leading-7 text-foreground">
-              {listing.remarks}
-            </p>
+            <p className="leading-7 text-foreground">{listing.remarks}</p>
           ) : (
             <EmptyState
               title="No remarks were included for this listing."
@@ -376,7 +372,7 @@ export function ListingDetailPage({
             <div className="grid gap-2">
               {listing.rooms.map((room) => (
                 <div
-                  className="grid gap-2 rounded-md border border-border bg-background p-3 sm:grid-cols-[1fr_auto]"
+                  className="grid gap-2 rounded-md border border-border bg-card p-3 sm:grid-cols-[1fr_auto]"
                   key={room.roomKey ?? `${room.roomType}-${room.roomLevel}`}
                 >
                   <div>
@@ -474,7 +470,7 @@ function areaLabel(listing: ListingDetail) {
 function CreditsBlock({ listing }: { readonly listing: ListingDetail }) {
   if (listing.offices.length === 0 && listing.agents.length === 0) return null
   return (
-    <div className="grid gap-3 rounded-lg border border-border bg-background p-4">
+    <div className="grid gap-3 rounded-lg border border-border bg-card p-4">
       <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
         Listing credits
       </p>

@@ -58,7 +58,7 @@ export function OpenHouseImageBadge({
 
 function OfficeCreditBlock({ office }: { readonly office: OfficeCard }) {
   return (
-    <div className="grid gap-3 rounded-md border border-border bg-background p-3">
+    <div className="grid gap-3 rounded-md border border-border bg-card p-3">
       <div className="flex items-start gap-3">
         <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-background text-foreground">
           {office.imageUrl !== null && office.imageUrl.length > 0 ? (
@@ -119,9 +119,7 @@ function OfficesDialogButton({
         className="max-w-4xl"
       >
         <div className="grid content-start gap-4">
-          <p className="text-sm leading-6 text-foreground">
-            {listing.address}
-          </p>
+          <p className="text-sm leading-6 text-foreground">{listing.address}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             {listing.offices.map((office) => (
               <OfficeCreditBlock office={office} key={office.officeKey} />
@@ -142,7 +140,7 @@ function OfficeCreditsSummary({
     <Item
       variant="outline"
       size="sm"
-      className="gap-3 rounded-md border-border bg-background p-3"
+      className="gap-3 rounded-md border-border bg-card p-3"
     >
       <ItemMedia
         variant="icon"
@@ -184,7 +182,7 @@ export function ListingCredits({
         <Item
           variant="outline"
           size="sm"
-          className="gap-3 rounded-md border-border bg-background p-3"
+          className="gap-3 rounded-md border-border bg-card p-3"
         >
           <ItemMedia
             variant="icon"
@@ -239,7 +237,7 @@ export function ListingCard({
 
   return (
     <article
-      className="group cursor-pointer overflow-hidden rounded-lg border border-border bg-background shadow-[0_12px_30px_rgba(23,58,64,0.08)] hover:border-border hover:shadow-[0_18px_38px_rgba(23,58,64,0.12)]"
+      className="group cursor-pointer overflow-hidden rounded-lg border border-border bg-card shadow-[0_12px_30px_rgba(23,58,64,0.08)] hover:border-border hover:shadow-[0_18px_38px_rgba(23,58,64,0.12)]"
       tabIndex={0}
       aria-label={`View listing details for ${listing.address}`}
       onClick={onCardClick}
