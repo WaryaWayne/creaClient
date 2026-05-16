@@ -152,18 +152,18 @@ export function SiteHeader() {
                   </span>
                 </Link>
                 <Link
-                  to="/offices"
-                  search={defaultListingSearch}
+                  to="/sellers/get-ready"
                   className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
                 >
-                  <span className="leading-tight font-medium">Offices</span>
+                  <span className="leading-tight font-medium">Seller prep</span>
                 </Link>
                 <Link
-                  to="/agents"
-                  search={defaultListingSearch}
+                  to="/investments/due-diligence"
                   className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
                 >
-                  <span className="leading-tight font-medium">Agents</span>
+                  <span className="leading-tight font-medium">
+                    Due diligence
+                  </span>
                 </Link>
               </div>
             </div>

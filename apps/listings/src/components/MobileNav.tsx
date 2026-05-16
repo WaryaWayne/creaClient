@@ -176,6 +176,28 @@ export function MobileNav() {
                   Estate organizer
                 </span>
               </SheetClose>
+              <SheetClose
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/sellers/get-ready"
+                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                  />
+                }
+              >
+                <span className="leading-snug font-medium">Seller prep</span>
+              </SheetClose>
+              <SheetClose
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/investments/due-diligence"
+                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                  />
+                }
+              >
+                <span className="leading-snug font-medium">Due diligence</span>
+              </SheetClose>
             </div>
             <SheetClose
               nativeButton={false}
