@@ -13,11 +13,10 @@ import { TooltipProvider } from '@workspace/ui/components/tooltip'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import { AppLogo } from '#/components/AppLogo'
+import { SiteHeader } from '#/components/SiteHeader'
+import { ThemeProvider } from '#/components/theme-provider'
 import { getLocale } from '#/paraglide/runtime'
-import {
-  defaultListingSearch,
-  defaultOpenHouseSearch,
-} from '#/features/listings/search'
+import { defaultListingSearch } from '#/features/listings/search'
 import { EmptyState } from '#/features/listings/components/shared'
 import { appIconLinks, appSeoDefaults } from '#/features/listings/seo'
 
@@ -54,16 +53,18 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={getLocale()}>
+    <html lang={getLocale()} suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
       <body>
-        <RegistryProvider>
-          <SiteHeader />
-          <TooltipProvider>{children}</TooltipProvider>
-          <SiteFooter />
-        </RegistryProvider>
+        <ThemeProvider defaultTheme="system" storageKey="theme">
+          <RegistryProvider>
+            <SiteHeader />
+            <TooltipProvider>{children}</TooltipProvider>
+            <SiteFooter />
+          </RegistryProvider>
+        </ThemeProvider>
         <TanStackDevtools
           config={{
             position: 'bottom-right',
@@ -79,54 +80,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
-  )
-}
-
-function SiteHeader() {
-  const linkClass =
-    'rounded-md px-3 py-2 text-sm font-semibold text-foreground no-underline transition hover:bg-background hover:text-foreground'
-
-  return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background backdrop-blur">
-      <div className="page-wrap flex min-h-16 items-center justify-between gap-4">
-        <Link
-          to="/"
-          className="inline-flex min-w-0 items-center no-underline"
-          aria-label="CreaClient home"
-        >
-          <AppLogo imageClassName="h-9 max-w-[152px]" />
-        </Link>
-        <nav className="flex flex-wrap items-center justify-end gap-1">
-          <Link
-            to="/listings"
-            search={defaultListingSearch}
-            className={linkClass}
-          >
-            Listings
-          </Link>
-          <Link
-            to="/rentals"
-            search={defaultListingSearch}
-            className={linkClass}
-          >
-            Rentals
-          </Link>
-          <Link
-            to="/open-houses"
-            search={defaultOpenHouseSearch}
-            className={linkClass}
-          >
-            Open houses
-          </Link>
-          <Link to="/sellers" className={linkClass}>
-            Sellers
-          </Link>
-          <Link to="/search" className={linkClass}>
-            Search
-          </Link>
-        </nav>
-      </div>
-    </header>
   )
 }
 
