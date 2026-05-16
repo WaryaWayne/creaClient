@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { AudienceShell } from '#/features/listings/components/audience-shell'
+import { SellerLandingPage } from '#/features/listings/components'
 
 export const Route = createFileRoute('/sellers/')({
   head: () => ({
@@ -17,30 +17,5 @@ export const Route = createFileRoute('/sellers/')({
 })
 
 function SellersRoute() {
-  return (
-    <AudienceShell
-      eyebrow="Seller path"
-      title="Sell with the current market in view."
-      description="Use this seller shell to compare local active inventory, keep listing details shareable, and move into the full search tools when you are ready."
-      searchLabel="See active listings"
-      search={{ status: 'Active', sort: 'newest' }}
-      points={[
-        {
-          title: 'Position',
-          description:
-            'Review nearby active listings and understand how similar homes are presented.',
-        },
-        {
-          title: 'Prepare',
-          description:
-            'Use listing detail pages as a checklist for photos, facts, remarks, and representation.',
-        },
-        {
-          title: 'Share',
-          description:
-            'Send filtered search URLs to keep everyone looking at the same market slice.',
-        },
-      ]}
-    />
-  )
+  return <SellerLandingPage />
 }

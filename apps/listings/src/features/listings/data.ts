@@ -215,9 +215,11 @@ export type DetailGroup = {
 
 export type ListingFacets = {
   readonly cities: ReadonlyArray<string>
+  readonly neighborhoods: ReadonlyArray<string>
   readonly provinces: ReadonlyArray<string>
   readonly statuses: ReadonlyArray<string>
   readonly types: ReadonlyArray<string>
+  readonly lotFeatures: ReadonlyArray<string>
   readonly prices: ReadonlyArray<number>
   readonly bedrooms: ReadonlyArray<number>
   readonly bathrooms: ReadonlyArray<number>
@@ -244,7 +246,13 @@ export type ListingsData = {
   readonly hasNextPage: boolean
 }
 
-export type ListingGroupSearchKey = 'city' | 'province' | 'status' | 'type'
+export type ListingGroupSearchKey =
+  | 'city'
+  | 'province'
+  | 'neighborhood'
+  | 'status'
+  | 'type'
+  | 'lotFeature'
 
 export type ListingGroupSummary = {
   readonly groupSlug: string
@@ -467,6 +475,23 @@ const displayAddress = (row: DbRow) => {
 const uniqueSorted = (values: ReadonlyArray<string | null>) =>
   Array.from(new Set(values.filter((value): value is string => !!value))).sort(
     (left, right) => left.localeCompare(right),
+  )
+
+const neighborhoodSortLabel = (value: string) =>
+  value.replace(/^\s*\d+\s*-\s*/, '').trim()
+
+const uniqueNeighborhoods = (values: ReadonlyArray<string | null>) =>
+  uniqueSorted(values).sort(
+    (left, right) =>
+      neighborhoodSortLabel(left).localeCompare(
+        neighborhoodSortLabel(right),
+        undefined,
+        { numeric: true, sensitivity: 'base' },
+      ) ||
+      left.localeCompare(right, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      }),
   )
 
 const groupValueNumber = new Intl.NumberFormat('en-CA', {
@@ -1108,6 +1133,8 @@ const listingFilters = (search: ListingSearch) => ({
   propertySubType: search.type || undefined,
   city: search.city || undefined,
   province: search.province || undefined,
+  cityRegion: search.neighborhood || undefined,
+  lotFeatures: search.lotFeature ? [search.lotFeature] : [],
   minPrice: numericFilter(search.minPrice),
   maxPrice: numericFilter(search.maxPrice),
   minBedrooms: numericFilter(search.minBeds),
@@ -1133,8 +1160,10 @@ const groupedListingFilters = (
   const suppressed = new Set(group.suppressedSearchKeys ?? [])
   if (suppressed.has('city')) filters.city = undefined
   if (suppressed.has('province')) filters.province = undefined
+  if (suppressed.has('neighborhood')) filters.cityRegion = undefined
   if (suppressed.has('status')) filters.standardStatus = undefined
   if (suppressed.has('type')) filters.propertySubType = undefined
+  if (suppressed.has('lotFeature')) filters.lotFeatures = []
   return filters
 }
 
@@ -1226,9 +1255,6 @@ const compareGroupSummaries = (
   searchGroupPriority(left.groupSlug) - searchGroupPriority(right.groupSlug) ||
   right.listingCount - left.listingCount ||
   left.pluralLabel.localeCompare(right.pluralLabel)
-
-const neighborhoodSortLabel = (value: string) =>
-  value.replace(/^\s*\d+\s*-\s*/, '').trim()
 
 const compareNeighborhoodValueLinks = (
   left: ListingGroupValueLink,
@@ -1844,6 +1870,7 @@ const listingGroupDefinitions = [
     pluralLabel: 'Lot features',
     description: 'Listings grouped by lot features.',
     valueKind: 'array',
+    suppressedSearchKeys: ['lotFeature'],
   },
   {
     slug: 'lot-size-area',
@@ -1862,6 +1889,7 @@ const listingGroupDefinitions = [
     pluralLabel: 'Neighborhoods',
     description: 'Listings grouped by city region or neighborhood.',
     valueKind: 'scalar',
+    suppressedSearchKeys: ['neighborhood'],
   },
   {
     slug: 'subdivision-name',
@@ -2155,8 +2183,10 @@ const listingAdvancedFacetDefinitions = [
 const listingFacetSelect = uniquePropertyFields([
   'city',
   'province',
+  'cityRegion',
   'propertySubType',
   'standardStatus',
+  'lotFeatures',
   'listPrice',
   'leaseAmount',
   'totalActualRent',
@@ -2426,7 +2456,12 @@ const buildFacets = Effect.fn('Listings.buildFacets')(function* (
   return {
     cities: uniqueSorted(
       rows.map((row) => schemaString<DdfProperty>(row, 'City', 'city')),
-    ).slice(0, 80),
+    ),
+    neighborhoods: uniqueNeighborhoods(
+      rows.map((row) =>
+        schemaString<DdfProperty>(row, 'CityRegion', 'cityRegion'),
+      ),
+    ),
     provinces: uniqueSorted(
       rows.map((row) =>
         schemaString<DdfProperty>(row, 'StateOrProvince', 'province'),
@@ -2440,6 +2475,13 @@ const buildFacets = Effect.fn('Listings.buildFacets')(function* (
     types: uniqueSorted(
       rows.map((row) =>
         schemaString<DdfProperty>(row, 'PropertySubType', 'propertySubType'),
+      ),
+    ),
+    lotFeatures: uniqueSorted(
+      rows.flatMap((row) =>
+        groupValueParts(
+          schemaValue<DdfProperty>(row, 'LotFeatures', 'lotFeatures'),
+        ).flatMap((value) => (typeof value === 'string' ? [value] : [])),
       ),
     ),
     prices: priceOptions(rows.map(effectivePrice)),

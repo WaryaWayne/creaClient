@@ -122,7 +122,7 @@ function RentalGroupedListingsRoute() {
           'Pick another rental category below or browse all rental listings.',
         fallbackButton: 'View rentals',
         groupedDescriptionSuffix:
-          'Keep filtering this rental page by city, province, status, price, beds, baths, or sort order.',
+          'Keep filtering this rental page by city, neighborhood, lot feature, price, beds, baths, or sort order.',
       }}
     />
   )

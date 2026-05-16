@@ -58,7 +58,7 @@ const audienceOptions: readonly AudienceOption[] = [
     to: '/sellers',
     icon: HomeIcon,
     searchLabel: 'See active listings',
-    search: { status: 'Active', sort: 'newest' },
+    search: { sort: 'newest' },
     bullets: ['Position the property', 'Check live competition'],
   },
   {

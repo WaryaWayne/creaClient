@@ -170,9 +170,11 @@ const listingDescription = (listing: ListingCard) => {
 const listingFilterParts = (search: ListingSearch) => {
   const parts = [
     search.city ? `in ${search.city}` : null,
+    search.neighborhood ? `in ${search.neighborhood}` : null,
     search.province ? `in ${search.province}` : null,
     search.status ? search.status : null,
     search.type ? search.type : null,
+    search.lotFeature ? `with ${search.lotFeature}` : null,
     search.minPrice || search.maxPrice
       ? `priced ${search.minPrice ? `from ${money.format(Number(search.minPrice))}` : ''}${
           search.minPrice && search.maxPrice ? ' ' : ''
@@ -192,7 +194,10 @@ const listingFilterParts = (search: ListingSearch) => {
 }
 
 const listingSearchTitle = (search: ListingSearch) => {
-  const primary = [search.type, search.city || search.province]
+  const primary = [
+    search.type,
+    search.city || search.neighborhood || search.province,
+  ]
     .filter(Boolean)
     .join(' in ')
   if (primary) return `${primary} Listings | ${appName}`
@@ -219,7 +224,7 @@ const listingSearchDescription = (
 }
 
 const rentalSearchTitle = (search: ListingSearch) => {
-  const place = search.city || search.province
+  const place = search.city || search.neighborhood || search.province
   if (search.type && place)
     return `${search.type} Rentals in ${place} | ${appName}`
   if (search.type) return `${search.type} Rentals | ${appName}`

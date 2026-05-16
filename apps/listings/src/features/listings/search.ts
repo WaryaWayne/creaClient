@@ -28,8 +28,10 @@ export type ListingAdvancedFilterKey =
 export type ListingSearch = {
   readonly city: string
   readonly province: string
+  readonly neighborhood: string
   readonly status: string
   readonly type: string
+  readonly lotFeature: string
   readonly minPrice: NumericSearchValue
   readonly maxPrice: NumericSearchValue
   readonly minBeds: NumericSearchValue
@@ -68,8 +70,10 @@ export type OpenHouseSearch = {
 export const defaultListingSearch: ListingSearch = {
   city: '',
   province: '',
+  neighborhood: '',
   status: '',
   type: '',
+  lotFeature: '',
   minPrice: '',
   maxPrice: '',
   minBeds: '',
@@ -111,7 +115,8 @@ const firstValue = (value: unknown): unknown =>
 const readString = (value: unknown) => {
   const first = firstValue(value)
   if (typeof first === 'number' && Number.isFinite(first)) return String(first)
-  return typeof first === 'string' ? first.trim() : ''
+  const parsed = typeof first === 'string' ? first.trim() : ''
+  return parsed === '__all' ? '' : parsed
 }
 
 const readPage = (value: unknown) => {
@@ -154,8 +159,10 @@ export const parseListingSearch = (input: unknown): ListingSearch => {
   return {
     city: readString(value.city),
     province: readString(value.province),
+    neighborhood: readString(value.neighborhood),
     status: readString(value.status),
     type: readString(value.type),
+    lotFeature: readString(value.lotFeature),
     minPrice: readNumeric(value.minPrice),
     maxPrice: readNumeric(value.maxPrice),
     minBeds: readNumeric(value.minBeds),
@@ -244,8 +251,10 @@ export const compactListingSearch = (search: ListingSearch) => {
   const output: Record<string, string | number | ReadonlyArray<string>> = {}
   addIfPresent(output, 'city', search.city)
   addIfPresent(output, 'province', search.province)
+  addIfPresent(output, 'neighborhood', search.neighborhood)
   addIfPresent(output, 'status', search.status)
   addIfPresent(output, 'type', search.type)
+  addIfPresent(output, 'lotFeature', search.lotFeature)
   addNumberIfPresent(output, 'minPrice', search.minPrice)
   addNumberIfPresent(output, 'maxPrice', search.maxPrice)
   addNumberIfPresent(output, 'minBeds', search.minBeds)

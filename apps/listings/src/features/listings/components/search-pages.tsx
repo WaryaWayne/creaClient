@@ -200,26 +200,29 @@ const buildSearchIndexActions = (
       search: { ...defaultListingSearch, city },
     } as const,
   })),
-  ...data.facets.provinces.map((province) => ({
-    id: `province-${province}`,
-    eyebrow: 'Province',
-    label: province,
-    description: `Listings in ${province}.`,
-    keywords: [`${province} listings`, `province ${province}`],
+  ...data.facets.neighborhoods.map((neighborhood) => {
+    const label = displaySearchGroupValue('neighborhood', neighborhood)
+    return {
+      id: `neighborhood-${neighborhood}`,
+      eyebrow: 'Neighborhood',
+      label,
+      description: `Listings in ${label}.`,
+      keywords: [`${label} listings`, `neighborhood ${label}`],
+      destination: {
+        type: 'listings',
+        search: { ...defaultListingSearch, neighborhood },
+      } as const,
+    }
+  }),
+  ...data.facets.lotFeatures.map((lotFeature) => ({
+    id: `lot-feature-${lotFeature}`,
+    eyebrow: 'Lot feature',
+    label: lotFeature,
+    description: `Listings with ${lotFeature}.`,
+    keywords: [`${lotFeature} listings`, `lot feature ${lotFeature}`],
     destination: {
       type: 'listings',
-      search: { ...defaultListingSearch, province },
-    } as const,
-  })),
-  ...data.facets.statuses.map((status) => ({
-    id: `status-${status}`,
-    eyebrow: 'Status',
-    label: status,
-    description: `${status} listings.`,
-    keywords: [`${status} properties`, `${status} homes`],
-    destination: {
-      type: 'listings',
-      search: { ...defaultListingSearch, status },
+      search: { ...defaultListingSearch, lotFeature },
     } as const,
   })),
   ...data.facets.types.map((type) => ({

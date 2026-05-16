@@ -20,7 +20,6 @@ import {
 } from '#/features/listings/search'
 import { EmptyState } from '#/features/listings/components/shared'
 import { appIconLinks, appSeoDefaults } from '#/features/listings/seo'
-import { Effect } from 'effect'
 
 import appCss from '../styles.css?url'
 
@@ -31,7 +30,7 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  beforeLoad: async () => {
+  beforeLoad: () => {
     // Other redirect strategies are possible; see
     // https://github.com/TanStack/router/tree/main/examples/react/i18n-paraglide#offline-redirect
     if (typeof document !== 'undefined') {
@@ -118,6 +117,9 @@ function SiteHeader() {
             className={linkClass}
           >
             Open houses
+          </Link>
+          <Link to="/sellers" className={linkClass}>
+            Sellers
           </Link>
           <Link to="/search" className={linkClass}>
             Search

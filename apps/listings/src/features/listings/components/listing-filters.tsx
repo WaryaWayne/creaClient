@@ -53,6 +53,7 @@ import {
   activeListingFilterCount,
   allValue,
   cleanSearchObject,
+  displaySearchGroupValue,
   maxCountLabel,
   minCountLabel,
   money,
@@ -66,12 +67,14 @@ function SelectFilter({
   value,
   placeholder,
   options,
+  formatOptionLabel,
   onChange,
 }: {
   readonly label: string
   readonly value: string
   readonly placeholder: string
   readonly options: ReadonlyArray<string>
+  readonly formatOptionLabel?: (value: string) => string
   readonly onChange: (value: string) => void
 }) {
   return (
@@ -92,7 +95,7 @@ function SelectFilter({
           <SelectItem value={allValue}>{placeholder}</SelectItem>
           {options.map((option) => (
             <SelectItem value={option} key={option}>
-              {option}
+              {formatOptionLabel?.(option) ?? option}
             </SelectItem>
           ))}
         </SelectContent>
@@ -377,22 +380,25 @@ export function ListingFilters({
                   onChange={(city) => commit({ city })}
                 />
               )}
-              {hiddenFieldSet.has('province') ? null : (
+              {hiddenFieldSet.has('neighborhood') ? null : (
                 <SelectFilter
-                  label="Province"
-                  value={filters.province}
-                  placeholder="All provinces"
-                  options={facets.provinces}
-                  onChange={(province) => commit({ province })}
+                  label="Neighborhood"
+                  value={filters.neighborhood}
+                  placeholder="All neighborhoods"
+                  options={facets.neighborhoods}
+                  formatOptionLabel={(value) =>
+                    displaySearchGroupValue('neighborhood', value)
+                  }
+                  onChange={(neighborhood) => commit({ neighborhood })}
                 />
               )}
-              {hiddenFieldSet.has('status') ? null : (
+              {hiddenFieldSet.has('lotFeature') ? null : (
                 <SelectFilter
-                  label="Status"
-                  value={filters.status}
-                  placeholder="All statuses"
-                  options={facets.statuses}
-                  onChange={(status) => commit({ status })}
+                  label="Lot feature"
+                  value={filters.lotFeature}
+                  placeholder="All lot features"
+                  options={facets.lotFeatures}
+                  onChange={(lotFeature) => commit({ lotFeature })}
                 />
               )}
               {hiddenFieldSet.has('type') ? null : (

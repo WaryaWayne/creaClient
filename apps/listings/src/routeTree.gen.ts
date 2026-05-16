@@ -22,8 +22,17 @@ import { Route as InvestmentsIndexRouteImport } from './routes/investments/index
 import { Route as EstatesIndexRouteImport } from './routes/estates/index'
 import { Route as BuyersIndexRouteImport } from './routes/buyers/index'
 import { Route as AgentsIndexRouteImport } from './routes/agents/index'
+import { Route as SellersGetReadyRouteImport } from './routes/sellers/get-ready'
+import { Route as SellersComparablesRouteImport } from './routes/sellers/comparables'
+import { Route as SellersCalculatorRouteImport } from './routes/sellers/calculator'
 import { Route as OpenHousesOpenHouseKeyRouteImport } from './routes/open-houses/$openHouseKey'
 import { Route as ListingsListingKeyRouteImport } from './routes/listings/$listingKey'
+import { Route as InvestmentsOpportunitiesRouteImport } from './routes/investments/opportunities'
+import { Route as InvestmentsDueDiligenceRouteImport } from './routes/investments/due-diligence'
+import { Route as InvestmentsCalculatorRouteImport } from './routes/investments/calculator'
+import { Route as EstatesPropertiesRouteImport } from './routes/estates/properties'
+import { Route as EstatesOrganizerRouteImport } from './routes/estates/organizer'
+import { Route as EstatesCalculatorRouteImport } from './routes/estates/calculator'
 import { Route as AgentsAgentKeyRouteImport } from './routes/agents/$agentKey'
 import { Route as SearchGroupIndexRouteImport } from './routes/search/$group/index'
 import { Route as RentalsGroupIndexRouteImport } from './routes/rentals/$group/index'
@@ -96,6 +105,21 @@ const AgentsIndexRoute = AgentsIndexRouteImport.update({
   path: '/agents/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SellersGetReadyRoute = SellersGetReadyRouteImport.update({
+  id: '/sellers/get-ready',
+  path: '/sellers/get-ready',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SellersComparablesRoute = SellersComparablesRouteImport.update({
+  id: '/sellers/comparables',
+  path: '/sellers/comparables',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SellersCalculatorRoute = SellersCalculatorRouteImport.update({
+  id: '/sellers/calculator',
+  path: '/sellers/calculator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OpenHousesOpenHouseKeyRoute = OpenHousesOpenHouseKeyRouteImport.update({
   id: '/open-houses/$openHouseKey',
   path: '/open-houses/$openHouseKey',
@@ -104,6 +128,37 @@ const OpenHousesOpenHouseKeyRoute = OpenHousesOpenHouseKeyRouteImport.update({
 const ListingsListingKeyRoute = ListingsListingKeyRouteImport.update({
   id: '/listings/$listingKey',
   path: '/listings/$listingKey',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvestmentsOpportunitiesRoute =
+  InvestmentsOpportunitiesRouteImport.update({
+    id: '/investments/opportunities',
+    path: '/investments/opportunities',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const InvestmentsDueDiligenceRoute = InvestmentsDueDiligenceRouteImport.update({
+  id: '/investments/due-diligence',
+  path: '/investments/due-diligence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvestmentsCalculatorRoute = InvestmentsCalculatorRouteImport.update({
+  id: '/investments/calculator',
+  path: '/investments/calculator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstatesPropertiesRoute = EstatesPropertiesRouteImport.update({
+  id: '/estates/properties',
+  path: '/estates/properties',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstatesOrganizerRoute = EstatesOrganizerRouteImport.update({
+  id: '/estates/organizer',
+  path: '/estates/organizer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstatesCalculatorRoute = EstatesCalculatorRouteImport.update({
+  id: '/estates/calculator',
+  path: '/estates/calculator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentsAgentKeyRoute = AgentsAgentKeyRouteImport.update({
@@ -142,8 +197,17 @@ export interface FileRoutesByFullPath {
   '/index-older': typeof IndexOlderRoute
   '/mcp': typeof McpRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
+  '/estates/calculator': typeof EstatesCalculatorRoute
+  '/estates/organizer': typeof EstatesOrganizerRoute
+  '/estates/properties': typeof EstatesPropertiesRoute
+  '/investments/calculator': typeof InvestmentsCalculatorRoute
+  '/investments/due-diligence': typeof InvestmentsDueDiligenceRoute
+  '/investments/opportunities': typeof InvestmentsOpportunitiesRoute
   '/listings/$listingKey': typeof ListingsListingKeyRoute
   '/open-houses/$openHouseKey': typeof OpenHousesOpenHouseKeyRoute
+  '/sellers/calculator': typeof SellersCalculatorRoute
+  '/sellers/comparables': typeof SellersComparablesRoute
+  '/sellers/get-ready': typeof SellersGetReadyRoute
   '/agents/': typeof AgentsIndexRoute
   '/buyers/': typeof BuyersIndexRoute
   '/estates/': typeof EstatesIndexRoute
@@ -165,8 +229,17 @@ export interface FileRoutesByTo {
   '/index-older': typeof IndexOlderRoute
   '/mcp': typeof McpRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
+  '/estates/calculator': typeof EstatesCalculatorRoute
+  '/estates/organizer': typeof EstatesOrganizerRoute
+  '/estates/properties': typeof EstatesPropertiesRoute
+  '/investments/calculator': typeof InvestmentsCalculatorRoute
+  '/investments/due-diligence': typeof InvestmentsDueDiligenceRoute
+  '/investments/opportunities': typeof InvestmentsOpportunitiesRoute
   '/listings/$listingKey': typeof ListingsListingKeyRoute
   '/open-houses/$openHouseKey': typeof OpenHousesOpenHouseKeyRoute
+  '/sellers/calculator': typeof SellersCalculatorRoute
+  '/sellers/comparables': typeof SellersComparablesRoute
+  '/sellers/get-ready': typeof SellersGetReadyRoute
   '/agents': typeof AgentsIndexRoute
   '/buyers': typeof BuyersIndexRoute
   '/estates': typeof EstatesIndexRoute
@@ -189,8 +262,17 @@ export interface FileRoutesById {
   '/index-older': typeof IndexOlderRoute
   '/mcp': typeof McpRoute
   '/agents/$agentKey': typeof AgentsAgentKeyRoute
+  '/estates/calculator': typeof EstatesCalculatorRoute
+  '/estates/organizer': typeof EstatesOrganizerRoute
+  '/estates/properties': typeof EstatesPropertiesRoute
+  '/investments/calculator': typeof InvestmentsCalculatorRoute
+  '/investments/due-diligence': typeof InvestmentsDueDiligenceRoute
+  '/investments/opportunities': typeof InvestmentsOpportunitiesRoute
   '/listings/$listingKey': typeof ListingsListingKeyRoute
   '/open-houses/$openHouseKey': typeof OpenHousesOpenHouseKeyRoute
+  '/sellers/calculator': typeof SellersCalculatorRoute
+  '/sellers/comparables': typeof SellersComparablesRoute
+  '/sellers/get-ready': typeof SellersGetReadyRoute
   '/agents/': typeof AgentsIndexRoute
   '/buyers/': typeof BuyersIndexRoute
   '/estates/': typeof EstatesIndexRoute
@@ -214,8 +296,17 @@ export interface FileRouteTypes {
     | '/index-older'
     | '/mcp'
     | '/agents/$agentKey'
+    | '/estates/calculator'
+    | '/estates/organizer'
+    | '/estates/properties'
+    | '/investments/calculator'
+    | '/investments/due-diligence'
+    | '/investments/opportunities'
     | '/listings/$listingKey'
     | '/open-houses/$openHouseKey'
+    | '/sellers/calculator'
+    | '/sellers/comparables'
+    | '/sellers/get-ready'
     | '/agents/'
     | '/buyers/'
     | '/estates/'
@@ -237,8 +328,17 @@ export interface FileRouteTypes {
     | '/index-older'
     | '/mcp'
     | '/agents/$agentKey'
+    | '/estates/calculator'
+    | '/estates/organizer'
+    | '/estates/properties'
+    | '/investments/calculator'
+    | '/investments/due-diligence'
+    | '/investments/opportunities'
     | '/listings/$listingKey'
     | '/open-houses/$openHouseKey'
+    | '/sellers/calculator'
+    | '/sellers/comparables'
+    | '/sellers/get-ready'
     | '/agents'
     | '/buyers'
     | '/estates'
@@ -260,8 +360,17 @@ export interface FileRouteTypes {
     | '/index-older'
     | '/mcp'
     | '/agents/$agentKey'
+    | '/estates/calculator'
+    | '/estates/organizer'
+    | '/estates/properties'
+    | '/investments/calculator'
+    | '/investments/due-diligence'
+    | '/investments/opportunities'
     | '/listings/$listingKey'
     | '/open-houses/$openHouseKey'
+    | '/sellers/calculator'
+    | '/sellers/comparables'
+    | '/sellers/get-ready'
     | '/agents/'
     | '/buyers/'
     | '/estates/'
@@ -284,8 +393,17 @@ export interface RootRouteChildren {
   IndexOlderRoute: typeof IndexOlderRoute
   McpRoute: typeof McpRoute
   AgentsAgentKeyRoute: typeof AgentsAgentKeyRoute
+  EstatesCalculatorRoute: typeof EstatesCalculatorRoute
+  EstatesOrganizerRoute: typeof EstatesOrganizerRoute
+  EstatesPropertiesRoute: typeof EstatesPropertiesRoute
+  InvestmentsCalculatorRoute: typeof InvestmentsCalculatorRoute
+  InvestmentsDueDiligenceRoute: typeof InvestmentsDueDiligenceRoute
+  InvestmentsOpportunitiesRoute: typeof InvestmentsOpportunitiesRoute
   ListingsListingKeyRoute: typeof ListingsListingKeyRoute
   OpenHousesOpenHouseKeyRoute: typeof OpenHousesOpenHouseKeyRoute
+  SellersCalculatorRoute: typeof SellersCalculatorRoute
+  SellersComparablesRoute: typeof SellersComparablesRoute
+  SellersGetReadyRoute: typeof SellersGetReadyRoute
   AgentsIndexRoute: typeof AgentsIndexRoute
   BuyersIndexRoute: typeof BuyersIndexRoute
   EstatesIndexRoute: typeof EstatesIndexRoute
@@ -396,6 +514,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sellers/get-ready': {
+      id: '/sellers/get-ready'
+      path: '/sellers/get-ready'
+      fullPath: '/sellers/get-ready'
+      preLoaderRoute: typeof SellersGetReadyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sellers/comparables': {
+      id: '/sellers/comparables'
+      path: '/sellers/comparables'
+      fullPath: '/sellers/comparables'
+      preLoaderRoute: typeof SellersComparablesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sellers/calculator': {
+      id: '/sellers/calculator'
+      path: '/sellers/calculator'
+      fullPath: '/sellers/calculator'
+      preLoaderRoute: typeof SellersCalculatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/open-houses/$openHouseKey': {
       id: '/open-houses/$openHouseKey'
       path: '/open-houses/$openHouseKey'
@@ -408,6 +547,48 @@ declare module '@tanstack/react-router' {
       path: '/listings/$listingKey'
       fullPath: '/listings/$listingKey'
       preLoaderRoute: typeof ListingsListingKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investments/opportunities': {
+      id: '/investments/opportunities'
+      path: '/investments/opportunities'
+      fullPath: '/investments/opportunities'
+      preLoaderRoute: typeof InvestmentsOpportunitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investments/due-diligence': {
+      id: '/investments/due-diligence'
+      path: '/investments/due-diligence'
+      fullPath: '/investments/due-diligence'
+      preLoaderRoute: typeof InvestmentsDueDiligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investments/calculator': {
+      id: '/investments/calculator'
+      path: '/investments/calculator'
+      fullPath: '/investments/calculator'
+      preLoaderRoute: typeof InvestmentsCalculatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estates/properties': {
+      id: '/estates/properties'
+      path: '/estates/properties'
+      fullPath: '/estates/properties'
+      preLoaderRoute: typeof EstatesPropertiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estates/organizer': {
+      id: '/estates/organizer'
+      path: '/estates/organizer'
+      fullPath: '/estates/organizer'
+      preLoaderRoute: typeof EstatesOrganizerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estates/calculator': {
+      id: '/estates/calculator'
+      path: '/estates/calculator'
+      fullPath: '/estates/calculator'
+      preLoaderRoute: typeof EstatesCalculatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agents/$agentKey': {
@@ -460,8 +641,17 @@ const rootRouteChildren: RootRouteChildren = {
   IndexOlderRoute: IndexOlderRoute,
   McpRoute: McpRoute,
   AgentsAgentKeyRoute: AgentsAgentKeyRoute,
+  EstatesCalculatorRoute: EstatesCalculatorRoute,
+  EstatesOrganizerRoute: EstatesOrganizerRoute,
+  EstatesPropertiesRoute: EstatesPropertiesRoute,
+  InvestmentsCalculatorRoute: InvestmentsCalculatorRoute,
+  InvestmentsDueDiligenceRoute: InvestmentsDueDiligenceRoute,
+  InvestmentsOpportunitiesRoute: InvestmentsOpportunitiesRoute,
   ListingsListingKeyRoute: ListingsListingKeyRoute,
   OpenHousesOpenHouseKeyRoute: OpenHousesOpenHouseKeyRoute,
+  SellersCalculatorRoute: SellersCalculatorRoute,
+  SellersComparablesRoute: SellersComparablesRoute,
+  SellersGetReadyRoute: SellersGetReadyRoute,
   AgentsIndexRoute: AgentsIndexRoute,
   BuyersIndexRoute: BuyersIndexRoute,
   EstatesIndexRoute: EstatesIndexRoute,

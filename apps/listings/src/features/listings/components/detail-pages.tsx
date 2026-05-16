@@ -21,6 +21,7 @@ import {
   ListingsGrid,
   OpenHouseImageBadge,
 } from './listing-card'
+import { LocationMap } from './location-map'
 import { MediaGroupsView, mediaGroups, mediaKey } from './media'
 import {
   DetailGroupSection,
@@ -179,57 +180,63 @@ export function OpenHouseDetailPage({
         </InfoSection>
         {property ? (
           <InfoSection title="Property">
-            <Link
-              to="/listings/$listingKey"
-              params={{ listingKey: property.listingKey }}
-              className="group grid gap-4 no-underline md:grid-cols-[220px_1fr]"
-            >
-              <div className="overflow-hidden rounded-md bg-background">
-                {property.imageUrl ? (
-                  <img
-                    src={property.imageUrl}
-                    alt={property.address}
-                    className="aspect-[4/3] h-full w-full object-cover transition group-hover:scale-[1.02]"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex aspect-[4/3] items-center justify-center text-foreground">
-                    <Home className="size-10" />
+            <div className="grid gap-4">
+              <Link
+                to="/listings/$listingKey"
+                params={{ listingKey: property.listingKey }}
+                className="group grid gap-4 no-underline md:grid-cols-[220px_1fr]"
+              >
+                <div className="overflow-hidden rounded-md bg-background">
+                  {property.imageUrl ? (
+                    <img
+                      src={property.imageUrl}
+                      alt={property.address}
+                      className="aspect-[4/3] h-full w-full object-cover transition group-hover:scale-[1.02]"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex aspect-[4/3] items-center justify-center text-foreground">
+                      <Home className="size-10" />
+                    </div>
+                  )}
+                </div>
+                <div className="grid content-start gap-3">
+                  <div>
+                    <p className="text-2xl font-extrabold text-foreground group-hover:text-foreground">
+                      {formatListingPrice(property)}
+                    </p>
+                    <p className="mt-1 text-lg font-extrabold text-foreground">
+                      {property.address}
+                    </p>
                   </div>
-                )}
-              </div>
-              <div className="grid content-start gap-3">
-                <div>
-                  <p className="text-2xl font-extrabold text-foreground group-hover:text-foreground">
-                    {formatListingPrice(property)}
+                  <p className="flex items-center gap-1.5 text-sm text-foreground">
+                    <MapPin className="size-4" />
+                    {[property.city, property.province]
+                      .filter(Boolean)
+                      .join(', ')}
                   </p>
-                  <p className="mt-1 text-lg font-extrabold text-foreground">
-                    {property.address}
-                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <MetricPill icon={BedDouble}>
+                      {property.bedrooms ?? '-'} beds
+                    </MetricPill>
+                    <MetricPill icon={Bath}>
+                      {property.bathrooms ?? '-'} baths
+                    </MetricPill>
+                    <MetricPill icon={Building2}>
+                      {property.propertySubType ?? 'Property'}
+                    </MetricPill>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-sm font-bold text-foreground">
+                    See property details
+                    <ArrowRight className="size-4" />
+                  </span>
                 </div>
-                <p className="flex items-center gap-1.5 text-sm text-foreground">
-                  <MapPin className="size-4" />
-                  {[property.city, property.province]
-                    .filter(Boolean)
-                    .join(', ')}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <MetricPill icon={BedDouble}>
-                    {property.bedrooms ?? '-'} beds
-                  </MetricPill>
-                  <MetricPill icon={Bath}>
-                    {property.bathrooms ?? '-'} baths
-                  </MetricPill>
-                  <MetricPill icon={Building2}>
-                    {property.propertySubType ?? 'Property'}
-                  </MetricPill>
-                </div>
-                <span className="inline-flex items-center gap-1 text-sm font-bold text-foreground">
-                  See property details
-                  <ArrowRight className="size-4" />
-                </span>
-              </div>
-            </Link>
+              </Link>
+              <LocationMap
+                place={property}
+                title={`Map for ${property.address}`}
+              />
+            </div>
           </InfoSection>
         ) : null}
       </section>
@@ -442,6 +449,11 @@ export function ListingDetailPage({
             </MetricPill>
           </div>
         </div>
+        <LocationMap
+          place={listing}
+          title={`Map for ${listing.address}`}
+          iframeClassName="h-56"
+        />
         <CreditsBlock listing={listing} />
       </aside>
     </main>

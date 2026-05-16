@@ -37,7 +37,7 @@ const defaultGroupedListingsPageCopy: GroupedListingsPageCopy = {
     'Pick another category below or browse all current listings.',
   fallbackButton: 'View all listings',
   groupedDescriptionSuffix:
-    'Keep filtering this grouped page by city, province, status, price, beds, baths, or sort order.',
+    'Keep filtering this grouped page by city, neighborhood, lot feature, price, beds, baths, or sort order.',
 }
 
 const defaultListingsPageCopy: ListingsPageCopy = {
@@ -84,7 +84,7 @@ export function ListingsPage({
             </p>
           </div>
           <div className="text-sm font-semibold text-foreground">
-            Page {data.search.page} · Showing {data.listings.length}1
+            Page {data.search.page} · Showing {data.listings.length}
           </div>
         </div>
         <ListingsGrid
@@ -165,7 +165,7 @@ export function GroupedListingsPage({
                 : 'active listings in this group'}
             </span>
             <span className="rounded-full border border-border bg-background px-3 py-1">
-              Page {data.search.page} · Showing {data.listings.length}2
+              Page {data.search.page} · Showing {data.listings.length}
             </span>
           </div>
         </div>

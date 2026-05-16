@@ -88,8 +88,10 @@ export const activeListingFilterCount = (
   [
     !hiddenFields.has('city') && filters.city,
     !hiddenFields.has('province') && filters.province,
+    !hiddenFields.has('neighborhood') && filters.neighborhood,
     !hiddenFields.has('status') && filters.status,
     !hiddenFields.has('type') && filters.type,
+    !hiddenFields.has('lotFeature') && filters.lotFeature,
     filters.minPrice,
     filters.maxPrice,
     filters.minBeds,
