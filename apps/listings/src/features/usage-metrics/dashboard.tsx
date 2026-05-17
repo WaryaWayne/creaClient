@@ -1,14 +1,33 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, BarChart3, Clock3, MousePointerClick } from 'lucide-react'
 
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@workspace/ui/components/alert'
+import { Badge } from '@workspace/ui/components/badge'
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@workspace/ui/components/card'
+import { Skeleton } from '@workspace/ui/components/skeleton'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@workspace/ui/components/table'
+
 import type { LucideIcon } from 'lucide-react'
 
-import type {
-  UsageMetricButtonBucket,
-  UsageMetricLoaderBucket,
-  UsageMetricPageBucket,
-  UsageMetricsDocument,
-} from './schema'
+import type { UsageMetricsDocument } from './schema'
 
 const numberFormat = new Intl.NumberFormat('en-CA')
 
@@ -39,18 +58,22 @@ function MetricCard({
   readonly detail: string
 }) {
   return (
-    <article className="grid gap-3 rounded-lg border border-border bg-card p-4 text-foreground">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-extrabold uppercase tracking-[0.14em]">
+    <Card size="sm" className="text-foreground">
+      <CardHeader>
+        <CardTitle className="text-sm font-extrabold uppercase tracking-[0.14em]">
           {label}
-        </span>
-        <span className="grid size-10 place-items-center rounded-md bg-background">
+        </CardTitle>
+        <CardAction className="grid size-10 place-items-center rounded-md bg-background">
           <Icon className="size-5" />
-        </span>
-      </div>
-      <strong className="text-3xl font-black leading-none">{value}</strong>
-      <span className="text-sm leading-6 text-foreground">{detail}</span>
-    </article>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="grid gap-3">
+        <strong className="text-3xl font-black leading-none">{value}</strong>
+        <CardDescription className="text-sm leading-6 text-foreground">
+          {detail}
+        </CardDescription>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -68,45 +91,47 @@ function UsageTable<TValue>({
   }>
 }) {
   return (
-    <section className="grid gap-3">
-      <h2 className="text-xl font-black text-foreground">{title}</h2>
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-left text-sm">
-            <thead className="bg-background text-xs uppercase tracking-[0.12em] text-foreground">
-              <tr>
-                {columns.map((column) => (
-                  <th className="px-4 py-3 font-black" key={column.key}>
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {values.map((value, index) => (
-                <tr className="border-t border-border" key={index}>
-                  {columns.map((column) => (
-                    <td className="px-4 py-3 align-top" key={column.key}>
-                      {column.render(value)}
-                    </td>
-                  ))}
-                </tr>
+    <Card size="sm" className="gap-3">
+      <CardHeader>
+        <CardTitle className="text-xl font-black text-foreground">
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {columns.map((column) => (
+                <TableHead className="font-black" key={column.key}>
+                  {column.label}
+                </TableHead>
               ))}
-              {values.length === 0 ? (
-                <tr>
-                  <td
-                    className="px-4 py-8 text-center text-sm font-semibold text-foreground"
-                    colSpan={columns.length}
-                  >
-                    No usage has been recorded yet.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {values.map((value, index) => (
+              <TableRow key={index}>
+                {columns.map((column) => (
+                  <TableCell className="align-top" key={column.key}>
+                    {column.render(value)}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+            {values.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  className="py-8 text-center text-sm font-semibold text-foreground"
+                  colSpan={columns.length}
+                >
+                  No usage has been recorded yet.
+                </TableCell>
+              </TableRow>
+            ) : null}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -143,7 +168,7 @@ export function UsageMetricsDashboard() {
   const pages = useMemo(
     () =>
       sortByCount(
-        Object.values(document?.pages ?? {}) as UsageMetricPageBucket[],
+        Object.values(document?.pages ?? {}),
         (page) => page.views,
       ).slice(0, 12),
     [document],
@@ -151,7 +176,7 @@ export function UsageMetricsDashboard() {
   const buttons = useMemo(
     () =>
       sortByCount(
-        Object.values(document?.buttons ?? {}) as UsageMetricButtonBucket[],
+        Object.values(document?.buttons ?? {}),
         (button) => button.clicks,
       ).slice(0, 12),
     [document],
@@ -159,7 +184,7 @@ export function UsageMetricsDashboard() {
   const loaders = useMemo(
     () =>
       sortByCount(
-        Object.values(document?.loaders ?? {}) as UsageMetricLoaderBucket[],
+        Object.values(document?.loaders ?? {}),
         (loader) => loader.executions,
       ).slice(0, 12),
     [document],
@@ -168,10 +193,12 @@ export function UsageMetricsDashboard() {
   if (error !== null) {
     return (
       <main className="page-wrap grid min-h-[55vh] place-items-center py-16">
-        <div className="max-w-xl rounded-lg border border-border bg-card p-6 text-foreground">
-          <h1 className="text-2xl font-black">Usage metrics unavailable</h1>
-          <p className="mt-3 text-sm leading-6">{error}</p>
-        </div>
+        <Alert className="max-w-xl">
+          <AlertTitle className="text-2xl font-black">
+            Usage metrics unavailable
+          </AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       </main>
     )
   }
@@ -179,9 +206,10 @@ export function UsageMetricsDashboard() {
   if (document === null) {
     return (
       <main className="page-wrap grid min-h-[55vh] place-items-center py-16">
-        <p className="text-sm font-bold text-foreground">
-          Loading usage metrics...
-        </p>
+        <div className="grid w-full max-w-xl gap-3">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-32 w-full" />
+        </div>
       </main>
     )
   }
@@ -201,9 +229,9 @@ export function UsageMetricsDashboard() {
               Last updated {formatDate(document.updatedAt)}
             </p>
           </div>
-          <code className="rounded-md border border-border bg-card px-3 py-2 text-xs font-bold text-foreground">
+          <Badge variant="outline" className="h-auto py-2 font-bold">
             {document.schema}
-          </code>
+          </Badge>
         </div>
       </section>
 

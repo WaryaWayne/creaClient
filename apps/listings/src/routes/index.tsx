@@ -16,7 +16,21 @@ import {
   defaultListingSearch,
   defaultOpenHouseSearch,
 } from '#/features/listings/search'
+import { Badge } from '@workspace/ui/components/badge'
 import { Button } from '@workspace/ui/components/button'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@workspace/ui/components/card'
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from '@workspace/ui/components/item'
 
 import type { ListingSearch } from '#/features/listings/search'
 
@@ -168,16 +182,18 @@ function Home() {
             </Button>
           </div>
         </div>
-        <div className="grid gap-3 rounded-lg border border-border bg-card p-4 shadow-[0_18px_42px_rgba(23,58,64,0.08)]">
-          <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
-            What you can do here
-          </p>
-          <div className="grid gap-3">
+        <Card size="sm" className="shadow-[0_18px_42px_rgba(23,58,64,0.08)]">
+          <CardHeader>
+            <CardTitle className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
+              What you can do here
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3">
             {siteHighlights.map((item) => (
               <SiteHighlight item={item} key={item.title} />
             ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </section>
 
       <section className="page-wrap grid gap-4">
@@ -190,13 +206,15 @@ function Home() {
               Who are you today?
             </h2>
           </div>
-          <Link
-            to="/search"
-            className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-extrabold text-foreground no-underline hover:border-border"
+          <Button
+            nativeButton={false}
+            render={<Link to="/search" />}
+            variant="outline"
+            className="w-fit font-extrabold"
           >
             Search all categories
             <ArrowRight className="size-4" />
-          </Link>
+          </Button>
         </div>
         <div className="grid items-stretch gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
           {audienceOptions.map((option) => (
@@ -215,34 +233,37 @@ function SiteHighlight({
 }) {
   const Icon = item.icon
   return (
-    <article className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[auto_1fr] sm:items-start">
-      <span className="flex size-10 items-center justify-center rounded-md bg-background text-foreground">
+    <Item variant="outline">
+      <ItemMedia
+        variant="icon"
+        className="size-10 rounded-md bg-background text-foreground"
+      >
         <Icon className="size-5" />
-      </span>
-      <span>
-        <span className="block text-base font-extrabold text-foreground">
+      </ItemMedia>
+      <ItemContent>
+        <ItemTitle className="text-base font-extrabold text-foreground">
           {item.title}
-        </span>
-        <span className="mt-1 block text-sm leading-6 text-foreground">
+        </ItemTitle>
+        <ItemDescription className="text-sm leading-6 text-foreground">
           {item.description}
-        </span>
-      </span>
-    </article>
+        </ItemDescription>
+      </ItemContent>
+    </Item>
   )
 }
 
 function AudienceCard({ option }: { readonly option: AudienceOption }) {
   const Icon = option.icon
   return (
-    <article className="feature-card grid min-h-[22rem] content-between gap-5 rounded-lg border border-border p-5 text-foreground">
+    <Card className="feature-card min-h-[22rem] justify-between text-foreground">
       <div className="grid gap-4">
         <div className="flex items-start justify-between gap-3">
           <span className="flex size-11 items-center justify-center rounded-md bg-background text-foreground">
             <Icon className="size-5" />
           </span>
-          <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold text-foreground">
+          <Badge variant="outline" className="font-bold">
             {option.title}
-          </span>
+          </Badge>
         </div>
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-foreground">
@@ -257,12 +278,13 @@ function AudienceCard({ option }: { readonly option: AudienceOption }) {
         </div>
         <div className="grid gap-2">
           {option.bullets.map((bullet) => (
-            <span
-              className="rounded-md border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground"
+            <Badge
+              variant="outline"
+              className="h-auto rounded-md px-3 py-2 text-sm font-semibold"
               key={bullet}
             >
               {bullet}
-            </span>
+            </Badge>
           ))}
         </div>
       </div>
@@ -285,6 +307,6 @@ function AudienceCard({ option }: { readonly option: AudienceOption }) {
           <Search />
         </Button>
       </div>
-    </article>
+    </Card>
   )
 }
