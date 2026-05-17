@@ -1,8 +1,8 @@
 import { createServerFn } from '@tanstack/react-start'
 import * as BunFileSystem from '@effect/platform-bun/BunFileSystem'
 import { Effect, Layer, Option } from 'effect'
-import { DdfDatabase, DdfDbClient } from '@warya/crea-ddf/db'
-import type { PropertyField, PropertyFilters } from '@warya/crea-ddf/db'
+import { DdfDatabase, DdfDbClient } from 'crea-ddf/db'
+import type { PropertyField, PropertyFilters } from 'crea-ddf/db'
 import type {
   DestinationSchema,
   MediaSchema,
