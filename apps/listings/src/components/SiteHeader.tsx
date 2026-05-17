@@ -3,6 +3,13 @@ import { ArrowRight, ChevronDown } from 'lucide-react'
 
 import { Button } from '@workspace/ui/components/button'
 import { ButtonGroup } from '@workspace/ui/components/button-group'
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from '@workspace/ui/components/item'
 import { AppLogo } from '#/components/AppLogo'
 import { MobileNav } from '#/components/MobileNav'
 import { ModeToggle } from '#/components/ModeToggle'
@@ -16,8 +23,8 @@ import type { ListingSearch } from '#/features/listings/search'
 const desktopLinkClass =
   'text-sm font-medium text-foreground no-underline transition-colors hover:text-primary'
 
-const dropdownLinkClass =
-  'border border-transparent px-4 py-3 text-sm text-foreground no-underline transition-colors hover:border-primary/20 hover:bg-primary/5 hover:backdrop-blur-sm'
+const toolLinkClass =
+  'flex h-full min-h-[3.25rem] items-center justify-center text-center no-underline'
 
 const estatePropertiesSearch = {
   ...defaultListingSearch,
@@ -67,72 +74,62 @@ export function SiteHeader() {
           </Link>
 
           <div className="group relative">
-            <button
-              className="flex items-center gap-1 py-4 text-sm font-medium text-foreground transition-colors hover:text-primary"
+            <Button
+              variant="ghost"
               aria-expanded="false"
               aria-haspopup="true"
               type="button"
+              className="py-4 text-sm font-medium"
             >
               Paths
               <ChevronDown className="h-4 w-4 transition-transform group-hover:rotate-180" />
-            </button>
+            </Button>
             <div className="invisible absolute top-full left-1/2 z-50 w-[620px] -translate-x-1/2 border border-border bg-card p-2 opacity-0 shadow-xl transition-all duration-200 group-hover:visible group-hover:opacity-100">
               <div className="grid grid-cols-2 gap-2">
-                <Link to="/buyers" className={dropdownLinkClass}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-semibold text-foreground">Buyers</p>
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                        Search synced CREA DDF listings, rentals, and open
-                        houses.
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-xs font-semibold text-primary">
-                      Browse
-                    </span>
-                  </div>
-                </Link>
-                <Link to="/sellers" className={dropdownLinkClass}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-semibold text-foreground">Sellers</p>
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                        Prepare, price, and compare before listing a property.
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-xs font-semibold text-primary">
-                      Plan
-                    </span>
-                  </div>
-                </Link>
-                <Link to="/investments" className={dropdownLinkClass}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        Investments
-                      </p>
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                        Screen active listings and move into deal math.
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-xs font-semibold text-primary">
-                      Analyze
-                    </span>
-                  </div>
-                </Link>
-                <Link to="/estates" className={dropdownLinkClass}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-semibold text-foreground">Estates</p>
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                        Organize larger-property and executor decisions.
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-xs font-semibold text-primary">
-                      Plan
-                    </span>
-                  </div>
-                </Link>
+                <Item variant="outline" render={<Link to="/buyers" />}>
+                  <ItemContent>
+                    <ItemTitle>Buyers</ItemTitle>
+                    <ItemDescription>
+                      Search synced CREA DDF listings, rentals, and open houses.
+                    </ItemDescription>
+                  </ItemContent>
+                  <ItemActions className="text-xs font-semibold text-primary">
+                    Browse
+                  </ItemActions>
+                </Item>
+                <Item variant="outline" render={<Link to="/sellers" />}>
+                  <ItemContent>
+                    <ItemTitle>Sellers</ItemTitle>
+                    <ItemDescription>
+                      Prepare, price, and compare before listing a property.
+                    </ItemDescription>
+                  </ItemContent>
+                  <ItemActions className="text-xs font-semibold text-primary">
+                    Plan
+                  </ItemActions>
+                </Item>
+                <Item variant="outline" render={<Link to="/investments" />}>
+                  <ItemContent>
+                    <ItemTitle>Investments</ItemTitle>
+                    <ItemDescription>
+                      Screen active listings and move into deal math.
+                    </ItemDescription>
+                  </ItemContent>
+                  <ItemActions className="text-xs font-semibold text-primary">
+                    Analyze
+                  </ItemActions>
+                </Item>
+                <Item variant="outline" render={<Link to="/estates" />}>
+                  <ItemContent>
+                    <ItemTitle>Estates</ItemTitle>
+                    <ItemDescription>
+                      Organize larger-property and executor decisions.
+                    </ItemDescription>
+                  </ItemContent>
+                  <ItemActions className="text-xs font-semibold text-primary">
+                    Plan
+                  </ItemActions>
+                </Item>
               </div>
               <div className="mt-2 border-t border-border px-2 pt-2">
                 <Link
@@ -146,24 +143,22 @@ export function SiteHeader() {
           </div>
 
           <div className="group relative">
-            <button
-              className="flex items-center gap-1 py-4 text-sm font-medium text-foreground transition-colors hover:text-primary"
+            <Button
+              variant="ghost"
               aria-expanded="false"
               aria-haspopup="true"
               type="button"
+              className="py-4 text-sm font-medium"
             >
               Tools
               <ChevronDown className="h-4 w-4 transition-transform group-hover:rotate-180" />
-            </button>
+            </Button>
             <div className="invisible absolute top-full left-1/2 z-50 w-[680px] -translate-x-1/2 border border-border bg-card p-2 opacity-0 shadow-xl transition-all duration-200 group-hover:visible group-hover:opacity-100">
               <p className="mb-3 px-2 pt-2 text-xs font-bold tracking-widest text-primary uppercase">
                 Calculators, comparisons, and directories
               </p>
               <div className="grid auto-rows-fr grid-cols-3 gap-1 px-2 pb-2">
-                <Link
-                  to="/sellers/calculator"
-                  className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
-                >
+                <Link to="/sellers/calculator" className={toolLinkClass}>
                   <span className="leading-tight font-medium">
                     Seller calculator
                   </span>
@@ -171,37 +166,28 @@ export function SiteHeader() {
                 <Link
                   to="/sellers/comparables"
                   search={defaultListingSearch}
-                  className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                  className={toolLinkClass}
                 >
                   <span className="leading-tight font-medium">Comparables</span>
                 </Link>
                 <Link
                   to="/investments/opportunities"
                   search={defaultListingSearch}
-                  className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                  className={toolLinkClass}
                 >
                   <span className="leading-tight font-medium">Investments</span>
                 </Link>
-                <Link
-                  to="/investments/calculator"
-                  className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
-                >
+                <Link to="/investments/calculator" className={toolLinkClass}>
                   <span className="leading-tight font-medium">
                     Investment calculator
                   </span>
                 </Link>
-                <Link
-                  to="/estates/organizer"
-                  className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
-                >
+                <Link to="/estates/organizer" className={toolLinkClass}>
                   <span className="leading-tight font-medium">
                     Estate organizer
                   </span>
                 </Link>
-                <Link
-                  to="/estates/calculator"
-                  className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
-                >
+                <Link to="/estates/calculator" className={toolLinkClass}>
                   <span className="leading-tight font-medium">
                     Estate calculator
                   </span>
@@ -209,22 +195,16 @@ export function SiteHeader() {
                 <Link
                   to="/estates/properties"
                   search={estatePropertiesSearch}
-                  className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                  className={toolLinkClass}
                 >
                   <span className="leading-tight font-medium">
                     Estate properties
                   </span>
                 </Link>
-                <Link
-                  to="/sellers/get-ready"
-                  className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
-                >
+                <Link to="/sellers/get-ready" className={toolLinkClass}>
                   <span className="leading-tight font-medium">Seller prep</span>
                 </Link>
-                <Link
-                  to="/investments/due-diligence"
-                  className="flex h-full min-h-[3.25rem] items-center justify-center border border-border px-2.5 py-1.5 text-center text-sm text-foreground no-underline transition-colors hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
-                >
+                <Link to="/investments/due-diligence" className={toolLinkClass}>
                   <span className="leading-tight font-medium">
                     Due diligence
                   </span>

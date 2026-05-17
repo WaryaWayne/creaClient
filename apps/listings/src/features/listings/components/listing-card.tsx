@@ -16,7 +16,9 @@ import {
   Users,
 } from 'lucide-react'
 
+import { Badge } from '@workspace/ui/components/badge'
 import { Button } from '@workspace/ui/components/button'
+import { Card, CardContent, CardFooter } from '@workspace/ui/components/card'
 import {
   Item,
   ItemActions,
@@ -45,54 +47,59 @@ export function OpenHouseImageBadge({
   const nextOpenHouse = openHouses[0]
 
   return (
-    <Link
-      to="/open-houses/$openHouseKey"
-      params={{ openHouseKey: nextOpenHouse.openHouseKey }}
-      className="inline-flex items-center gap-1.5 rounded-full bg-background ring-2 ring-border px-3 py-1 text-xs font-extrabold text-foreground no-underline shadow-sm"
+    <Badge
+      variant="outline"
+      render={
+        <Link
+          to="/open-houses/$openHouseKey"
+          params={{ openHouseKey: nextOpenHouse.openHouseKey }}
+        />
+      }
+      className="gap-1.5 bg-background py-1 font-extrabold no-underline shadow-sm ring-2 ring-border"
     >
       <CalendarDays className="size-3.5" />
       {`${formatDate(nextOpenHouse.date)}${openHouses.length > 1 ? ` +${openHouses.length - 1}` : ''}`}
-    </Link>
+    </Badge>
   )
 }
 
 function OfficeCreditBlock({ office }: { readonly office: OfficeCard }) {
   return (
-    <div className="grid gap-3 rounded-md border border-border bg-card p-3">
-      <div className="flex items-start gap-3">
-        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-background text-foreground">
-          {office.imageUrl !== null && office.imageUrl.length > 0 ? (
-            <img
-              src={office.imageUrl}
-              alt={office.officeName ?? 'Office logo'}
-              className="h-full w-full object-contain"
-              loading="lazy"
-            />
-          ) : (
-            <Building2 className="size-5" />
-          )}
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-foreground">
-            Office
-          </p>
-          <p className="mt-1 font-extrabold text-foreground">
-            {office.officeName ?? 'Office'}
-          </p>
-          <p className="mt-1 text-sm text-foreground">
-            {[office.address, office.city, office.province, office.postalCode]
-              .filter(Boolean)
-              .join(', ') || office.officeKey}
-          </p>
-          {office.phone !== null && office.phone.length > 0 ? (
-            <p className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-foreground">
-              <Phone className="size-3" />
-              {office.phone}
-            </p>
-          ) : null}
-        </div>
-      </div>
-    </div>
+    <Item variant="outline" size="sm">
+      <ItemMedia
+        variant="image"
+        className="size-12 rounded-md bg-background text-foreground [&_img]:object-contain"
+      >
+        {office.imageUrl !== null && office.imageUrl.length > 0 ? (
+          <img
+            src={office.imageUrl}
+            alt={office.officeName ?? 'Office logo'}
+            loading="lazy"
+          />
+        ) : (
+          <Building2 className="size-5" />
+        )}
+      </ItemMedia>
+      <ItemContent className="min-w-0">
+        <ItemDescription className="text-sm font-extrabold uppercase tracking-[0.14em] text-foreground">
+          Office
+        </ItemDescription>
+        <ItemTitle className="font-extrabold text-foreground">
+          {office.officeName ?? 'Office'}
+        </ItemTitle>
+        <ItemDescription className="text-foreground">
+          {[office.address, office.city, office.province, office.postalCode]
+            .filter(Boolean)
+            .join(', ') || office.officeKey}
+        </ItemDescription>
+        {office.phone !== null && office.phone.length > 0 ? (
+          <ItemDescription className="inline-flex items-center gap-1 text-xs font-semibold text-foreground">
+            <Phone className="size-3" />
+            {office.phone}
+          </ItemDescription>
+        ) : null}
+      </ItemContent>
+    </Item>
   )
 }
 
@@ -137,11 +144,7 @@ function OfficeCreditsSummary({
   readonly listing: Pick<ListingCardType, 'address' | 'offices'>
 }) {
   return (
-    <Item
-      variant="outline"
-      size="sm"
-      className="gap-3 rounded-md border-border bg-card p-3"
-    >
+    <Item variant="outline" size="sm" className="gap-3">
       <ItemMedia
         variant="icon"
         className="size-10 rounded-md bg-background text-foreground"
@@ -179,11 +182,7 @@ export function ListingCredits({
         <OfficeCreditsSummary listing={listing} />
       ) : null}
       {listing.agents.length > 0 ? (
-        <Item
-          variant="outline"
-          size="sm"
-          className="gap-3 rounded-md border-border bg-card p-3"
-        >
+        <Item variant="outline" size="sm" className="gap-3">
           <ItemMedia
             variant="icon"
             className="size-10 rounded-md bg-background text-foreground"
@@ -236,8 +235,8 @@ export function ListingCard({
   }
 
   return (
-    <article
-      className="group cursor-pointer overflow-hidden rounded-lg border border-border bg-card shadow-[0_12px_30px_rgba(23,58,64,0.08)] hover:border-border hover:shadow-[0_18px_38px_rgba(23,58,64,0.12)]"
+    <Card
+      className="group cursor-pointer py-0 transition hover:ring-foreground/20"
       tabIndex={0}
       aria-label={`View listing details for ${listing.address}`}
       onClick={onCardClick}
@@ -257,16 +256,19 @@ export function ListingCard({
           </div>
         )}
         <div className="absolute left-3 top-3 flex max-w-[calc(100%-5rem)] flex-wrap gap-2">
-          <div className="rounded-full bg-background px-3 py-1 text-xs font-bold text-foreground shadow-sm">
+          <Badge
+            variant="outline"
+            className="bg-background py-1 font-bold shadow-sm"
+          >
             {listing.status ?? 'Listing'}
-          </div>
+          </Badge>
           <OpenHouseImageBadge openHouses={listing.openHouses} />
         </div>
         <div className="absolute right-2 top-2 rounded-full bg-background shadow-sm">
           <ListingActions listingKey={listing.listingKey} compact />
         </div>
       </div>
-      <div className="grid gap-4 p-4">
+      <CardContent className="grid gap-4 py-4">
         <div className="grid gap-2">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -298,7 +300,7 @@ export function ListingCard({
           </p>
         ) : null}
         <ListingCredits listing={listing} />
-        <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-foreground">
+        <CardFooter className="justify-between border-t px-0 pt-3 text-xs text-foreground">
           <span>{listing.listingId ?? 'CREA DDF listing'}</span>
           <Button
             nativeButton={false}
@@ -313,9 +315,9 @@ export function ListingCard({
           >
             View
           </Button>
-        </div>
-      </div>
-    </article>
+        </CardFooter>
+      </CardContent>
+    </Card>
   )
 }
 

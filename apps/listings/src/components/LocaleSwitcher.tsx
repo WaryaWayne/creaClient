@@ -1,6 +1,7 @@
 // Locale switcher refs:
 // - Paraglide docs: https://inlang.com/m/gerre34r/library-inlang-paraglideJs
 // - Router example: https://github.com/TanStack/router/tree/main/examples/react/i18n-paraglide#switching-locale
+import { Button } from '@workspace/ui/components/button'
 import { getLocale, locales, setLocale } from '#/paraglide/runtime'
 import { m } from '#/paraglide/messages'
 
@@ -17,16 +18,19 @@ export default function ParaglideLocaleSwitcher() {
       </span>
       <div className="flex gap-1">
         {locales.map((locale) => (
-          <button
+          <Button
             key={locale}
+            type="button"
+            variant={locale === currentLocale ? 'default' : 'outline'}
+            size="sm"
             onClick={() => setLocale(locale)}
             aria-pressed={locale === currentLocale}
-            className={`cursor-pointer rounded-full border border-border bg-card px-3 py-1.5 text-foreground ${
+            className={
               locale === currentLocale ? 'font-bold' : 'font-medium opacity-70'
-            }`}
+            }
           >
             {locale.toUpperCase()}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

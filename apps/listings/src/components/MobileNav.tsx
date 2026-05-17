@@ -3,6 +3,12 @@ import { ArrowRight, Logs, Menu } from 'lucide-react'
 
 import { Button } from '@workspace/ui/components/button'
 import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from '@workspace/ui/components/item'
+import {
   Sheet,
   SheetClose,
   SheetContent,
@@ -19,8 +25,8 @@ import type { ListingSearch } from '#/features/listings/search'
 const sheetLinkClass =
   'block py-2.5 font-medium text-foreground no-underline hover:text-primary'
 
-const sheetCardLinkClass =
-  'block border border-border px-3 py-3 text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:backdrop-blur-sm'
+const toolLinkClass =
+  'flex min-h-[3.5rem] items-center gap-2 text-sm text-foreground no-underline hover:text-primary'
 
 const estatePropertiesSearch = {
   ...defaultListingSearch,
@@ -113,41 +119,55 @@ export function MobileNav() {
             <div className="space-y-2">
               <SheetClose
                 nativeButton={false}
-                render={<Link to="/buyers" className={sheetCardLinkClass} />}
+                render={
+                  <Item variant="outline" render={<Link to="/buyers" />} />
+                }
               >
-                <p className="font-semibold text-foreground">Buyers</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Browse current local inventory and open-house options.
-                </p>
-              </SheetClose>
-              <SheetClose
-                nativeButton={false}
-                render={<Link to="/sellers" className={sheetCardLinkClass} />}
-              >
-                <p className="font-semibold text-foreground">Sellers</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Pricing, preparation, and market comparison tools.
-                </p>
+                <ItemContent>
+                  <ItemTitle>Buyers</ItemTitle>
+                  <ItemDescription>
+                    Browse current local inventory and open-house options.
+                  </ItemDescription>
+                </ItemContent>
               </SheetClose>
               <SheetClose
                 nativeButton={false}
                 render={
-                  <Link to="/investments" className={sheetCardLinkClass} />
+                  <Item variant="outline" render={<Link to="/sellers" />} />
                 }
               >
-                <p className="font-semibold text-foreground">Investments</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Screen active listings and move into deal math.
-                </p>
+                <ItemContent>
+                  <ItemTitle>Sellers</ItemTitle>
+                  <ItemDescription>
+                    Pricing, preparation, and market comparison tools.
+                  </ItemDescription>
+                </ItemContent>
               </SheetClose>
               <SheetClose
                 nativeButton={false}
-                render={<Link to="/estates" className={sheetCardLinkClass} />}
+                render={
+                  <Item variant="outline" render={<Link to="/investments" />} />
+                }
               >
-                <p className="font-semibold text-foreground">Estates</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Organize sale planning, documents, and property decisions.
-                </p>
+                <ItemContent>
+                  <ItemTitle>Investments</ItemTitle>
+                  <ItemDescription>
+                    Screen active listings and move into deal math.
+                  </ItemDescription>
+                </ItemContent>
+              </SheetClose>
+              <SheetClose
+                nativeButton={false}
+                render={
+                  <Item variant="outline" render={<Link to="/estates" />} />
+                }
+              >
+                <ItemContent>
+                  <ItemTitle>Estates</ItemTitle>
+                  <ItemDescription>
+                    Organize sale planning, documents, and property decisions.
+                  </ItemDescription>
+                </ItemContent>
               </SheetClose>
             </div>
           </div>
@@ -160,10 +180,7 @@ export function MobileNav() {
               <SheetClose
                 nativeButton={false}
                 render={
-                  <Link
-                    to="/sellers/calculator"
-                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
-                  />
+                  <Link to="/sellers/calculator" className={toolLinkClass} />
                 }
               >
                 <span className="leading-snug font-medium">
@@ -176,7 +193,7 @@ export function MobileNav() {
                   <Link
                     to="/sellers/comparables"
                     search={defaultListingSearch}
-                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                    className={toolLinkClass}
                   />
                 }
               >
@@ -188,7 +205,7 @@ export function MobileNav() {
                   <Link
                     to="/investments/opportunities"
                     search={defaultListingSearch}
-                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                    className={toolLinkClass}
                   />
                 }
               >
@@ -199,7 +216,7 @@ export function MobileNav() {
                 render={
                   <Link
                     to="/investments/calculator"
-                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                    className={toolLinkClass}
                   />
                 }
               >
@@ -210,10 +227,7 @@ export function MobileNav() {
               <SheetClose
                 nativeButton={false}
                 render={
-                  <Link
-                    to="/estates/organizer"
-                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
-                  />
+                  <Link to="/estates/organizer" className={toolLinkClass} />
                 }
               >
                 <span className="leading-snug font-medium">
@@ -223,10 +237,7 @@ export function MobileNav() {
               <SheetClose
                 nativeButton={false}
                 render={
-                  <Link
-                    to="/estates/calculator"
-                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
-                  />
+                  <Link to="/estates/calculator" className={toolLinkClass} />
                 }
               >
                 <span className="leading-snug font-medium">
@@ -239,7 +250,7 @@ export function MobileNav() {
                   <Link
                     to="/estates/properties"
                     search={estatePropertiesSearch}
-                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                    className={toolLinkClass}
                   />
                 }
               >
@@ -250,10 +261,7 @@ export function MobileNav() {
               <SheetClose
                 nativeButton={false}
                 render={
-                  <Link
-                    to="/sellers/get-ready"
-                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
-                  />
+                  <Link to="/sellers/get-ready" className={toolLinkClass} />
                 }
               >
                 <span className="leading-snug font-medium">Seller prep</span>
@@ -263,7 +271,7 @@ export function MobileNav() {
                 render={
                   <Link
                     to="/investments/due-diligence"
-                    className="flex min-h-[3.5rem] items-center gap-2 border border-border px-3 py-2 text-sm text-foreground no-underline hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:backdrop-blur-sm"
+                    className={toolLinkClass}
                   />
                 }
               >

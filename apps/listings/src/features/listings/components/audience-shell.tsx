@@ -2,6 +2,12 @@ import { Link } from '@tanstack/react-router'
 import { ArrowLeft, ArrowRight, Search } from 'lucide-react'
 
 import { Button } from '@workspace/ui/components/button'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@workspace/ui/components/card'
 
 import { defaultListingSearch } from '../search'
 
@@ -41,7 +47,7 @@ export function AudienceShell({
 }: AudienceShellProps) {
   return (
     <main className="page-wrap grid gap-6 py-8">
-      <section className="grid gap-6 rounded-lg border border-border bg-card p-6 lg:grid-cols-[1fr_340px] lg:items-start">
+      <Card className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
             {eyebrow}
@@ -70,33 +76,34 @@ export function AudienceShell({
             </Button>
           </div>
         </div>
-        <aside className="grid gap-3 rounded-lg border border-border bg-card p-4">
+        <Card size="sm" className="grid gap-3">
           <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-foreground">
             Next steps
           </p>
-          <Link
-            to="/search"
-            className="inline-flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm font-extrabold text-foreground no-underline hover:border-border"
+          <Button
+            nativeButton={false}
+            render={<Link to="/search" />}
+            variant="outline"
+            className="justify-between font-extrabold"
           >
             Browse indexed categories
             <ArrowRight className="size-4" />
-          </Link>
-        </aside>
-      </section>
+          </Button>
+        </Card>
+      </Card>
 
       <section className="grid gap-3 md:grid-cols-3">
         {points.map((point) => (
-          <article
-            className="rounded-lg border border-border bg-card p-4"
-            key={point.title}
-          >
-            <h2 className="text-lg font-extrabold text-foreground">
-              {point.title}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-foreground">
+          <Card size="sm" key={point.title}>
+            <CardHeader>
+              <CardTitle className="text-lg font-extrabold text-foreground">
+                {point.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm leading-6 text-foreground">
               {point.description}
-            </p>
-          </article>
+            </CardContent>
+          </Card>
         ))}
       </section>
     </main>

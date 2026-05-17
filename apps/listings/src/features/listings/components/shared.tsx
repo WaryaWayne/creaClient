@@ -1,10 +1,28 @@
-import { useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { createPortal } from 'react-dom'
-import { CircleOff, X } from 'lucide-react'
+import { CircleOff } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
+import { Badge } from '@workspace/ui/components/badge'
 import { Button } from '@workspace/ui/components/button'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@workspace/ui/components/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@workspace/ui/components/dialog'
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from '@workspace/ui/components/item'
 import {
   Empty,
   EmptyContent,
@@ -30,56 +48,22 @@ export function DetailsDialog({
   readonly children: ReactNode
   readonly className?: string
 }) {
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onOpenChange(false)
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onOpenChange, open])
-
-  if (!open) return null
-
-  if (typeof document === 'undefined') return null
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 grid place-items-center bg-background p-4 backdrop-blur-sm"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onOpenChange(false)
-      }}
-    >
-      <section
-        aria-modal="true"
-        role="dialog"
-        aria-labelledby={`${title.replace(/\W+/g, '-').toLowerCase()}-dialog-title`}
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
         className={cn(
-          'relative grid max-h-[min(88vh,760px)] w-full max-w-3xl gap-5 overflow-y-auto rounded-lg border border-border bg-card p-5 text-foreground shadow-[0_30px_90px_rgba(23,58,64,0.28)]',
+          'max-h-[min(88vh,760px)] overflow-y-auto text-foreground sm:max-w-3xl',
           className,
         )}
       >
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Close dialog"
-          className="absolute right-3 top-3"
-          onClick={() => onOpenChange(false)}
-        >
-          <X />
-        </Button>
-        <h2
-          id={`${title.replace(/\W+/g, '-').toLowerCase()}-dialog-title`}
-          className="display-title pr-10 text-3xl font-bold text-foreground"
-        >
-          {title}
-        </h2>
+        <DialogHeader>
+          <DialogTitle className="display-title pr-10 text-3xl font-bold text-foreground">
+            {title}
+          </DialogTitle>
+        </DialogHeader>
         {children}
-      </section>
-    </div>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -91,10 +75,10 @@ export function MetricPill({
   readonly children: ReactNode
 }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-semibold text-foreground">
+    <Badge variant="outline" className="gap-1 py-1 font-semibold">
       <Icon className="size-3.5 text-foreground" />
       {children}
-    </span>
+    </Badge>
   )
 }
 
@@ -123,10 +107,16 @@ export function DirectoryPanel({
   readonly children: ReactNode
 }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-5">
-      <h3 className="text-lg font-extrabold text-foreground">{title}</h3>
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">{children}</div>
-    </section>
+    <Card size="sm">
+      <CardHeader>
+        <CardTitle className="text-lg font-extrabold text-foreground">
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3 lg:grid-cols-2">
+        {children}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -205,10 +195,14 @@ export function InfoSection({
   readonly children: ReactNode
 }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-5">
-      <h2 className="text-xl font-extrabold text-foreground">{title}</h2>
-      <div className="mt-4">{children}</div>
-    </section>
+    <Card size="sm">
+      <CardHeader>
+        <CardTitle className="text-xl font-extrabold text-foreground">
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
   )
 }
 
@@ -236,14 +230,16 @@ export function DetailItem({
   readonly value: string | number | null
 }) {
   return (
-    <div className="rounded-md border border-border bg-card p-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
-        {label}
-      </p>
-      <p className="mt-1 text-base font-extrabold text-foreground">
-        {value ?? '-'}
-      </p>
-    </div>
+    <Item variant="outline" size="sm">
+      <ItemContent>
+        <ItemDescription className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
+          {label}
+        </ItemDescription>
+        <ItemTitle className="text-base font-extrabold text-foreground">
+          {value ?? '-'}
+        </ItemTitle>
+      </ItemContent>
+    </Item>
   )
 }
 
@@ -259,24 +255,28 @@ export function Pagination({
   readonly onPage: (page: number) => void
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3">
-      <Button
-        type="button"
-        variant="outline"
-        disabled={isPending || page <= 1}
-        onClick={() => onPage(Math.max(1, page - 1))}
-      >
-        Previous
-      </Button>
-      <span className="text-sm font-semibold text-foreground">Page {page}</span>
-      <Button
-        type="button"
-        variant="outline"
-        disabled={isPending || !hasNextPage}
-        onClick={() => onPage(page + 1)}
-      >
-        Next
-      </Button>
-    </div>
+    <Card size="sm" className="gap-0">
+      <CardFooter className="justify-between gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isPending || page <= 1}
+          onClick={() => onPage(Math.max(1, page - 1))}
+        >
+          Previous
+        </Button>
+        <span className="text-sm font-semibold text-foreground">
+          Page {page}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isPending || !hasNextPage}
+          onClick={() => onPage(page + 1)}
+        >
+          Next
+        </Button>
+      </CardFooter>
+    </Card>
   )
 }
