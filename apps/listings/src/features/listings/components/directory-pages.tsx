@@ -36,6 +36,7 @@ import { AskExpertButton, ContactAgentButton } from './contact'
 import { ListingsGrid } from './listing-card'
 import { MediaGroupsView, mediaGroups, mediaKey } from './media'
 import { DetailItem, EmptyState, InfoSection, Pagination } from './shared'
+import { elevatedSurfaceClassName } from './surface-styles'
 import {
   formatDate,
   looseSearchTokens,
@@ -254,7 +255,12 @@ export function AgentDetailPage({
             )}
           </InfoSection>
         </div>
-        <aside className="island-shell grid content-start gap-5 rounded-lg p-5 lg:sticky lg:top-24">
+        <aside
+          className={cn(
+            elevatedSurfaceClassName,
+            'grid content-start gap-5 rounded-lg p-5 lg:sticky lg:top-24',
+          )}
+        >
           <AgentRow agent={agent} prominent />
           {agent.office ? (
             <div className="grid gap-3 border-t border-border pt-5">
@@ -534,7 +540,12 @@ function OfficeDetailView({ office }: { readonly office: OfficeDetail }) {
             </div>
           ) : null}
         </div>
-        <aside className="island-shell grid content-start gap-5 rounded-lg p-5 lg:sticky lg:top-24">
+        <aside
+          className={cn(
+            elevatedSurfaceClassName,
+            'grid content-start gap-5 rounded-lg p-5 lg:sticky lg:top-24',
+          )}
+        >
           <OfficeRow office={office} prominent />
           <div className="grid grid-cols-2 gap-3">
             <OfficeMetric

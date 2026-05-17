@@ -18,7 +18,9 @@ import {
 } from '#/features/listings/search'
 import { Button } from '@workspace/ui/components/button'
 
+import { featureCardClassName } from '#/features/listings/components/surface-styles'
 import type { ListingSearch } from '#/features/listings/search'
+import { cn } from '#/lib/utils'
 
 export const Route = createFileRoute('/')({
   head: () => homeSeoHead(undefined),
@@ -234,7 +236,12 @@ function SiteHighlight({
 function AudienceCard({ option }: { readonly option: AudienceOption }) {
   const Icon = option.icon
   return (
-    <article className="feature-card grid min-h-[22rem] content-between gap-5 rounded-lg border border-border p-5 text-foreground">
+    <article
+      className={cn(
+        featureCardClassName,
+        'grid min-h-[22rem] content-between gap-5 rounded-lg border border-border p-5 text-foreground',
+      )}
+    >
       <div className="grid gap-4">
         <div className="flex items-start justify-between gap-3">
           <span className="flex size-11 items-center justify-center rounded-md bg-background text-foreground">

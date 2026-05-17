@@ -49,6 +49,7 @@ import { defaultListingSearch, listingSortOptions } from '../search'
 import type { ListingAdvancedFilterKey, ListingSearch } from '../search'
 import { listingFiltersAtom } from '../state'
 import { EmptyState } from './shared'
+import { elevatedSurfaceClassName } from './surface-styles'
 import {
   activeListingFilterCount,
   allValue,
@@ -328,7 +329,10 @@ export function ListingFilters({
             <Button
               type="button"
               variant="outline"
-              className="island-shell pointer-events-auto h-11 rounded-full bg-background px-4 font-extrabold text-foreground shadow-[0_12px_30px_rgba(23,58,64,0.12)] hover:bg-background"
+              className={cn(
+                elevatedSurfaceClassName,
+                'pointer-events-auto h-11 rounded-full bg-background px-4 font-extrabold text-foreground shadow-[0_12px_30px_rgba(23,58,64,0.12)] hover:bg-background',
+              )}
             />
           }
         >

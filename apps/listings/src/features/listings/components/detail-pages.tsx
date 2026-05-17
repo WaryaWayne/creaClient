@@ -12,6 +12,7 @@ import {
 
 import { Button } from '@workspace/ui/components/button'
 
+import { cn } from '#/lib/utils'
 import type { ListingDetail, OpenHouseDetail } from '../data'
 import { defaultListingSearch, defaultOpenHouseSearch } from '../search'
 import { AskExpertButton, ExpertHelpCallout } from './contact'
@@ -31,6 +32,7 @@ import {
   InfoSection,
   MetricPill,
 } from './shared'
+import { elevatedSurfaceClassName } from './surface-styles'
 import {
   formatDate,
   formatListingPrice,
@@ -142,7 +144,12 @@ export function OpenHouseDetailPage({
           </div>
         </div>
         {property ? (
-          <div className="island-shell grid content-start gap-3 rounded-lg p-5">
+          <div
+            className={cn(
+              elevatedSurfaceClassName,
+              'grid content-start gap-3 rounded-lg p-5',
+            )}
+          >
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
               Property subtype
             </p>
@@ -176,7 +183,12 @@ export function OpenHouseDetailPage({
             />
           </div>
         ) : (
-          <div className="island-shell grid content-start gap-3 rounded-lg p-5">
+          <div
+            className={cn(
+              elevatedSurfaceClassName,
+              'grid content-start gap-3 rounded-lg p-5',
+            )}
+          >
             <AskExpertButton
               context={{
                 source: 'open-house-detail-empty-property-card',
@@ -437,7 +449,12 @@ export function ListingDetailPage({
           </InfoSection>
         ) : null}
       </div>
-      <aside className="island-shell grid content-start gap-5 rounded-lg p-5 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+      <aside
+        className={cn(
+          elevatedSurfaceClassName,
+          'grid content-start gap-5 rounded-lg p-5 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto',
+        )}
+      >
         <ListingOpenHousesPanel listing={listing} />
         <div className="border-t border-border pt-5">
           <div className="flex items-start justify-between gap-3">
